@@ -1,0 +1,103 @@
+import { CssVarsProvider, } from '@mui/joy/styles';
+import Sheet from '@mui/joy/Sheet';
+import CssBaseline from '@mui/joy/CssBaseline';
+import Typography from '@mui/joy/Typography';
+import FormControl from '@mui/joy/FormControl';
+import FormLabel from '@mui/joy/FormLabel';
+import Input from '@mui/joy/Input';
+import Button from '@mui/joy/Button';
+import { Link, useNavigate } from 'react-router-dom';
+import React, { useRef, useState, useEffect } from "react";
+
+
+export default function Login() {
+    const [error, setError] = useState("");
+    const [emailInput, setEmailInput] = useState("");
+    const [passwordInput, setPasswordInput] = useState("");
+
+
+    async function handleSubmit(e) {
+        console.log("handleSubmit")
+        e.preventDefault();
+        try {
+            setError("");
+            await login(emailInput, passwordInput);
+            console.log("login successfull")
+            navigate("/components/Home")
+        } catch {
+            alert("Incorrect email or password");
+            setEmailInput("");
+            setPasswordInput("")
+        }
+    }
+
+    return (
+        <>
+            <div id='containerLogin'>
+                <div id='imageDiv'>
+                    <img src="/src/images/flatLogoResized.png" alt="Flat Finder Logo" />
+                </div>
+                <main id='form'>
+                    <CssVarsProvider >
+                        <CssBaseline />
+                        <Sheet
+                            sx={{
+                                width: 400,
+                                mx: 'auto', // margin left & right
+                                my: 4, // margin top & bottom
+                                py: 3, // padding top & bottom
+                                px: 2, // padding left & right
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 2,
+                                borderRadius: 'sm',
+                                boxShadow: 'md',
+                            }}
+                            variant="outlined"
+                        >
+                            <div>
+                                <Typography level="h4" component="h1">
+                                    <b>LOG</b>
+                                </Typography>
+                                <Typography level="body-sm">Sign in</Typography>
+                            </div>
+                            <FormControl>
+                                <FormLabel>Email</FormLabel>
+                                <Input
+                                    name="email"
+                                    type="email"
+                                    value={emailInput}
+                                    required
+                                    onChange={e => setEmailInput(e.target.value.toLowerCase())}
+                                />
+                            </FormControl>
+                            <FormControl>
+                                <FormLabel>Password</FormLabel>
+                                <Input
+                                    name="password"
+                                    type="password"
+                                    value={passwordInput}
+                                    required
+                                    onChange={e => setPasswordInput(e.target.value)}
+                                />
+                            </FormControl>
+                            <Button sx={{ mt: 1 /* margin top */ }} onClick={handleSubmit}>Sign in</Button>
+                            <Typography
+                                endDecorator={<Link to="/components/UserRegister">Reset</Link>}
+                                sx={{ fontSize: 'sm', alignSelf: 'center' }}
+                            >
+                                Forgot Password?
+                            </Typography>
+                            <Typography
+                                endDecorator={<Link to="/components/SignUp">Sign up</Link>}
+                                sx={{ fontSize: 'sm', alignSelf: 'center' }}
+                            >
+                                Don&apos;t have an account? Please 
+                            </Typography>
+                        </Sheet>
+                    </CssVarsProvider>
+                </main>
+            </div>
+        </>
+    );
+}
