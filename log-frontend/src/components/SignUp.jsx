@@ -37,11 +37,11 @@ export default function SignUp({ props }) {
             let checkemail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
             if (!userEmail) {
-                setUserEmailError("Please insert an email address")
+                setUserEmailError("Por favor introduzir um endereço de email válido.")
                 setValidEmail(false)
             }
             else if (checkemail.test(userEmail) == false) {
-                setUserEmailError("Please insert a valid email")
+                setUserEmailError("Por favor introduzir um endereço de email válido.")
                 setValidEmail(false)
             }
             else {
@@ -58,7 +58,7 @@ export default function SignUp({ props }) {
         if (counter == 1) {
             let checkPassword = /^(?=.*[a-z])(?=.*\d)(?=.*[@.#$!%*?&])[A-Za-z\d@.#$!%*?&]{6,100}$/;
             if (checkPassword.test(password) == false) {
-                setPasswordError("The password must be at least 6 characters and must contain letters, numbers and a character that is neither a letter nor a number")
+                setPasswordError("A password deve conter pelo menos 6 caracteres, letras, números e um caracter especial.")
                 setValidPassword(false)
             }
             else {
@@ -66,7 +66,7 @@ export default function SignUp({ props }) {
                 setValidPassword(true)
             }
             if (password != passwordConfirmation) {
-                setPasswordConfirmationError("The password's doens't match")
+                setPasswordConfirmationError("As passwords não coincidem.")
                 setValidPasswordConfirmation(false)
             }
             else {
@@ -82,7 +82,7 @@ export default function SignUp({ props }) {
     useEffect(() => {
         if (counter == 1) {
             if (userName.length < 2) {
-                setUserNameError("The first name should have at least 2 letters")
+                setUserNameError("O nome deve conter no minimo 2 letras.")
                 setValidFirstName(false)
             }
             else {
@@ -122,7 +122,7 @@ export default function SignUp({ props }) {
                 });
         }
         else {
-            alert("Invalid data, please check.");
+            alert("Dados inválidos.");
         }
     }
 
@@ -159,14 +159,14 @@ export default function SignUp({ props }) {
                         variant="outlined"
                     >
                         <div>
-                            <Typography level="h4" component="h1">
-                                <b>New User</b>
+                            <Typography style={{fontWeight: 'bold', color: '#f57c00' }}level="h4" component="h1">
+                                <b>Novo utilizador</b>
                             </Typography>
-                            <Typography level="body-sm">Fill all inputs to register a new user.</Typography>
+                            <Typography level="body-sm">Preencha todos os campos para criar um novo utilizador.</Typography>
                         </div>
 
                         <FormControl>
-                            <FormLabel>Name</FormLabel>
+                            <FormLabel>Nome</FormLabel>
                             <Input name="name" type="text" value={userName} onChange={e => setUserName(e.target.value)} />
                             <p style={{ color: "red", fontSize: "12px" }}>{userNameError}</p>
                         </FormControl>
@@ -184,13 +184,13 @@ export default function SignUp({ props }) {
                         </FormControl>
 
                         <FormControl>
-                            <FormLabel >Password confirmation</FormLabel>
+                            <FormLabel >Confirmação de Password</FormLabel>
                             <Input name="password" type="password" value={passwordConfirmation} onChange={e => setPasswordConfirmation(e.target.value)} />
-                            <p style={{ color: "red", fontSize: "12px", marginLeft: "5%" }}>{passwordConfirmationError}</p>
+                            <p style={{ color: "red", fontSize: "12px" }}>{passwordConfirmationError}</p>
                         </FormControl>
 
-                        <Button sx={{ mt: 1 /* margin top */ }} onClick={handleSubmit}>Register</Button>
-                        <Button sx={{ mt: 1, backgroundColor: 'rgba(236, 114, 105, 1)' /* margin top */ }} onClick={closePage}>Cancel</Button>
+                        <Button sx={{ mt: 1 /* margin top */ }} onClick={handleSubmit}>Registar</Button>
+                        <Button sx={{ mt: 1 /* margin top */ }} onClick={closePage}>Voltar</Button>
                     </Sheet>
                 </CssVarsProvider>
 

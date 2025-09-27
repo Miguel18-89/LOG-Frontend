@@ -1,3 +1,90 @@
+:root {
+  --primary-orange: #f57c00;
+  --hover-orange: #fb8c00;
+  --dark: #212121;
+  --light: #ffffff;
+  --gray: #f5f5f5;
+  --border-radius: 6px;
+  --transition: 0.3s ease;
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background-color: var(--gray);
+  color: var(--dark);
+}
+
+header, nav {
+  background-color: var(--primary-orange);
+  color: var(--light);
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+nav a {
+  color: var(--light);
+  text-decoration: none;
+  margin-left: 1rem;
+  font-weight: bold;
+  transition: var(--transition);
+}
+
+nav a:hover {
+  color: var(--dark);
+}
+
+main {
+  padding: 2rem;
+  background-color: var(--light);
+  border-radius: var(--border-radius);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  max-width: 900px;
+  margin: 10rem auto;
+}
+
+h1, h2 {
+  color: var(--primary-orange);
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 0.75rem;
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+  border: 1px solid #ccc;
+  border-radius: var(--border-radius);
+  font-size: 1rem;
+}
+
+button {
+  background-color: var(--primary-orange);
+  color: var(--light);
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--border-radius);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+button:hover {
+  background-color: var(--hover-orange);
+}
+
+footer {
+  text-align: center;
+  padding: 1rem;
+  background-color: var(--dark);
+  color: var(--light);
+  margin-top: 3rem;
+}
+
+
+
+
 body {
     /*overflow: hidden;*/
     overflow-y: scroll;

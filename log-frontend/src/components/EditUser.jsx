@@ -62,8 +62,8 @@ export default function EditUser({ props }) {
     useEffect(() => {
         if (counter == 1) {
             if (name.length < 2) {
-                setNameError("The first name should have at least 2 letters")
-                setName(false)
+                setNameError("O nome deve conter no minimo 2 letras.")
+                setValidName(false)
             }
             else {
                 setNameError("");
@@ -80,11 +80,11 @@ export default function EditUser({ props }) {
         e.preventDefault();
         if (validName == true) {
             updateUser();
-            alert("Profile update successfully.")
+            alert("Perfil actualizado com sucesso.")
             navigate("/Home")
         }
         else {
-            alert("Invalid data, please check.");
+            alert("Dados inválidos");
         }
     }
 
@@ -126,25 +126,26 @@ export default function EditUser({ props }) {
                             variant="outlined"
                         >
                             <div>
-                                <Typography style={{ fontWeight: "normal" }} level="h4" component="h1">
-                                    <b>My Profile</b>
+                                <Typography sx={{ fontWeight: 'bold', color: '#f57c00' }} level="h4" component="h1">
+                                    <p style={{ margin: 0}}>Meu perfil</p>
                                 </Typography>
                             </div>
                             <FormControl>
                                 <FormLabel>Email</FormLabel>
                                 <Input name="email" type="email" value={user.email} disabled />
-                                <p style={{ color: "red", fontSize: "12px" }}></p>
+                                <p style={{ color: "red", fontSize: "12px", margin: 0}}></p>
                             </FormControl>
 
                             <FormControl>
-                                <FormLabel>Name</FormLabel>
+                                <FormLabel>Nome</FormLabel>
                                 <Input name="name" type="text" defaultValue={user.name} onChange={e => setName(e.target.value)} />
                                 <p style={{ color: "red", fontSize: "12px" }}>{nameError}</p>
                             </FormControl>
 
-                            <Button sx={{ mt: 1 /* margin top */ }} onClick={handleSubmit}>Update profile</Button>
+                            <Button sx={{ mt: 1 /* margin top */ }} onClick={handleSubmit}>Actualizar perfil</Button>
                             <br />
-                            <Button sx={{ mt: 1 /* margin top */ }} onClick={ResetPassword}>Reset Password</Button>
+                            <p>Precisa alterar a password? Por favor clicar no botão abaixo.</p>
+                            <Button sx={{ mt: 1 /* margin top */ }} onClick={ResetPassword}>Alterar password</Button>
 
                             {message && <p style={{ color: 'green', marginTop: '10px' }}>{message}</p>}
                             {error && <p style={{ color: 'red', marginTop: '10px' }}>{error}</p>}

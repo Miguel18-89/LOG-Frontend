@@ -5,7 +5,7 @@ const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem('token');
 
   if (!token) {
-    localStorage.setItem('logoutReason', 'You are not loggedin. Please log in.');
+    localStorage.setItem('logoutReason', 'Não está autenticado.');
     return <Navigate to="/" />;
   }
 
@@ -16,7 +16,7 @@ const PrivateRoute = ({ children }) => {
     if (isExpired) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      localStorage.setItem('logoutReason', 'Your session has expired. Please log in again.');
+      localStorage.setItem('logoutReason', 'A sua sessão expirou, por favor autentique-se de novo.');
       return <Navigate to="/" />;
     }
 
@@ -24,7 +24,7 @@ const PrivateRoute = ({ children }) => {
   } catch {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    localStorage.setItem('logoutReason', 'Invalid token. Please log in again.');
+    localStorage.setItem('logoutReason', 'Token inválido, Por favor autentique-se de novo.');
     return <Navigate to="/" />;
   }
 };

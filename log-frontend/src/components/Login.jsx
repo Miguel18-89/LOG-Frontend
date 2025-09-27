@@ -22,7 +22,7 @@ export default function Login() {
         const reason = localStorage.getItem('logoutReason');
         if (reason) {
             setLogoutMessage(reason);
-            alert(reason); // usar diretamente o valor lido
+            alert(reason);
             localStorage.removeItem('logoutReason');
         }
     }, []);
@@ -80,7 +80,7 @@ export default function Login() {
                                 <Typography level="h4" component="h1">
                                     <b>LOG</b>
                                 </Typography>
-                                <Typography level="body-sm">Sign in</Typography>
+                                <Typography level="body-sm">Insira os seus dados de autenticação.</Typography>
                             </div>
                             <FormControl>
                                 <FormLabel>Email</FormLabel>
@@ -102,18 +102,18 @@ export default function Login() {
                                     onChange={e => setPasswordInput(e.target.value)}
                                 />
                             </FormControl>
-                            <Button sx={{ mt: 1 /* margin top */ }} onClick={handleSubmit}>Sign in</Button>
+                            <Button sx={{ mt: 1 /* margin top */ }} onClick={handleSubmit}>Entrar</Button>
                             <Typography
-                                endDecorator={<Link to="/ForgotPassword">Reset</Link>}
+                                endDecorator={<Link to="/ForgotPassword">Recuperar</Link>}
                                 sx={{ fontSize: 'sm', alignSelf: 'center' }}
                             >
-                                Forgot Password?
+                                Esqueceu a Password?
                             </Typography>
                             <Typography
-                                endDecorator={<Link to="/SignUp">Sign up</Link>}
+                                endDecorator={<Link to="/SignUp">Registar</Link>}
                                 sx={{ fontSize: 'sm', alignSelf: 'center' }}
                             >
-                                Don&apos;t have an account? Please
+                                Não tem conta?
                             </Typography>
                         </Sheet>
                     </CssVarsProvider>
