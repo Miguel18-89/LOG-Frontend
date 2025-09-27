@@ -1,0 +1,669 @@
+body {
+    /*overflow: hidden;*/
+    overflow-y: scroll;
+}
+
+#containerLogin {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-self: center;
+    align-items: center;
+    position: relative;
+}
+
+#imageDiv {
+    display: flex;
+    width: 45%;
+    height: 100vh;
+    justify-content: center;
+    align-items: center;
+}
+
+#containerLogin img {
+    width: 80%;
+}
+
+#verticalSeparatorDiv {
+    background-color: grey;
+    height: 72vh;
+    width: 0.1%;
+    border-radius: 10px;
+}
+
+#containerLogin #form {
+    display: flex;
+    align-items: center;
+    width: 55%;
+    position: relative;
+}
+
+#passwordDiv {
+    display: flex;
+    flex-direction: row;
+}
+
+#namesDiv {
+    display: flex;
+    flex-direction: row;
+}
+
+#closeIcon {
+    display: flex;
+    align-items: center;
+    border-radius: 10px;
+    color: white;
+    font-size: 20px;
+    position: absolute;
+    right: 195px;
+    top: 40px;
+}
+
+/* NAVBAR */
+
+#navbarDiv {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    height: 12vh;
+    align-items: center;
+    justify-content: center;
+}
+
+#imgNavbarDiv {
+    width: 20%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#imgNavbarDiv img {
+    height: 200%;
+    margin-right: 20px;
+    margin-top: 10px;
+
+}
+
+#navbarCenter {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    width: 60%;
+    height: 8vh;
+    background-color: rgb(130, 158, 236);
+    border-radius: 50px;
+}
+
+#navbarLinksDiv {
+    display: flex;
+    flex-direction: row;
+    background-color: #0b6bcb;
+    align-items: center;
+    justify-content: center;
+    width: 60%;
+    height: 8vh;
+    border-radius: 50px;
+    margin-top: 50px;
+}
+
+#navbarLink {
+    padding: 10px;
+    margin: 20px;
+    color: white;
+    width: 20%;
+    font-size: 20px;
+    text-align: center;
+    text-decoration: none;
+    font-family: var(--joy-fontFamily-body, "Inter", var(--joy-fontFamily-fallback, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"));
+}
+
+#navbarLink:hover {
+    padding: 10px;
+    margin: 20px;
+    background-color: white;
+    color: #0b6bcb;
+    border-radius: 40px;
+    width: 20%;
+    font-size: 20px;
+    text-align: center;
+    text-decoration: none;
+}
+
+#navbarProfileDiv {
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: center;
+    width: 20%;
+    height: 12vh;
+    margin-top: 10px;
+}
+
+#userIdDiv {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--joy-fontFamily-body, "Inter", var(--joy-fontFamily-fallback, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"));
+}
+
+
+/* HOME*/
+
+#homeDiv {
+    display: flex;
+    flex-direction: row;
+}
+
+#homeLeftDiv {
+    display: flex;
+    flex-direction: column;
+    border-radius: 30px;
+    /*border: solid 3px lightgray;*/
+    /*box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;*/
+    box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+    background-color: rgb(255, 255, 255);
+    width: 20%;
+    height: 70vh;
+    margin: 2vh;
+    margin-top: 13vh;
+}
+
+#searchDiv {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+#searchDiv p {
+    margin-left: 15%;
+    font-size: 18px;
+    font-weight: bold;
+    color: #0b6bcb;
+    font-family: var(--joy-fontFamily-body, "Inter", var(--joy-fontFamily-fallback, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"));
+}
+
+#filterDiv {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+#filterDiv p {
+    margin-left: 15%;
+    font-size: 18px;
+    font-weight: bold;
+    color: #0b6bcb;
+    font-family: var(--joy-fontFamily-body, "Inter", var(--joy-fontFamily-fallback, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"));
+}
+
+#sortDiv {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+#sortDiv p {
+    margin-left: 15%;
+    font-size: 18px;
+    font-weight: bold;
+    color: #0b6bcb;
+    font-family: var(--joy-fontFamily-body, "Inter", var(--joy-fontFamily-fallback, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"));
+}
+
+
+#homeRightDiv {
+    display: flex;
+    flex-direction: column;
+    /*border: solid 3px lightgray;
+    box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;*/
+    /*align-items: center;*/
+    max-width: 78%;
+    overflow-y: scroll;
+    height: 80vh;
+    margin: 2vh;
+    margin-top: 5vh;
+    font-family: var(--joy-fontFamily-body, "Inter", var(--joy-fontFamily-fallback, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"));
+}
+
+#topDiv {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    width: 100%;
+    height: 8vh;
+}
+
+#topDivTitle {
+    display: flex;
+    justify-content: flex-start;
+    width: 50%;
+}
+
+#topDivButton {
+    display: flex;
+    justify-content: flex-end;
+    width: 50%;
+}
+
+#homeRightDiv h2 {
+    color: #0b6bcb;
+    font-size: 24px;
+}
+
+#Typography {
+
+    font-family: var(--joy-fontFamily-body, "Inter", var(--joy-fontFamily-fallback, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"));
+    font-weight: normal;
+}
+
+#containerFlats {
+    /**/
+    display: grid;
+    grid-template-columns: 25% 25% 25% 25%;
+    /**/
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+#cardFlat {
+    display: flex;
+    flex-direction: column;
+    width: 80%;
+    font-family: var(--joy-fontFamily-body, "Inter", var(--joy-fontFamily-fallback, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"));
+    margin: 0.5%;
+    min-width: 20%;
+    height: 54vh;
+    justify-content: flex-end;
+}
+
+#cardFlat #imgDiv {
+    display: flex;
+    width: 100%;
+    max-height: 20vh;
+    justify-content: center;
+}
+
+#cardFlat img {
+    display: flex;
+    border-radius: 10px;
+    width: 100%;
+    min-height: 20vh;
+    max-height: 20vh;
+}
+
+#titleCityDiv {
+    position: relative;
+}
+
+#flatTitleH3 {
+    width: 82%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#cardFlat #favoriteIcon {
+    display: flex;
+    position: absolute;
+    top: 5%;
+    right: 1%;
+    cursor: pointer;
+}
+
+#cardFlat p {
+    color: black;
+    font-family: var(--joy-fontFamily-body, "Inter", var(--joy-fontFamily-fallback, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"));
+
+}
+
+#cardFlatBottom {
+    display: flex;
+    flex-direction: row;
+    background-color: #0b6bcb;
+    justify-content: space-around;
+    align-items: center;
+    border-radius: 5px;
+}
+
+#cardFlatBottom p {
+    display: flex;
+    flex-direction: row;
+    color: white;
+    font-family: var(--joy-fontFamily-body, "Inter", var(--joy-fontFamily-fallback, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"));
+}
+
+/*ViewFlat*/
+
+
+.thumbs-wrapper.axis-vertical {
+    display: flex;
+    justify-content: center;
+}
+
+#viewFlatDiv {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    overflow: scroll;
+
+}
+
+#cardViewFlat {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    width: 80%;
+    font-family: var(--joy-fontFamily-body, "Inter", var(--joy-fontFamily-fallback, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"));
+    position: relative;
+    margin: 0.5%;
+    min-width: 20%;
+    min-height: 45vh;
+    margin-top: 1%;
+
+}
+
+#viewFlatInfo {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    font-family: var(--joy-fontFamily-body, "Inter", var(--joy-fontFamily-fallback, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"));
+    position: relative;
+    margin: 0.5%;
+    min-width: 20%;
+    min-height: 45vh;
+}
+
+/* flatComments is set above */
+
+#cardViewFlat #imgDiv {
+    display: flex;
+    width: 50%;
+    max-height: 52vh;
+}
+
+#cardViewFlat img {
+    display: flex;
+    border-radius: 10px;
+    width: 100%;
+    max-height: 40vh;
+}
+
+#cardViewFlat #favoriteIcon {
+    display: flex;
+    position: absolute;
+    top: -4%;
+    right: 1%;
+    cursor: pointer;
+    font-size: 60px;
+}
+
+#viewFlatTitleDiv {
+    display: flex;
+    flex-direction: column;
+    width: 50%;
+    margin-left: 5%;
+}
+
+#cardViewFlat #viewFlatTitleDiv p {
+    font-family: var(--joy-fontFamily-body, "Inter", var(--joy-fontFamily-fallback, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"));
+    margin-top: 5%;
+}
+
+#cardViewFlatBottom {
+    background-color: blue;
+    display: flex;
+    flex-direction: row;
+    background-color: #0b6bcb;
+    justify-content: space-around;
+    align-items: center;
+    width: 35%;
+    border-radius: 5px;
+    position: absolute;
+    bottom: 5%;
+    right: 13%;
+}
+
+#cardViewFlatBottom p {
+    display: flex;
+    flex-direction: row;
+    color: white;
+    font-family: var(--joy-fontFamily-body, "Inter", var(--joy-fontFamily-fallback, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"));
+}
+
+/* FlatCommments*/
+
+#flatExistingComments {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 60%;
+    margin: 1%;
+}
+
+#flatComments {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: flex-end;
+    width: 60%;
+    border: 3px solid rgb(238, 238, 238);
+    border-radius: 10px;
+    background-color: rgb(250, 250, 250);
+}
+
+#commentCard {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin: 1%;
+    border: 3px solid rgb(238, 238, 238);
+    border-radius: 10px;
+    background-color: rgb(250, 250, 250);
+    font-family: var(--joy-fontFamily-body, "Inter", var(--joy-fontFamily-fallback, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"));
+    align-items: flex-start;
+    justify-content: flex-start;
+    position: relative;
+}
+
+#commentCard #commentCardUser {
+    margin: 0% 5% 0% 5%;
+}
+
+#commentCard #commentCardComment {
+    margin: 0% 5% 5% 5%;
+}
+
+#commentCardDeleteIcon {
+    display: flex;
+    position: absolute;
+    right: 1%;
+    top: 5%;
+}
+
+
+#commentInput {
+    background-color: rgb(250, 250, 250);
+    border: none;
+    width: 97%;
+    margin: 2%;
+    height: 5vh;
+    font-size: 16px;
+    overflow: scroll;
+    resize: none;
+    font-family: var(--joy-fontFamily-body, "Inter", var(--joy-fontFamily-fallback, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"));
+    overflow: visible;
+    height: auto;
+}
+
+#commentInput:focus {
+    border: none;
+    outline: none;
+}
+
+#sendCommentButton {
+    margin: 1%;
+
+}
+
+
+/*Edit Flat */
+
+#currentImagesDiv {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    height: 10vh;
+    align-items: center;
+    margin-bottom: 2%;
+}
+
+#editFlatimageDiv {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 10%;
+    height: 100%;
+    margin: 0 1% 0 1%;
+    position: relative;
+}
+
+#editFlatRemoveIcon {
+    display: flex;
+    position: absolute;
+    top: 100%;
+
+
+}
+
+
+
+/* New Flat */
+
+#newFlatContainerDiv {
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    width: 60%;
+    margin-top: 2vh;
+}
+
+#newFlatDiv {
+    display: flex;
+    justify-content: center;
+}
+
+#radioHasACDiv {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+#cityStreetNameNumberDiv {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+#formOtherDataDiv {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+#form {
+    display: flex;
+    width: 100%;
+}
+
+
+/*My Profile*/
+
+#adminUserInfoDiv {
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 5vh;
+    font-size: 20px;
+    font-family: var(--joy-fontFamily-body, "Inter", var(--joy-fontFamily-fallback, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"));
+
+}
+
+/* Users page*/
+
+#AllUsersDiv{
+    display: flex;
+    flex-direction: row;
+
+}
+
+#usersFilterSortDiv{
+    display: flex;
+    flex-direction: column;
+    border-radius: 30px;
+    /*border: solid 3px lightgray;*/
+    /*box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;*/
+    box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+    background-color: rgb(255, 255, 255);
+    width: 20%;
+    height: 70vh;
+    margin: 2vh;
+    margin-top: 13vh;
+}
+
+
+#usersPage {
+    display: flex;
+    align-items: center;
+    margin-top: 23h;
+    flex-direction: column;
+
+    width: 80%;
+}
+
+#usersPage h2 {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 5vh;
+    flex-direction: column;
+    font-family: var(--joy-fontFamily-body, "Inter", var(--joy-fontFamily-fallback, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"));
+    color: #0b6bcb;
+    font-size: 24px;
+
+}
+
+#tableTitle{
+    display: flex;
+    flex-direction: row;
+}
+
+#horizontalLine{
+    background-color: rgb(230, 230, 230);
+    width: 98%;
+    height: 0.2vh;
+    margin-bottom: 1vh;
+}
+
+#userInfoRow{
+    display: flex;
+    flex-direction: row;
+
+}
+
+#viewUsersDiv {
+    width: 80%;
+    justify-content: center;
+    align-items: center;
+    margin-top: 2vh;
+}
+
+#editUsersDiv{
+    display: flex;
+    margin-top: 10vh;
+}

@@ -7,25 +7,46 @@ import FormLabel from '@mui/joy/FormLabel';
 import Input from '@mui/joy/Input';
 import Button from '@mui/joy/Button';
 import { Link, useNavigate } from 'react-router-dom';
-import React, { useRef, useState, useEffect } from "react";
+import React, {useState, useEffect } from "react";
+import api from '../services/api'
 
 
 export default function Login() {
     const [error, setError] = useState("");
     const [emailInput, setEmailInput] = useState("");
     const [passwordInput, setPasswordInput] = useState("");
+    const navigate = useNavigate();
+    const [logoutMessage, setLogoutMessage] = useState('');
+
+    useEffect(() => {
+        const reason = localStorage.getItem('logoutReason');
+        if (reason) {
+            setLogoutMessage(reason);
+            alert(reason); // usar diretamente o valor lido
+            localStorage.removeItem('logoutReason');
+        }
+    }, []);
+
+
 
 
     async function handleSubmit(e) {
-        console.log("handleSubmit")
         e.preventDefault();
         try {
             setError("");
-            await login(emailInput, passwordInput);
-            console.log("login successfull")
-            navigate("/components/Home")
-        } catch {
-            alert("Incorrect email or password");
+
+            await api.post('/users/login', {
+                email: emailInput,
+                password: passwordInput
+            }).then(response => {
+                localStorage.setItem('token', response.data.token);
+                localStorage.setItem('user', JSON.stringify(response.data.user));
+                setEmailInput("")
+                setPasswordInput("")
+                navigate("/Home")
+            })
+        } catch (error) {
+            alert(JSON.stringify(error.response?.data));
             setEmailInput("");
             setPasswordInput("")
         }
@@ -35,7 +56,7 @@ export default function Login() {
         <>
             <div id='containerLogin'>
                 <div id='imageDiv'>
-                    <img src="/src/images/flatLogoResized.png" alt="Flat Finder Logo" />
+                    <img src="/src/images/LOG.png" alt="LOG Logo" />
                 </div>
                 <main id='form'>
                     <CssVarsProvider >
@@ -83,16 +104,16 @@ export default function Login() {
                             </FormControl>
                             <Button sx={{ mt: 1 /* margin top */ }} onClick={handleSubmit}>Sign in</Button>
                             <Typography
-                                endDecorator={<Link to="/components/UserRegister">Reset</Link>}
+                                endDecorator={<Link to="/ForgotPassword">Reset</Link>}
                                 sx={{ fontSize: 'sm', alignSelf: 'center' }}
                             >
                                 Forgot Password?
                             </Typography>
                             <Typography
-                                endDecorator={<Link to="/components/SignUp">Sign up</Link>}
+                                endDecorator={<Link to="/SignUp">Sign up</Link>}
                                 sx={{ fontSize: 'sm', alignSelf: 'center' }}
                             >
-                                Don&apos;t have an account? Please 
+                                Don&apos;t have an account? Please
                             </Typography>
                         </Sheet>
                     </CssVarsProvider>

@@ -133,7 +133,7 @@ export default function SignUp({ props }) {
     return (
         <div id='containerLogin'>
             <div id='imageDiv'>
-                <img src="/src/images/flatLogoResized.png" alt="Flat Finder Logo" />
+                <img src="/src/images/LOG.png" alt="LOG Logo" />
             </div>
 
             <div id='verticalSeparatorDiv'>
