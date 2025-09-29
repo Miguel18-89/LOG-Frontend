@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CssVarsProvider } from '@mui/joy/styles';
 import Sheet from '@mui/joy/Sheet';
 import Typography from '@mui/joy/Typography';
@@ -15,58 +15,65 @@ import api from '../services/api'
 
 export default function NewStore() {
     const navigate = useNavigate();
+    const [currentLoggedUser, setCurrentLoggedUser] = useState({});
     const [formData, setFormData] = useState({
-        nome: '',
-        numero: '',
-        morada: '',
-        regional: '',
-        area: '',
-        fiscalizacaoNome: '',
-        fiscalizacaoTelefone: '',
+        storeName: '',
+        storeNumber: '',
+        storeAddress: '',
+        storeRegion: '',
+        storeArea: '',
+        storeInspectorName: '',
+        storeInspectorContact: '',
+        userId: currentLoggedUser.id
     });
 
+    useEffect(() => {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+            setCurrentLoggedUser(JSON.parse(storedUser));
+        }
+    }, []);
+
     const handleChange = (e) => {
+        const { name, value } = e.target;
         setFormData((prev) => ({
             ...prev,
-            [e.target.name]: e.target.value,
+            [name]: value,
         }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         const errors = [];
 
-        // Validação de campos obrigatórios
-        if (!formData.nome.trim()) {
+        if (!formData.storeName.trim()) {
             errors.push("O campo Nome é obrigatório.");
         }
 
-        if (!formData.numero.trim()) {
+        if (!formData.storeNumber.trim()) {
             errors.push("O campo Número da Loja é obrigatório.");
         }
 
-        // Verificar se número da loja é um número válido
-        if (isNaN(formData.numero) || Number(formData.numero) <= 0) {
+        if (isNaN(formData.storeNumber) || Number(formData.storeNumber) <= 0) {
             errors.push("O Número da Loja deve ser um número válido.");
         }
 
-        // Verificar se área é um número válido
-        if (formData.area == "") {
+
+        if (formData.storeArea == "") {
         }
         else {
 
-            if (Number(formData.area) <= 0 || (!Number(formData.area))) {
+            if (Number(formData.storeArea) <= 0 || (!Number(formData.storeArea))) {
                 errors.push("A Área deve ser um número válido.");
             }
         }
 
 
-        // Verificar se telefone é um número válido (opcional: 9 dígitos)
-        if (formData.fiscalizacaoTelefone == "") {
+        if (formData.storeInspectorContact == "") {
         }
         else {
-            if (isNaN(formData.fiscalizacaoTelefone) || formData.fiscalizacaoTelefone.length < 9) {
+            if (isNaN(formData.storeInspectorContact) || formData.storeInspectorContact.length < 9) {
                 errors.push("O telefone da fiscalização deve conter apenas números e ter pelo menos 9 dígitos.");
             }
         }
@@ -76,7 +83,14 @@ export default function NewStore() {
             return;
         }
 
-        // Se tudo estiver válido
+        console.log(formData)
+        await api.post('/stores', {
+            ...formData,
+            storeNumber: Number(formData.storeNumber),
+            storeArea: formData.storeArea ? Number(formData.storeArea) : null,
+            storeInspectorContact: formData.storeInspectorContact ? Number(formData.storeInspectorContact) : null,
+            userId: currentLoggedUser.id
+        });
         console.log("Nova loja:", formData);
         alert("Loja adicionada com sucesso!");
         navigate("/Home")
@@ -107,30 +121,29 @@ export default function NewStore() {
                                 Adicionar Nova Loja
                             </Typography>
 
-                            {/* Dados da loja */}
                             <FormControl>
                                 <FormLabel>Nome da Loja</FormLabel>
-                                <Input name="nome" value={formData.nome} onChange={handleChange} required />
+                                <Input name="storeName" value={formData.storeName} onChange={handleChange} required />
                             </FormControl>
 
                             <FormControl>
                                 <FormLabel>Número</FormLabel>
-                                <Input name="numero"
-                                    value={formData.numero} onChange={handleChange} required />
+                                <Input name="storeNumber"
+                                    value={formData.storeNumber} onChange={handleChange} required />
                             </FormControl>
 
                             <FormControl>
                                 <FormLabel>Morada</FormLabel>
-                                <Input name="morada" value={formData.morada} onChange={handleChange} required />
+                                <Input name="storeAddress" value={formData.storeAddress} onChange={handleChange} required />
                             </FormControl>
 
                             <FormControl>
                                 <FormLabel>Regional</FormLabel>
                                 <Select
-                                    name="regional"
-                                    value={formData.regional}
+                                    name="storeRegion"
+                                    value={formData.storeRegion}
                                     onChange={(e, newValue) =>
-                                        setFormData((prev) => ({ ...prev, regional: newValue }))
+                                        setFormData((prev) => ({ ...prev, storeRegion: newValue }))
                                     }
                                     required
                                 >
@@ -144,22 +157,21 @@ export default function NewStore() {
 
                             <FormControl>
                                 <FormLabel>Área (m2)</FormLabel>
-                                <Input name="area"
-                                    value={formData.area} onChange={handleChange} required />
+                                <Input name="storeArea"
+                                    value={formData.storeArea} onChange={handleChange} required />
                             </FormControl>
 
-                            {/* Fiscalização */}
                             <Typography level="h5" sx={{ mt: 2, fontWeight: 'bold' }}>Contacto da Fiscalização</Typography>
 
                             <FormControl>
                                 <FormLabel>Nome</FormLabel>
-                                <Input name="fiscalizacaoNome" value={formData.fiscalizacaoNome} onChange={handleChange} required />
+                                <Input name="storeInspectorName" value={formData.storeInspectorName} onChange={handleChange} required />
                             </FormControl>
 
                             <FormControl>
                                 <FormLabel>Telefone</FormLabel>
-                                <Input name="fiscalizacaoTelefone" type="tel" pattern="[0-9]{9}"
-                                    value={formData.fiscalizacaoTelefone} onChange={handleChange} required />
+                                <Input name="storeInspectorContact" type="tel" pattern="[0-9]{9}"
+                                    value={formData.storeInspectorContact} onChange={handleChange} required />
                             </FormControl>
 
                             <Button variant="solid" color="primary" onClick={handleSubmit}>

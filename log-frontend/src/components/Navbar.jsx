@@ -2,7 +2,6 @@ import { useNavigate, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Box, Typography } from '@mui/joy';
 import Button from '@mui/joy/Button';
-import Avatar from '@mui/joy/Avatar';
 import Sheet from '@mui/joy/Sheet';
 
 export default function Navbar() {
@@ -48,12 +47,10 @@ export default function Navbar() {
 
             }}
         >
-            {/* Logo e título */}
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <img src="/src/images/LOG.png" alt="LOG logo" style={{ height: "60px", marginRight: "1rem" }} />
             </Box>
 
-            {/* Links de navegação */}
             <Box sx={{ display: 'flex', gap: 3 }}>
                 <Link to="/Home" style={{
                     color: '#fff', textDecoration: 'none', fontWeight: 'bold', fontSize: '1.7rem', transition: '0.3s',
@@ -93,7 +90,6 @@ export default function Navbar() {
                     onMouseLeave={(e) => (e.target.style.color = '#fff')}>Utilizadores</Link>
             </Box>
 
-            {/* Perfil e ações */}
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
                 <Typography level="body-md" sx={{ color: '#fff', fontSize: '1.3rem', fontWeight: 'bold' }}>
                     Bem-vindo, {currentLoggedUser.name}
