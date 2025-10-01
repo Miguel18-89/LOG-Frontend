@@ -52,7 +52,6 @@ export default function StoreList() {
                                     <th>Número</th>
                                     <th>Morada</th>
                                     <th>Região</th>
-                                    <th>Área</th>
                                     <th>Fiscalização</th>
                                     <th>Detalhes</th>
                                 </tr>
@@ -65,7 +64,6 @@ export default function StoreList() {
                                         <td>{store.storeNumber}</td>
                                         <td>{store.storeAddress}</td>
                                         <td>{store.storeRegion}</td>
-                                        <td>{store.storeArea} m²</td>
                                         <td>{store.storeInspectorName}</td>
                                         <td>
                                             <Button

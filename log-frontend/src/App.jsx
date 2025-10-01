@@ -14,6 +14,7 @@ import CompletedStores from './components/CompletedStores';
 import InProgressStores from './components/InProgressStores';
 import UpcomingStores from './components/UpcomingStores';
 import AllUsers from './components/AllUsers';
+import StoreDetails from './components/storeDetails';
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
         <Route path="/InProgress" element={<PrivateRoute><InProgressStores /></PrivateRoute>} />
         <Route path="/Upcoming" element={<PrivateRoute><UpcomingStores /></PrivateRoute>} />
         <Route path="/Users" element={<PrivateRoute><AllUsers /></PrivateRoute>} />
+        <Route path="/stores/:id" element={<PrivateRoute><StoreDetails /></PrivateRoute>} />
       </Routes>}
     </CssVarsProvider>
   );

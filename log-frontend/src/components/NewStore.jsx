@@ -15,24 +15,17 @@ import api from '../services/api'
 
 export default function NewStore() {
     const navigate = useNavigate();
-    const [currentLoggedUser, setCurrentLoggedUser] = useState({});
+    const token = localStorage.getItem('token');
+    const currentLoggedUser = JSON.parse(localStorage.getItem('user'));
     const [formData, setFormData] = useState({
         storeName: '',
         storeNumber: '',
         storeAddress: '',
         storeRegion: '',
-        storeArea: '',
         storeInspectorName: '',
         storeInspectorContact: '',
         userId: currentLoggedUser.id
     });
-
-    useEffect(() => {
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-            setCurrentLoggedUser(JSON.parse(storedUser));
-        }
-    }, []);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -55,18 +48,12 @@ export default function NewStore() {
             errors.push("O campo Número da Loja é obrigatório.");
         }
 
+        if (Number(formData.storeNumber) <= 0 || (!Number(formData.storeNumber))) {
+            errors.push("A Número de loja não é válido.");
+        }
+
         if (isNaN(formData.storeNumber) || Number(formData.storeNumber) <= 0) {
             errors.push("O Número da Loja deve ser um número válido.");
-        }
-
-
-        if (formData.storeArea == "") {
-        }
-        else {
-
-            if (Number(formData.storeArea) <= 0 || (!Number(formData.storeArea))) {
-                errors.push("A Área deve ser um número válido.");
-            }
         }
 
 
@@ -84,16 +71,26 @@ export default function NewStore() {
         }
 
         console.log(formData)
-        await api.post('/stores', {
-            ...formData,
-            storeNumber: Number(formData.storeNumber),
-            storeArea: formData.storeArea ? Number(formData.storeArea) : null,
-            storeInspectorContact: formData.storeInspectorContact ? Number(formData.storeInspectorContact) : null,
-            userId: currentLoggedUser.id
-        });
-        console.log("Nova loja:", formData);
-        alert("Loja adicionada com sucesso!");
-        navigate("/Home")
+        try {
+            await api.post('/stores', {
+                ...formData,
+                storeNumber: Number(formData.storeNumber),
+                storeInspectorContact: formData.storeInspectorContact ? Number(formData.storeInspectorContact) : null,
+            }, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+            alert("Loja adicionada com sucesso!");
+            navigate("/Home");
+
+        } catch (error) {
+            if (error.response) {
+                alert(JSON.stringify(error.response?.data));
+            } else {
+                alert("Erro ao comunicar com o servidor.");
+            }
+        }
     };
 
     return (
@@ -153,12 +150,6 @@ export default function NewStore() {
                                     <Option value="Sul">Sul</Option>
                                     <Option value="Oeste">Oeste</Option>
                                 </Select>
-                            </FormControl>
-
-                            <FormControl>
-                                <FormLabel>Área (m2)</FormLabel>
-                                <Input name="storeArea"
-                                    value={formData.storeArea} onChange={handleChange} required />
                             </FormControl>
 
                             <Typography level="h5" sx={{ mt: 2, fontWeight: 'bold' }}>Contacto da Fiscalização</Typography>
