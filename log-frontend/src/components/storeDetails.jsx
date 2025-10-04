@@ -17,6 +17,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 import Tooltip from '@mui/joy/Tooltip';
 import StoreSurveyForm from './storeSurveyForm';
+import StoreProvisioningForm from './storeProvisioningForm';
 
 
 
@@ -45,7 +46,15 @@ export default function StoreDetails() {
         surveyHasChicken: false,
         surveyHasCodfish: false,
         surveyHasNewOvens: false,
-        status: '',
+        status: 0,
+    });
+
+    const [provisioning, setProvisioning] = useState({
+        ordered: false,
+        trackingNumber: "",
+        received: false,
+        validated: false,
+        status: 0,
     });
 
     useEffect(() => {
@@ -61,6 +70,9 @@ export default function StoreDetails() {
                 setFormData(response.data);
                 if (response.data.storeSurveys?.length > 0) {
                     setSurvey(response.data.storeSurveys[0]);
+                }
+                if (response.data.storeProvisioning?.length > 0) {
+                    setProvisioning(response.data.storeProvisioning[0]);
                 }
             } catch (error) {
                 console.error("Erro ao buscar loja:", error);
@@ -219,8 +231,12 @@ export default function StoreDetails() {
                             initialData={survey}
                             storeId={store.id}
                         />
-
-
+                    )}
+                    {provisioning && (
+                        <StoreProvisioningForm
+                            initialData={provisioning}
+                            storeId={store.id}
+                        />
                     )}
 
 

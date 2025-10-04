@@ -32,6 +32,7 @@ export default function StoreSurveyForm({ storeId, initialData }) {
     };
 
 
+
     const parseDate = (ddmmyyyy) => {
         const [day, month, year] = ddmmyyyy.split('/');
         if (!day || !month || !year) return '';
@@ -39,7 +40,14 @@ export default function StoreSurveyForm({ storeId, initialData }) {
         return iso;
     };
 
+    const [currentLoggedUser, setCurrentLoggedUser] = useState({});
 
+    useEffect(() => {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+            setCurrentLoggedUser(JSON.parse(storedUser));
+        }
+    }, []);
 
     useEffect(() => {
         if (initialData) {
@@ -54,11 +62,12 @@ export default function StoreSurveyForm({ storeId, initialData }) {
 
     const handleSave = async () => {
         try {
-            console.log("Dados enviados:", formData);
+            console.log("Dados enviados:", formData, storeId);
 
             await api.put(`/surveys/${formData.id}`, {
                 ...formData,
                 storeId,
+                userId: currentLoggedUser.id,
             }, {
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -265,6 +274,10 @@ export default function StoreSurveyForm({ storeId, initialData }) {
             <FormControl>
                 <FormLabel>Status</FormLabel>
                 <Select
+                    size="lg"
+                    sx={{
+                        minHeight: '48px'
+                    }}
                     value={formData.status}
                     onChange={(e, val) => handleChange('status', parseInt(val))}
                     disabled={!isEditing}
