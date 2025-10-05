@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useAsyncError, useParams } from 'react-router-dom';
 import api from '../services/api';
 import { CssVarsProvider } from '@mui/joy/styles';
 import Sheet from '@mui/joy/Sheet';
@@ -18,6 +18,8 @@ import SaveIcon from '@mui/icons-material/Save';
 import Tooltip from '@mui/joy/Tooltip';
 import StoreSurveyForm from './storeSurveyForm';
 import StoreProvisioningForm from './storeProvisioningForm';
+import StorePhase1Form from './storePhase1Form';
+import StorePhase2Form from './storePhase2Form';
 
 
 
@@ -47,6 +49,7 @@ export default function StoreDetails() {
         surveyHasCodfish: false,
         surveyHasNewOvens: false,
         status: 0,
+        updated_at: null,
     });
 
     const [provisioning, setProvisioning] = useState({
@@ -55,7 +58,35 @@ export default function StoreDetails() {
         received: false,
         validated: false,
         status: 0,
+        updated_at: null,
     });
+
+    const [phase1, setPhase1] = useState({
+        cablesSalesArea: false,
+        cablesBakery: false,
+        cablesWarehouse: false,
+        cablesBackoffice: false,
+        speakersSalesArea: false,
+        speakersBakery: false,
+        speakersWarehouse: false,
+        speakersBackoffice: false,
+        status: 0,
+        updated_at: null,
+    })
+
+    const [phase2, setPhase2] = useState({
+        kls: false,
+        acrylics: false,
+        hotButtons: false,
+        eas: false,
+        tiko: false,
+        ovens: false,
+        smc: false,
+        amplifier: false,
+        tests: false,
+        status: 0,
+        updated_at: null,
+    })
 
     useEffect(() => {
         const fetchStore = async () => {
@@ -73,6 +104,12 @@ export default function StoreDetails() {
                 }
                 if (response.data.storeProvisioning?.length > 0) {
                     setProvisioning(response.data.storeProvisioning[0]);
+                }
+                if (response.data.storePhase1?.length > 0) {
+                    setPhase1(response.data.storePhase1[0]);
+                }
+                if (response.data.storePhase2?.length > 0) {
+                    setPhase2(response.data.storePhase2[0]);
                 }
             } catch (error) {
                 console.error("Erro ao buscar loja:", error);
@@ -212,13 +249,13 @@ export default function StoreDetails() {
                         </div>
                         <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: '8px' }}>
                             {!isEditing ? (
-                                <Tooltip title="Editar loja">
+                                <Tooltip title="Editar">
                                     <IconButton onClick={() => setIsEditing(true)}>
                                         <EditIcon />
                                     </IconButton>
                                 </Tooltip>
                             ) : (
-                                <Tooltip title="Guardar alterações">
+                                <Tooltip title="Guardar">
                                     <IconButton onClick={handleSave}>
                                         <SaveIcon />
                                     </IconButton>
@@ -238,7 +275,18 @@ export default function StoreDetails() {
                             storeId={store.id}
                         />
                     )}
-
+                    {phase1 && (
+                        <StorePhase1Form
+                            initialData={phase1}
+                            storeId={store.id}
+                        />
+                    )}
+                    {phase2 && (
+                        <StorePhase2Form
+                            initialData={phase2}
+                            storeId={store.id}
+                        />
+                    )}
 
                 </main>
             </CssVarsProvider>

@@ -15,11 +15,15 @@ import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 import { useState, useEffect } from 'react';
 import api from '../services/api';
+import Gesture from '@mui/icons-material/Gesture';
+import Speaker from '@mui/icons-material/Speaker';
 import { format } from 'date-fns';
 import { pt } from 'date-fns/locale';
 
-export default function StoreProvisioningForm({ storeId, initialData }) {
-    const [provisioning, setProvisioning] = useState("")
+
+
+export default function StorePhase1Form({ storeId, initialData }) {
+    const [survey, setSurvey] = useState("")
     const token = localStorage.getItem('token');
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({ ...initialData });
@@ -63,7 +67,7 @@ export default function StoreProvisioningForm({ storeId, initialData }) {
         try {
             console.log("Dados enviados:", formData, storeId);
 
-            const res = await api.put(`/provisioning/${formData.id}`, {
+            const res = await api.put(`/phase1/${formData.id}`, {
                 ...formData,
                 storeId,
                 userId: currentLoggedUser.id,
@@ -122,7 +126,7 @@ export default function StoreProvisioningForm({ storeId, initialData }) {
             variant="outlined"
         >
             <Typography level="h4" sx={{ fontWeight: 'bold', color: '#f57c00' }}>
-                Aprovisionamento
+                1ª Fase
             </Typography>
 
             <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: '8px' }}>
@@ -146,42 +150,63 @@ export default function StoreProvisioningForm({ storeId, initialData }) {
                     </Tooltip>
                 )}
             </div>
-            <div style={{ display: 'flex', gap: '16px' }}>
-
+            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                <Gesture sx={{ fontSize: 24 }}  />
+                <Typography level="title-md">Cabos  :  </Typography>
                 <Checkbox
-                    label="Encomendado"
-                    checked={formData.ordered}
-                    onChange={(e) => handleChange('ordered', e.target.checked)}
+                    label="Loja"
+                    checked={formData.cablesSalesArea}
+                    onChange={(e) => handleChange('cablesSalesArea', e.target.checked)}
                     disabled={!isEditing}
                 />
                 <Checkbox
-                    label="Recebido"
-                    checked={formData.received}
-                    onChange={(e) => handleChange('received', e.target.checked)}
+                    label="Padaria"
+                    checked={formData.cablesbakery}
+                    onChange={(e) => handleChange('cablesBakery', e.target.checked)}
                     disabled={!isEditing}
                 />
                 <Checkbox
-                    label="Validado"
-                    checked={formData.validated}
-                    onChange={(e) => handleChange('validated', e.target.checked)}
+                    label="Armazém"
+                    checked={formData.cablesWarehouse}
+                    onChange={(e) => handleChange('cablesWarehouse', e.target.checked)}
+                    disabled={!isEditing}
+                />
+                <Checkbox
+                    label="Backoffice"
+                    checked={formData.cablesBackoffice}
+                    onChange={(e) => handleChange('cablesBackoffice', e.target.checked)}
                     disabled={!isEditing}
                 />
             </div>
 
-            <div style={{ display: 'flex', gap: '16px' }}>
-
-
-                <FormControl sx={{ flex: 1 }}>
-                    <FormLabel>Número de tracking</FormLabel>
-                    <Input
-                        type="text"
-                        value={formData.trackingNumber}
-                        onChange={(e) => handleChange('trackingNumber', e.target.value)}
-                        readOnly={!isEditing}
-                    />
-                </FormControl>
+            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                <Speaker sx={{ fontSize: 24 }} />
+                <Typography level="title-md">Colunas : </Typography>
+                <Checkbox
+                    label="Loja"
+                    checked={formData.speakersSalesArea}
+                    onChange={(e) => handleChange('speakersSalesArea', e.target.checked)}
+                    disabled={!isEditing}
+                />
+                <Checkbox
+                    label="Padaria"
+                    checked={formData.speakersbakery}
+                    onChange={(e) => handleChange('speakersBakery', e.target.checked)}
+                    disabled={!isEditing}
+                />
+                <Checkbox
+                    label="Armazém"
+                    checked={formData.speakersWarehouse}
+                    onChange={(e) => handleChange('speakersWarehouse', e.target.checked)}
+                    disabled={!isEditing}
+                />
+                <Checkbox
+                    label="Backoffice"
+                    checked={formData.speakersBackoffice}
+                    onChange={(e) => handleChange('speakersBackoffice', e.target.checked)}
+                    disabled={!isEditing}
+                />
             </div>
-
             <FormControl>
                 <FormLabel>Status</FormLabel>
                 <Select

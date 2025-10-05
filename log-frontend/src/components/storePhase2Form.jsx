@@ -18,13 +18,16 @@ import api from '../services/api';
 import { format } from 'date-fns';
 import { pt } from 'date-fns/locale';
 
-export default function StoreProvisioningForm({ storeId, initialData }) {
-    const [provisioning, setProvisioning] = useState("")
+
+
+
+export default function StorePhase2Form({ storeId, initialData }) {
     const token = localStorage.getItem('token');
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({ ...initialData });
     const [currentLoggedUser, setCurrentLoggedUser] = useState({});
     const [updatedByName, setUpdatedByName] = useState("")
+
 
     useEffect(() => {
         const storedUser = localStorage.getItem('user');
@@ -55,6 +58,7 @@ export default function StoreProvisioningForm({ storeId, initialData }) {
     }, [initialData]);
 
 
+
     const handleChange = (field, value) => {
         setFormData((prev) => ({ ...prev, [field]: value }));
     };
@@ -63,7 +67,7 @@ export default function StoreProvisioningForm({ storeId, initialData }) {
         try {
             console.log("Dados enviados:", formData, storeId);
 
-            const res = await api.put(`/provisioning/${formData.id}`, {
+            const res = await api.put(`/phase2/${formData.id}`, {
                 ...formData,
                 storeId,
                 userId: currentLoggedUser.id,
@@ -72,6 +76,7 @@ export default function StoreProvisioningForm({ storeId, initialData }) {
                     Authorization: `Bearer ${token}`,
                 },
             });
+
             alert("Guardado com sucesso!");
             setIsEditing(false);
 
@@ -87,7 +92,6 @@ export default function StoreProvisioningForm({ storeId, initialData }) {
                     });
 
                     setUpdatedByName(updatedUser.data.name ?? 'Desconhecido');
-
                 } catch (err) {
                     console.error('Erro ao buscar nome do utilizador:', err);
                     setUpdatedByName('Desconhecido');
@@ -96,6 +100,7 @@ export default function StoreProvisioningForm({ storeId, initialData }) {
                 console.warn('updated_by está ausente na resposta');
                 setUpdatedByName('Desconhecido');
             }
+
 
         } catch (error) {
             console.error("Erro ao guardar:", error);
@@ -122,7 +127,7 @@ export default function StoreProvisioningForm({ storeId, initialData }) {
             variant="outlined"
         >
             <Typography level="h4" sx={{ fontWeight: 'bold', color: '#f57c00' }}>
-                Aprovisionamento
+                2ª Fase
             </Typography>
 
             <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: '8px' }}>
@@ -146,42 +151,65 @@ export default function StoreProvisioningForm({ storeId, initialData }) {
                     </Tooltip>
                 )}
             </div>
-            <div style={{ display: 'flex', gap: '16px' }}>
-
+            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
                 <Checkbox
-                    label="Encomendado"
-                    checked={formData.ordered}
-                    onChange={(e) => handleChange('ordered', e.target.checked)}
+                    label="Kls"
+                    checked={formData.kls}
+                    onChange={(e) => handleChange('kls', e.target.checked)}
                     disabled={!isEditing}
                 />
                 <Checkbox
-                    label="Recebido"
-                    checked={formData.received}
-                    onChange={(e) => handleChange('received', e.target.checked)}
+                    label="Acrilicos"
+                    checked={formData.acrylics}
+                    onChange={(e) => handleChange('acrylics', e.target.checked)}
                     disabled={!isEditing}
                 />
                 <Checkbox
-                    label="Validado"
-                    checked={formData.validated}
-                    onChange={(e) => handleChange('validated', e.target.checked)}
+                    label="HotButtons"
+                    checked={formData.hotButtons}
+                    onChange={(e) => handleChange('hotButtons', e.target.checked)}
+                    disabled={!isEditing}
+                />
+                <Checkbox
+                    label="EAS"
+                    checked={formData.eas}
+                    onChange={(e) => handleChange('eas', e.target.checked)}
+                    disabled={!isEditing}
+                />
+                <Checkbox
+                    label="Tiko"
+                    checked={formData.tiko}
+                    onChange={(e) => handleChange('tiko', e.target.checked)}
                     disabled={!isEditing}
                 />
             </div>
 
-            <div style={{ display: 'flex', gap: '16px' }}>
-
-
-                <FormControl sx={{ flex: 1 }}>
-                    <FormLabel>Número de tracking</FormLabel>
-                    <Input
-                        type="text"
-                        value={formData.trackingNumber}
-                        onChange={(e) => handleChange('trackingNumber', e.target.value)}
-                        readOnly={!isEditing}
-                    />
-                </FormControl>
+            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                <Checkbox
+                    label="SMC"
+                    checked={formData.smc}
+                    onChange={(e) => handleChange('smc', e.target.checked)}
+                    disabled={!isEditing}
+                />
+                <Checkbox
+                    label="Amplificador"
+                    checked={formData.amplifier}
+                    onChange={(e) => handleChange('amplifier', e.target.checked)}
+                    disabled={!isEditing}
+                />
+                <Checkbox
+                    label="Fornos"
+                    checked={formData.ovens}
+                    onChange={(e) => handleChange('ovens', e.target.checked)}
+                    disabled={!isEditing}
+                />
+                <Checkbox
+                    label="Testes"
+                    checked={formData.tests}
+                    onChange={(e) => handleChange('tests', e.target.checked)}
+                    disabled={!isEditing}
+                />
             </div>
-
             <FormControl>
                 <FormLabel>Status</FormLabel>
                 <Select
