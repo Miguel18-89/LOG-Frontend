@@ -20,6 +20,8 @@ import StoreSurveyForm from './storeSurveyForm';
 import StoreProvisioningForm from './storeProvisioningForm';
 import StorePhase1Form from './storePhase1Form';
 import StorePhase2Form from './storePhase2Form';
+import StoreComments from './storeComments';
+
 
 
 
@@ -86,6 +88,10 @@ export default function StoreDetails() {
         tests: false,
         status: 0,
         updated_at: null,
+    })
+
+    const [comments, setComments] = useState({
+        message: "",
     })
 
     useEffect(() => {
@@ -191,7 +197,7 @@ export default function StoreDetails() {
                             </FormControl>
 
                             <FormControl sx={{ width: '120px' }}>
-                                <FormLabel>Número</FormLabel>
+                                <FormLabel>Número (PT)</FormLabel>
                                 <Input
                                     name="storeNumber"
                                     value={formData.storeNumber}
@@ -284,6 +290,13 @@ export default function StoreDetails() {
                     {phase2 && (
                         <StorePhase2Form
                             initialData={phase2}
+                            storeId={store.id}
+                        />
+                    )}
+
+                    {comments && (
+                        <StoreComments
+                            initialData={comments}
                             storeId={store.id}
                         />
                     )}

@@ -48,7 +48,8 @@ export default function Navbar() {
             }}
         >
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <img src="/src/images/LOG.png" alt="LOG logo" style={{ height: "60px", marginRight: "1rem" }} />
+                <img src="/src/images/LOG.png" alt="LOG logo" style={{ height: "60px", marginRight: "1rem" }} onClick={() => navigate('/Home')}
+                />
             </Box>
 
             <Box sx={{ display: 'flex', gap: 3 }}>
@@ -77,17 +78,39 @@ export default function Navbar() {
                     onMouseEnter={(e) => (e.target.style.color = '#212121')}
                     onMouseLeave={(e) => (e.target.style.color = '#fff')}>Próximas</Link>
 
-                <Link to="/NewStore" style={{
-                    color: '#fff', textDecoration: 'none', fontWeight: 'bold', fontSize: '1.7rem', transition: '0.3s',
-                }}
-                    onMouseEnter={(e) => (e.target.style.color = '#212121')}
-                    onMouseLeave={(e) => (e.target.style.color = '#fff')}>Adicionar Loja</Link>
+                {[1, 2].includes(currentLoggedUser.role) && (
+                    <Link
+                        to="/NewStore"
+                        style={{
+                            color: '#fff',
+                            textDecoration: 'none',
+                            fontWeight: 'bold',
+                            fontSize: '1.7rem',
+                            transition: '0.3s',
+                        }}
+                        onMouseEnter={(e) => (e.target.style.color = '#212121')}
+                        onMouseLeave={(e) => (e.target.style.color = '#fff')}
+                    >
+                        Adicionar Loja
+                    </Link>
+                )}
 
-                <Link to="/Users" style={{
-                    color: '#fff', textDecoration: 'none', fontWeight: 'bold', fontSize: '1.7rem', transition: '0.3s',
-                }}
-                    onMouseEnter={(e) => (e.target.style.color = '#212121')}
-                    onMouseLeave={(e) => (e.target.style.color = '#fff')}>Utilizadores</Link>
+                {[2].includes(currentLoggedUser.role) && (
+                    <Link
+                        to="/Users"
+                        style={{
+                            color: '#fff',
+                            textDecoration: 'none',
+                            fontWeight: 'bold',
+                            fontSize: '1.7rem',
+                            transition: '0.3s',
+                        }}
+                        onMouseEnter={(e) => (e.target.style.color = '#212121')}
+                        onMouseLeave={(e) => (e.target.style.color = '#fff')}
+                    >
+                        Utilizadores
+                    </Link>
+                )}
             </Box>
 
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
@@ -96,7 +119,7 @@ export default function Navbar() {
                 </Typography>
                 <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
                     <Button variant="soft" onClick={MyProfile}>Meu Perfil</Button>
-                    <Button variant="solid" color="neutral" style={{minWidth: "7rem"}} onClick={Logout}>Sair</Button>
+                    <Button variant="solid" color="neutral" style={{ minWidth: "7rem" }} onClick={Logout}>Sair</Button>
                 </Box>
             </Box>
         </Sheet>

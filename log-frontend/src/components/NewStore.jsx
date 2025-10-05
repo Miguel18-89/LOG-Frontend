@@ -124,7 +124,7 @@ export default function NewStore() {
                             </FormControl>
 
                             <FormControl>
-                                <FormLabel>Número</FormLabel>
+                                <FormLabel>Número (PT)</FormLabel>
                                 <Input name="storeNumber"
                                     value={formData.storeNumber} onChange={handleChange} required />
                             </FormControl>
