@@ -70,9 +70,9 @@ export default function Navbar() {
                     color: '#fff', textDecoration: 'none', fontWeight: 'bold', fontSize: '1.7rem', transition: '0.3s',
                 }}
                     onMouseEnter={(e) => (e.target.style.color = '#212121')}
-                    onMouseLeave={(e) => (e.target.style.color = '#fff')}>Em progresso</Link>
+                    onMouseLeave={(e) => (e.target.style.color = '#fff')}>Em curso</Link>
 
-                <Link to="/Upcoming" style={{
+                <Link to="/UpComming" style={{
                     color: '#fff', textDecoration: 'none', fontWeight: 'bold', fontSize: '1.7rem', transition: '0.3s',
                 }}
                     onMouseEnter={(e) => (e.target.style.color = '#212121')}

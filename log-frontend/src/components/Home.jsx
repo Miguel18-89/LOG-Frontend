@@ -15,7 +15,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 // Componente auxiliar para bolinha de status
 function StatusDot({ value }) {
     const colorMap = {
-        0: '#d32f2f', // vermelho
+        //0: '#d32f2f', // vermelho
         1: '#fbc02d', // amarelo
         2: '#388e3c', // verde
     };

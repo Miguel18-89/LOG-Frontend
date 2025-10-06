@@ -133,8 +133,12 @@ export default function StorePhase1Form({ storeId, initialData }) {
                 {!isEditing ? (
                     <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '8px', gap: '6px' }}>
                         <Typography level="body-xs" sx={{ color: 'neutral.500' }}>
-                            Atualizado por {updatedByName ?? 'Desconhecido5'} em {format(new Date(formData.updated_at), "dd/MM/yyyy 'às' HH:mm", { locale: pt })}
+                            Atualizado por {updatedByName ?? 'Desconhecido5'} em{' '}
+                            {formData.updated_at
+                                ? format(new Date(formData.updated_at), "dd/MM/yyyy 'às' HH:mm", { locale: pt })
+                                : 'data desconhecida'}
                         </Typography>
+
 
                         <Tooltip title="Editar">
                             <IconButton onClick={() => setIsEditing(true)}>
@@ -151,7 +155,7 @@ export default function StorePhase1Form({ storeId, initialData }) {
                 )}
             </div>
             <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-                <Gesture sx={{ fontSize: 24 }}  />
+                <Gesture sx={{ fontSize: 24 }} />
                 <Typography level="title-md">Cabos  :  </Typography>
                 <Checkbox
                     label="Loja"

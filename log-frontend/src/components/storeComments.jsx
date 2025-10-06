@@ -236,7 +236,7 @@ export default function StoreComments({ storeId, initialData }) {
                                                     {isEdited && ' (editado)'}
                                                 </Typography>
                                                 {isOwnComment && (
-                                                    <Box sx={{ display: 'flex', gap: 1 }}>
+                                                    <Box sx={{ display: 'flex' }}>
                                                         <Tooltip title="Editar" placement="top">
                                                             <IconButton
                                                                 size="sm"

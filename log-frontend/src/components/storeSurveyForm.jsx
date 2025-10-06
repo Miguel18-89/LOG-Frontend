@@ -198,12 +198,7 @@ export default function StoreSurveyForm({ storeId, initialData }) {
                     </Tooltip>
                 )}
             </div>
-
-
-
-
             <div style={{ display: 'flex', gap: '16px' }}>
-
                 <FormControl sx={{ flex: 1 }}>
                     <FormLabel>Área de Vendas</FormLabel>
                     <Input
@@ -237,7 +232,7 @@ export default function StoreSurveyForm({ storeId, initialData }) {
                             }
                         }}
                         placeholder="DD/MM/AAAA"
-                        disabled={!isEditing}
+                        readOnly={!isEditing}
                     />
                 </FormControl>
 
@@ -272,7 +267,7 @@ export default function StoreSurveyForm({ storeId, initialData }) {
                             }
                         }}
                         placeholder="DD/MM/AAAA"
-                        disabled={!isEditing}
+                        readOnly={!isEditing}
                     />
                 </FormControl>
 
@@ -307,7 +302,7 @@ export default function StoreSurveyForm({ storeId, initialData }) {
                             }
                         }}
                         placeholder="DD/MM/AAAA"
-                        disabled={!isEditing}
+                        readOnly={!isEditing}
                     />
                 </FormControl>
 
