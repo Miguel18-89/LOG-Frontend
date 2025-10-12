@@ -26,6 +26,38 @@ export default function StoreProvisioningForm({ storeId, initialData }) {
     const [currentLoggedUser, setCurrentLoggedUser] = useState({});
     const [updatedByName, setUpdatedByName] = useState("")
 
+    const formatDate = (isoDate) => {
+        const date = new Date(isoDate);
+        if (!isoDate || isNaN(date)) return '';
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+    };
+
+    const parseDate = (ddmmyyyy) => {
+        const [day, month, year] = ddmmyyyy.split('/');
+        if (!day || !month || !year) return null;
+        const iso = new Date(`${year}-${month}-${day}`);
+        return isNaN(iso) ? null : iso.toISOString();
+    };
+    const [surveyPhase1Text, setSurveyPhase1Text] = useState('');
+    const [surveyPhase2Text, setSurveyPhase2Text] = useState('');
+    const [surveyOpeningDate, setSurveyOpeningDateText] = useState('');
+
+    const sanitizeSurveyDates = (data) => ({
+        ...data,
+        surveyPhase1Date: isValidDate(data.surveyPhase1Date) ? data.surveyPhase1Date : null,
+        surveyPhase2Date: isValidDate(data.surveyPhase2Date) ? data.surveyPhase2Date : null,
+        updated_at: isValidDate(data.updated_at) ? data.updated_at : null,
+    });
+
+    const isValidDate = (value) => {
+        const date = new Date(value);
+        return value && !isNaN(date.getTime());
+    };
+
+
     useEffect(() => {
         const storedUser = localStorage.getItem('user');
         if (storedUser) {
@@ -73,10 +105,10 @@ export default function StoreProvisioningForm({ storeId, initialData }) {
                 },
             });
             alert("Guardado com sucesso!");
-            setIsEditing(false);
-
-            const updated = res.data;
+             const updated = res.data;
             setFormData(updated);
+            setIsEditing(false);
+            console.log(formData)
 
             if (updated?.updated_by) {
                 try {
@@ -128,9 +160,11 @@ export default function StoreProvisioningForm({ storeId, initialData }) {
             <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: '8px' }}>
                 {!isEditing ? (
                     <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '8px', gap: '6px' }}>
-                        <Typography level="body-xs" sx={{ color: 'neutral.500' }}>
-                            Atualizado por {updatedByName ?? 'Desconhecido5'} em {format(new Date(formData.updated_at), "dd/MM/yyyy 'às' HH:mm", { locale: pt })}
-                        </Typography>
+                        {isValidDate(formData.updated_at) && (
+                                <Typography level="body-xs" sx={{ color: 'neutral.500' }}>
+                                    Atualizado por {updatedByName ?? 'Desconhecido'} em {format(new Date(formData.updated_at), "dd/MM/yyyy 'às' HH:mm", { locale: pt })}
+                                </Typography>
+                            )}
 
                         <Tooltip title="Editar">
                             <IconButton onClick={() => setIsEditing(true)}>

@@ -170,6 +170,19 @@ export default function StoreComments({ storeId, initialData }) {
                                         textAlign: isOwnComment ? 'right' : 'left',
                                     }}
                                 >
+                                    <Typography
+                                        level="body-xs"
+                                        sx={{
+                                            color: 'neutral.500',
+                                            textAlign: isOwnComment ? 'right' : 'left',
+                                            flex: 1,
+                                            fontWeight: "xl"
+                                        }}
+                                    >
+                                        {comment.createdBy.name ?? 'Desconhecido'} —{' '}
+                                        {safeFormatDate(comment.created_at)}
+                                        {isEdited && ' (editado)'}
+                                    </Typography>
                                     {isEditing ? (
                                         <>
                                             <Textarea
@@ -188,23 +201,14 @@ export default function StoreComments({ storeId, initialData }) {
                                             <Box
                                                 sx={{
                                                     display: 'flex',
-                                                    justifyContent: 'space-between',
+                                                    justifyContent: 'flex-end',
                                                     alignItems: 'center',
                                                     mt: 1,
+                                                    width: '100%',
+                                                    textAlign: 'right',
                                                 }}
                                             >
-                                                <Typography
-                                                    level="body-xs"
-                                                    sx={{
-                                                        color: 'neutral.500',
-                                                        textAlign: isOwnComment ? 'right' : 'left',
-                                                        flex: 1,
-                                                    }}
-                                                >
-                                                    {comment.createdBy.name ?? 'Desconhecido'} —{' '}
-                                                    {safeFormatDate(comment.created_at)}
-                                                    {isEdited && ' (editado)'}
-                                                </Typography>
+
                                                 <Tooltip title="Guardar" placement="top">
                                                     <IconButton size="sm" onClick={handleCommentSubmit}>
                                                         <SaveIcon />
@@ -223,20 +227,18 @@ export default function StoreComments({ storeId, initialData }) {
                                                     mt: 1,
                                                 }}
                                             >
-                                                <Typography
-                                                    level="body-xs"
-                                                    sx={{
-                                                        color: 'neutral.500',
-                                                        textAlign: isOwnComment ? 'right' : 'left',
-                                                        flex: 1,
-                                                    }}
-                                                >
-                                                    {comment.createdBy.name ?? 'Desconhecido'} —{' '}
-                                                    {safeFormatDate(comment.created_at)}
-                                                    {isEdited && ' (editado)'}
-                                                </Typography>
+
                                                 {isOwnComment && (
-                                                    <Box sx={{ display: 'flex' }}>
+                                                    <Box
+                                                        sx={{
+                                                            display: 'flex',
+                                                            justifyContent: 'flex-end',
+                                                            alignItems: 'center',
+                                                            mt: 1,
+                                                            width: '100%',
+                                                            textAlign: 'right',
+                                                        }}
+                                                    >
                                                         <Tooltip title="Editar" placement="top">
                                                             <IconButton
                                                                 size="sm"
@@ -246,7 +248,7 @@ export default function StoreComments({ storeId, initialData }) {
                                                                 <EditIcon />
                                                             </IconButton>
                                                         </Tooltip>
-                                                        <Tooltip title="Apagar" placement="top">
+                                                        <Tooltip title="Eliminar" placement="top">
                                                             <IconButton
                                                                 size="sm"
                                                                 variant="plain"
@@ -257,6 +259,7 @@ export default function StoreComments({ storeId, initialData }) {
                                                         </Tooltip>
                                                     </Box>
                                                 )}
+
                                             </Box>
                                         </>
                                     )}

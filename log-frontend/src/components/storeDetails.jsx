@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useAsyncError, useParams } from 'react-router-dom';
+import { useAsyncError, useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { CssVarsProvider } from '@mui/joy/styles';
 import Sheet from '@mui/joy/Sheet';
@@ -14,6 +14,7 @@ import Navbar from './Navbar';
 import Button from '@mui/joy/Button';
 import IconButton from '@mui/joy/IconButton';
 import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 import SaveIcon from '@mui/icons-material/Save';
 import Tooltip from '@mui/joy/Tooltip';
 import StoreSurveyForm from './storeSurveyForm';
@@ -21,11 +22,15 @@ import StoreProvisioningForm from './storeProvisioningForm';
 import StorePhase1Form from './storePhase1Form';
 import StorePhase2Form from './storePhase2Form';
 import StoreComments from './storeComments';
+import { Box } from '@mui/joy';
+import { format } from 'date-fns';
+import { pt } from 'date-fns/locale';
 
 
 
 
 export default function StoreDetails() {
+    const navigate = useNavigate();
     const { id } = useParams();
     const [store, setStore] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -94,6 +99,37 @@ export default function StoreDetails() {
         message: "",
     })
 
+    const [currentLoggedUser, setCurrentLoggedUser] = useState({});
+
+
+    const formatDate = (isoDate) => {
+        const date = new Date(isoDate);
+        if (!isoDate || isNaN(date)) return '';
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+    };
+
+    const parseDate = (ddmmyyyy) => {
+        const [day, month, year] = ddmmyyyy.split('/');
+        if (!day || !month || !year) return null;
+        const iso = new Date(`${year}-${month}-${day}`);
+        return isNaN(iso) ? null : iso.toISOString();
+    };
+
+    const isValidDate = (value) => {
+        const date = new Date(value);
+        return value && !isNaN(date.getTime());
+    };
+
+    useEffect(() => {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+            setCurrentLoggedUser(JSON.parse(storedUser));
+        }
+    }, [isEditing]);
+
     useEffect(() => {
         const fetchStore = async () => {
             try {
@@ -121,12 +157,14 @@ export default function StoreDetails() {
                 console.error("Erro ao buscar loja:", error);
             } finally {
                 setLoading(false);
+                
             }
         };
 
         if (id && token) {
             fetchStore();
         }
+               
     }, []);
 
     const handleChange = (e) => {
@@ -139,20 +177,42 @@ export default function StoreDetails() {
 
     const handleSave = async () => {
         try {
-            await api.put(`/stores/${store.id}`, formData, {
+            const res = await api.put(`/stores/${store.id}`, formData, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
             });
+            console.log(res.data)
+            setFormData(res.data)
             alert("Loja atualizada com sucesso!");
             setIsEditing(false);
             setStore(formData);
+            
 
         } catch (error) {
             console.error("Erro ao atualizar loja:", error);
             alert("Erro ao guardar alterações.");
         }
     };
+
+    const handleDelete = async () => {
+        const confirm = window.confirm('Eliminar esta loja e dados associados?');
+        if (!confirm) return;
+        try {
+            await api.delete(`/stores/${store.id}`, formData, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+            alert("Loja eliminada com sucesso!");
+            navigate("/home")
+
+        } catch (error) {
+            console.error("Erro ao eliminar loja:", error);
+            alert("Erro ao eliminar loja.");
+        }
+    };
+
 
 
     if (loading) return <CircularProgress />;
@@ -193,9 +253,7 @@ export default function StoreDetails() {
                                     onChange={handleChange}
                                     readOnly={!isEditing}
                                 />
-
                             </FormControl>
-
                             <FormControl sx={{ width: '120px' }}>
                                 <FormLabel>Número (PT)</FormLabel>
                                 <Input
@@ -205,7 +263,6 @@ export default function StoreDetails() {
                                     readOnly
                                 />
                             </FormControl>
-
                             <FormControl sx={{ flex: 1, maxWidth: '160px' }}>
                                 <FormLabel>Região</FormLabel>
                                 <Select value={store.storeRegion} disabled size="lg" sx={{ height: '40px' }}>
@@ -216,8 +273,6 @@ export default function StoreDetails() {
                                 </Select>
                             </FormControl>
                         </div>
-
-
                         <FormControl>
                             <FormLabel>Morada</FormLabel>
                             <Input
@@ -227,11 +282,9 @@ export default function StoreDetails() {
                                 readOnly={!isEditing}
                             />
                         </FormControl>
-
                         <Typography level="h5" sx={{ mt: 2, fontWeight: 'bold' }}>
                             Fiscalização
                         </Typography>
-
                         <div style={{ display: 'flex', gap: '16px' }}>
                             <FormControl sx={{ flex: 1 }}>
                                 <FormLabel>Nome</FormLabel>
@@ -242,7 +295,6 @@ export default function StoreDetails() {
                                     readOnly={!isEditing}
                                 />
                             </FormControl>
-
                             <FormControl sx={{ flex: 1 }}>
                                 <FormLabel>Contacto</FormLabel>
                                 <Input
@@ -253,13 +305,33 @@ export default function StoreDetails() {
                                 />
                             </FormControl>
                         </div>
+
                         <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: '8px' }}>
+
                             {!isEditing ? (
-                                <Tooltip title="Editar">
-                                    <IconButton onClick={() => setIsEditing(true)}>
-                                        <EditIcon />
-                                    </IconButton>
-                                </Tooltip>
+                                <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '8px', gap: '6px' }}>
+                                    {isValidDate(formData.updated_at) && (
+                                        <Typography level="body-xs" sx={{ color: 'neutral.500' }}>
+                                            Atualizado por {formData.updatedBy.name ?? 'Desconhecido'} em {format(new Date(formData.updated_at), "dd/MM/yyyy 'às' HH:mm", { locale: pt })}
+                                        </Typography>
+                                    )}
+                                    {[1, 2].includes(currentLoggedUser.role) && (
+                                        <Box>
+
+                                            <Tooltip title="Editar">
+                                                <IconButton onClick={() => setIsEditing(true)}>
+                                                    <EditIcon />
+                                                </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title="Eliminar Loja">
+                                                <IconButton onClick={handleDelete}>
+                                                    <DeleteIcon />
+                                                </IconButton>
+                                            </Tooltip>
+                                        </Box>
+                                    )}
+                                </div>
+
                             ) : (
                                 <Tooltip title="Guardar">
                                     <IconButton onClick={handleSave}>
@@ -268,6 +340,7 @@ export default function StoreDetails() {
                                 </Tooltip>
                             )}
                         </div>
+
                     </Sheet>
                     {survey && (
                         <StoreSurveyForm

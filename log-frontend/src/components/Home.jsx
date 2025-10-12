@@ -11,14 +11,24 @@ import { useNavigate } from 'react-router-dom';
 import IconButton from '@mui/joy/IconButton';
 import Tooltip from '@mui/joy/Tooltip';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import Select from '@mui/joy/Select';
+import Option from '@mui/joy/Option';
 
-// Componente auxiliar para bolinha de status
-function StatusDot({ value }) {
-    const colorMap = {
-        //0: '#d32f2f', // vermelho
-        1: '#fbc02d', // amarelo
-        2: '#388e3c', // verde
-    };
+const statusColors = {
+    partial: '#fbc02d',
+    complete: '#388e3c',
+};
+
+const valueColors = {
+    1: '#fbc02d',
+    2: '#388e3c',
+};
+
+function StatusDot({ status, value }) {
+    const backgroundColor =
+        statusColors[status] ||
+        valueColors[value] ||
+        '#9e9e9e';
 
     return (
         <Box
@@ -26,7 +36,7 @@ function StatusDot({ value }) {
                 width: 12,
                 height: 12,
                 borderRadius: '50%',
-                backgroundColor: colorMap[value] || '#9e9e9e',
+                backgroundColor,
                 mx: 'auto',
             }}
         />
@@ -39,19 +49,26 @@ function getStatus(array) {
 
 export default function StoreList() {
     const [stores, setStores] = useState([]);
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
+    const [total, setTotal] = useState(0);
     const navigate = useNavigate();
 
+    const fetchStores = async () => {
+        try {
+            const response = await api.get('/stores', {
+                params: { page, pageSize },
+            });
+            setStores(response.data.allStores);
+            setTotal(response.data.total);
+        } catch (error) {
+            console.error('Erro ao buscar lojas:', error);
+        }
+    };
+
     useEffect(() => {
-        const fetchStores = async () => {
-            try {
-                const response = await api.get('/stores');
-                setStores(response.data.allStores); // ajusta conforme estrutura da API
-            } catch (error) {
-                console.error('Erro ao buscar lojas:', error);
-            }
-        };
         fetchStores();
-    }, []);
+    }, [page, pageSize]);
 
     return (
         <>
@@ -91,6 +108,7 @@ export default function StoreList() {
                                     <th style={{ textAlign: 'center' }}>Aprovisionamento</th>
                                     <th style={{ textAlign: 'center' }}>1ª Fase</th>
                                     <th style={{ textAlign: 'center' }}>2ª Fase</th>
+                                    <th style={{ textAlign: 'center' }}>Abertura</th>
                                     <th style={{ textAlign: 'center' }}>Detalhes</th>
                                 </tr>
                             </thead>
@@ -101,30 +119,24 @@ export default function StoreList() {
                                             <td>{store.storeName}</td>
                                             <td style={{ textAlign: 'center' }}>PT {store.storeNumber}</td>
                                             <td style={{ textAlign: 'center' }}>{store.storeRegion}</td>
-                                            <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
-                                                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-                                                    <StatusDot value={getStatus(store.storeSurveys)} />
-                                                </Box>
+                                            <td style={{ textAlign: 'center' }}>
+                                                <StatusDot value={getStatus(store.storeSurveys)} />
                                             </td>
-
-                                            <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
-                                                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-                                                    <StatusDot value={getStatus(store.storeProvisioning)} />
-                                                </Box>
+                                            <td style={{ textAlign: 'center' }}>
+                                                <StatusDot value={getStatus(store.storeProvisioning)} />
                                             </td>
-
-                                            <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
-                                                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-                                                    <StatusDot value={getStatus(store.storePhase1)} />
-                                                </Box>
+                                            <td style={{ textAlign: 'center' }}>
+                                                <StatusDot value={getStatus(store.storePhase1)} />
                                             </td>
-
-                                            <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
-                                                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-                                                    <StatusDot value={getStatus(store.storePhase2)} />
-                                                </Box>
+                                            <td style={{ textAlign: 'center' }}>
+                                                <StatusDot value={getStatus(store.storePhase2)} />
                                             </td>
-                                            <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
+                                            <td style={{ textAlign: 'center' }}>
+                                                {store.storeSurveys?.[0]?.surveyOpeningDate
+                                                    ? new Date(store.storeSurveys[0].surveyOpeningDate).toLocaleDateString('pt-PT')
+                                                    : '---'}
+                                            </td>
+                                            <td style={{ textAlign: 'center' }}>
                                                 <Tooltip title="Ver detalhes" placement="top">
                                                     <IconButton
                                                         size="sm"
@@ -140,6 +152,65 @@ export default function StoreList() {
                                     ))}
                             </tbody>
                         </Table>
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                mt: 3,
+                                flexWrap: 'wrap',
+                                gap: 2,
+                            }}
+                        >
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                    <StatusDot status="notStarted" />
+                                    <Typography level="body-sm" sx={{ ml: 1 }}>Não iniciado</Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                    <StatusDot status="partial" />
+                                    <Typography level="body-sm" sx={{ ml: 1 }}>Parcial</Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                    <StatusDot status="complete" />
+                                    <Typography level="body-sm" sx={{ ml: 1 }}>Completo</Typography>
+                                </Box>
+                            </Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
+                                    <Typography level="body-sm" sx={{ mr: 1 }}>
+                                        Resultados por página:
+                                    </Typography>
+                                    <Select
+                                        value={pageSize}
+                                        onChange={(_, value) => {
+                                            setPageSize(Number(value));
+                                            setPage(1);
+                                        }}
+                                        size="sm"
+                                    >
+                                        {[10, 15, 20, 25].map((size) => (
+                                            <Option key={size} value={size}>
+                                                {size}
+                                            </Option>
+                                        ))}
+                                    </Select>
+                                </Box>
+                                <Button
+                                    disabled={page === 1}
+                                    onClick={() => setPage((prev) => prev - 1)}
+                                >
+                                    Anterior
+                                </Button>
+                                <Typography level="body-md">Página {page} de {Math.ceil(total / pageSize)}</Typography>
+                                <Button
+                                    disabled={page * pageSize >= total}
+                                    onClick={() => setPage((prev) => prev + 1)}
+                                >
+                                    Seguinte
+                                </Button>
+                            </Box>
+                        </Box>
                     </Sheet>
                 </main>
             </CssVarsProvider>

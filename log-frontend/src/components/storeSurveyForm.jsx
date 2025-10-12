@@ -110,35 +110,46 @@ export default function StoreSurveyForm({ storeId, initialData }) {
     };
 
     const handleSave = async () => {
+        const cleanedFormData = {
+            ...formData,
+            surveyOpeningDate:
+                surveyOpeningDate === '' || surveyOpeningDate === null
+                    ? null
+                    : parseDate(surveyOpeningDate),
+            surveyPhase1Date:
+                surveyPhase1Text === '' || surveyPhase1Text === null
+                    ? null
+                    : parseDate(surveyPhase1Text),
+            surveyPhase2Date:
+                surveyPhase2Text === '' || surveyPhase2Text === null
+                    ? null
+                    : parseDate(surveyPhase2Text),
+        };
+
         try {
-            console.log("Dados enviados:", formData, storeId);
+            console.log("Dados enviados:", cleanedFormData, storeId);
 
             const res = await api.put(`/surveys/${formData.id}`, {
-                ...formData,
+                ...cleanedFormData,
                 storeId,
                 userId: currentLoggedUser.id,
             }, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
+                headers: { Authorization: `Bearer ${token}` },
             });
+
             alert("Survey guardado com sucesso!");
             setIsEditing(false);
 
             const updated = sanitizeSurveyDates(res.data);
             setFormData(updated);
-
+            console.log(updated);
 
             if (updated?.updated_by) {
                 try {
                     const updatedUser = await api.get(`/users/${updated.updated_by}`, {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
+                        headers: { Authorization: `Bearer ${token}` },
                     });
-
                     setUpdatedByName(updatedUser.data.name ?? 'Desconhecido');
-
                 } catch (err) {
                     console.error('Erro ao buscar nome do utilizador:', err);
                     setUpdatedByName('Desconhecido');
@@ -184,11 +195,13 @@ export default function StoreSurveyForm({ storeId, initialData }) {
                                 Atualizado por {updatedByName ?? 'Desconhecido'} em {format(new Date(formData.updated_at), "dd/MM/yyyy 'às' HH:mm", { locale: pt })}
                             </Typography>
                         )}
-                        <Tooltip title="Editar">
-                            <IconButton onClick={() => setIsEditing(true)}>
-                                <EditIcon />
-                            </IconButton>
-                        </Tooltip>
+                        {[1, 2].includes(currentLoggedUser.role) && (
+                            <Tooltip title="Editar">
+                                <IconButton onClick={() => setIsEditing(true)}>
+                                    <EditIcon />
+                                </IconButton>
+                            </Tooltip>
+                        )}
                     </div>
                 ) : (
                     <Tooltip title="Guardar">
@@ -294,11 +307,11 @@ export default function StoreSurveyForm({ storeId, initialData }) {
                     <Input
                         type="text"
                         value={surveyOpeningDate}
-                        onChange={(e) => setSurveyOpeningDateText(e.target.value)} // permite digitar livremente
+                        onChange={(e) => setSurveyOpeningDateText(e.target.value)}
                         onBlur={(e) => {
                             const parsed = parseDate(e.target.value);
                             if (parsed) {
-                                handleChange('surveyOpeningDate', parsed); // só atualiza o estado real se for válido
+                                handleChange('surveyOpeningDate', parsed);
                             }
                         }}
                         placeholder="DD/MM/AAAA"

@@ -165,7 +165,7 @@ export default function StorePhase1Form({ storeId, initialData }) {
                 />
                 <Checkbox
                     label="Padaria"
-                    checked={formData.cablesbakery}
+                    checked={formData.cablesBakery}
                     onChange={(e) => handleChange('cablesBakery', e.target.checked)}
                     disabled={!isEditing}
                 />
@@ -194,7 +194,7 @@ export default function StorePhase1Form({ storeId, initialData }) {
                 />
                 <Checkbox
                     label="Padaria"
-                    checked={formData.speakersbakery}
+                    checked={formData.speakersBakery}
                     onChange={(e) => handleChange('speakersBakery', e.target.checked)}
                     disabled={!isEditing}
                 />
