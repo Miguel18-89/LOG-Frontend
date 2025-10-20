@@ -7,8 +7,12 @@ import FormLabel from '@mui/joy/FormLabel';
 import Input from '@mui/joy/Input';
 import Button from '@mui/joy/Button';
 import { Link, useNavigate } from 'react-router-dom';
-import React, {useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import api from '../services/api'
+import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'react-toastify';
+
+
 
 
 export default function Login() {
@@ -17,36 +21,50 @@ export default function Login() {
     const [passwordInput, setPasswordInput] = useState("");
     const navigate = useNavigate();
     const [logoutMessage, setLogoutMessage] = useState('');
+    const { updateUser } = useAuth();
 
     useEffect(() => {
         const reason = localStorage.getItem('logoutReason');
         if (reason) {
             setLogoutMessage(reason);
-            alert(reason);
+            toast.error(reason);
             localStorage.removeItem('logoutReason');
         }
     }, []);
 
 
-
-
     async function handleSubmit(e) {
         e.preventDefault();
-        try {
-            setError("");
+        if (emailInput.trim == ""){
+            toast.error("Email não inserido")
+        }
+        if (passwordInput.trim == ""){
+            toast.error("Password não inserida")
+        }
 
-            await api.post('/users/login', {
-                email: emailInput,
-                password: passwordInput
-            }).then(response => {
-                localStorage.setItem('token', response.data.token);
-                localStorage.setItem('user', JSON.stringify(response.data.user));
-                setEmailInput("")
-                setPasswordInput("")
-                navigate("/Home")
-            })
+        try {
+            const response = await api.post('/users/login', { email: emailInput, password: passwordInput });
+            const { token, user } = response.data;
+
+            localStorage.setItem('token', token);
+            localStorage.setItem('user', JSON.stringify(user));
+            updateUser(user);
+            navigate('/home');
+
         } catch (error) {
-            alert(JSON.stringify(error.response?.data));
+            console.log(error)
+
+            if (error.response?.status === 401) {
+                toast.error('Password incorreta');
+            }
+
+            if (error.response?.status === 404 ) {
+                toast.info('Utilizador não encontrado. Por favor registe-se.');
+            }
+
+            if (error.response?.status === 403 ) {
+                toast.info('O seu registo aguarda aprovação. Contacte o administrador..');
+            }
             setEmailInput("");
             setPasswordInput("")
         }
@@ -64,10 +82,10 @@ export default function Login() {
                         <Sheet
                             sx={{
                                 width: 400,
-                                mx: 'auto', // margin left & right
-                                my: 4, // margin top & bottom
-                                py: 3, // padding top & bottom
-                                px: 2, // padding left & right
+                                mx: 'auto',
+                                my: 4,
+                                py: 3,
+                                px: 2, 
                                 display: 'flex',
                                 flexDirection: 'column',
                                 gap: 2,

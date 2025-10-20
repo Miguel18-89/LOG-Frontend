@@ -12,6 +12,7 @@ import './components.css';
 import Navbar from './Navbar';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api'
+import { toast } from 'react-toastify';
 
 export default function NewStore() {
     const navigate = useNavigate();
@@ -56,8 +57,12 @@ export default function NewStore() {
             errors.push("O Número da Loja deve ser um número válido.");
         }
 
-
         if (formData.storeInspectorContact == "") {
+        }
+
+
+        if (formData.storeInspectorContact == "" || formData.storeInspectorName.length < 3) {
+            errors.push("O nome do Fiscal é obrigatório e deve conter 3 ou mais caracteres.");
         }
         else {
             if (isNaN(formData.storeInspectorContact) || formData.storeInspectorContact.length < 9) {
@@ -66,7 +71,7 @@ export default function NewStore() {
         }
 
         if (errors.length > 0) {
-            alert("Erros no formulário:\n\n" + errors.join("\n"));
+            toast.error("Erros no formulário:\n\n" + errors.join("\n"));
             return;
         }
 
@@ -76,19 +81,15 @@ export default function NewStore() {
                 ...formData,
                 storeNumber: Number(formData.storeNumber),
                 storeInspectorContact: formData.storeInspectorContact ? Number(formData.storeInspectorContact) : null,
-            }, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
             });
-            alert("Loja adicionada com sucesso!");
+            toast.success("Loja adicionada com sucesso!");
             navigate("/Home");
 
         } catch (error) {
             if (error.response) {
-                alert(JSON.stringify(error.response?.data));
+                toast.error(JSON.stringify(error.response?.data));
             } else {
-                alert("Erro ao comunicar com o servidor.");
+                toast.error("Erro ao comunicar com o servidor.");
             }
         }
     };

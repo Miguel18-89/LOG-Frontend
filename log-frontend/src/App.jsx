@@ -15,8 +15,23 @@ import InProgressStores from './components/InProgressStores';
 import UpCommingStores from './components/UpcomingStores';
 import AllUsers from './components/AllUsers';
 import StoreDetails from './components/storeDetails';
+import { useNavigate } from 'react-router-dom';
+import { setupInterceptors } from './services/interceptors';
+import { useEffect } from 'react';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { Slide } from 'react-toastify';
+
+
 
 function App() {
+
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    setupInterceptors(navigate);
+  }, [navigate]);
+
   return (
     <CssVarsProvider theme={theme}>
       {<Routes>
@@ -33,6 +48,19 @@ function App() {
         <Route path="/Users" element={<PrivateRoute><AllUsers /></PrivateRoute>} />
         <Route path="/stores/:id" element={<PrivateRoute><StoreDetails /></PrivateRoute>} />
       </Routes>}
+      <ToastContainer
+        position="top-center"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick={false}
+        rtl={false}
+        //pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+        transition={Slide}
+      />
     </CssVarsProvider>
   );
 }

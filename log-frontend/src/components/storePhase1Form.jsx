@@ -19,6 +19,7 @@ import Gesture from '@mui/icons-material/Gesture';
 import Speaker from '@mui/icons-material/Speaker';
 import { format } from 'date-fns';
 import { pt } from 'date-fns/locale';
+import { toast } from 'react-toastify';
 
 
 
@@ -29,6 +30,37 @@ export default function StorePhase1Form({ storeId, initialData }) {
     const [formData, setFormData] = useState({ ...initialData });
     const [currentLoggedUser, setCurrentLoggedUser] = useState({});
     const [updatedByName, setUpdatedByName] = useState("")
+
+    const formatDate = (isoDate) => {
+        const date = new Date(isoDate);
+        if (!isoDate || isNaN(date)) return '';
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+    };
+
+    const parseDate = (ddmmyyyy) => {
+        const [day, month, year] = ddmmyyyy.split('/');
+        if (!day || !month || !year) return null;
+        const iso = new Date(`${year}-${month}-${day}`);
+        return isNaN(iso) ? null : iso.toISOString();
+    };
+    const [surveyPhase1Text, setSurveyPhase1Text] = useState('');
+    const [surveyPhase2Text, setSurveyPhase2Text] = useState('');
+    const [surveyOpeningDate, setSurveyOpeningDateText] = useState('');
+
+    const sanitizeSurveyDates = (data) => ({
+        ...data,
+        surveyPhase1Date: isValidDate(data.surveyPhase1Date) ? data.surveyPhase1Date : null,
+        surveyPhase2Date: isValidDate(data.surveyPhase2Date) ? data.surveyPhase2Date : null,
+        updated_at: isValidDate(data.updated_at) ? data.updated_at : null,
+    });
+
+    const isValidDate = (value) => {
+        const date = new Date(value);
+        return value && !isNaN(date.getTime());
+    };
 
     useEffect(() => {
         const storedUser = localStorage.getItem('user');
@@ -41,9 +73,7 @@ export default function StorePhase1Form({ storeId, initialData }) {
         const fetchUpdatedByName = async () => {
             if (initialData?.updated_by) {
                 try {
-                    const res = await api.get(`/users/${initialData.updated_by}`, {
-                        headers: { Authorization: `Bearer ${token}` },
-                    });
+                    const res = await api.get(`/users/${initialData.updated_by}`);
                     setUpdatedByName(res.data.name ?? 'Desconhecido20');
                 } catch (err) {
                     console.error('Erro ao buscar nome do utilizador:', err);
@@ -71,12 +101,8 @@ export default function StorePhase1Form({ storeId, initialData }) {
                 ...formData,
                 storeId,
                 userId: currentLoggedUser.id,
-            }, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
             });
-            alert("Guardado com sucesso!");
+            toast.success("Actualizado com sucesso!");
             setIsEditing(false);
 
             const updated = res.data;
@@ -84,11 +110,7 @@ export default function StorePhase1Form({ storeId, initialData }) {
 
             if (updated?.updated_by) {
                 try {
-                    const updatedUser = await api.get(`/users/${updated.updated_by}`, {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
-                    });
+                    const updatedUser = await api.get(`/users/${updated.updated_by}`);
 
                     setUpdatedByName(updatedUser.data.name ?? 'Desconhecido');
 
@@ -103,7 +125,7 @@ export default function StorePhase1Form({ storeId, initialData }) {
 
         } catch (error) {
             console.error("Erro ao guardar:", error);
-            alert("Ocorreu um erro ao guardar.");
+            toast.error("Ocorreu um erro ao guardar.");
         }
     };
 
@@ -132,19 +154,20 @@ export default function StorePhase1Form({ storeId, initialData }) {
             <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: '8px' }}>
                 {!isEditing ? (
                     <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '8px', gap: '6px' }}>
-                        <Typography level="body-xs" sx={{ color: 'neutral.500' }}>
-                            Atualizado por {updatedByName ?? 'Desconhecido5'} em{' '}
-                            {formData.updated_at
-                                ? format(new Date(formData.updated_at), "dd/MM/yyyy 'às' HH:mm", { locale: pt })
-                                : 'data desconhecida'}
-                        </Typography>
+                        {isValidDate(formData.updated_at) && (
+                            <Typography level="body-xs" sx={{ color: 'neutral.500' }}>
+                                Atualizado por {updatedByName ?? 'Desconhecido'} em {format(new Date(formData.updated_at), "dd/MM/yyyy 'às' HH:mm", { locale: pt })}
+                            </Typography>
+                        )}
 
 
-                        <Tooltip title="Editar">
-                            <IconButton onClick={() => setIsEditing(true)}>
-                                <EditIcon />
-                            </IconButton>
-                        </Tooltip>
+                        {[0, 2].includes(currentLoggedUser.role) && (
+                            <Tooltip title="Editar">
+                                <IconButton onClick={() => setIsEditing(true)}>
+                                    <EditIcon />
+                                </IconButton>
+                            </Tooltip>
+                        )}
                     </div>
                 ) : (
                     <Tooltip title="Guardar">

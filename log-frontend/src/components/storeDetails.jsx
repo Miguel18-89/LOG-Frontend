@@ -25,8 +25,8 @@ import StoreComments from './storeComments';
 import { Box } from '@mui/joy';
 import { format } from 'date-fns';
 import { pt } from 'date-fns/locale';
-
-
+import { toast } from 'react-toastify';
+import { showConfirmationToast } from '../utils/showConfirmationToast';
 
 
 export default function StoreDetails() {
@@ -38,6 +38,7 @@ export default function StoreDetails() {
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState(null);
     const [isSurveyEditing, setIsSurveyEditing] = useState(false);
+
 
     const [survey, setSurvey] = useState({
         surveyHasFalseCeilling: false,
@@ -133,11 +134,7 @@ export default function StoreDetails() {
     useEffect(() => {
         const fetchStore = async () => {
             try {
-                const response = await api.get(`/stores/${id}`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                });
+                const response = await api.get(`/stores/${id}`);
                 console.log("Dados da loja:", response.data);
                 setStore(response.data);
                 setFormData(response.data);
@@ -157,17 +154,18 @@ export default function StoreDetails() {
                 console.error("Erro ao buscar loja:", error);
             } finally {
                 setLoading(false);
-                
+
             }
         };
 
         if (id && token) {
             fetchStore();
         }
-               
+
     }, []);
 
     const handleChange = (e) => {
+        console.log("Change:", e.target.name, e.target.value);
         const { name, value } = e.target;
         setFormData((prev) => ({
             ...prev,
@@ -177,42 +175,37 @@ export default function StoreDetails() {
 
     const handleSave = async () => {
         try {
-            const res = await api.put(`/stores/${store.id}`, formData, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
+            const res = await api.put(`/stores/${store.id}`, formData);
             console.log(res.data)
             setFormData(res.data)
-            alert("Loja atualizada com sucesso!");
+            toast.success("Atualizado com sucesso!");
             setIsEditing(false);
             setStore(formData);
-            
+
 
         } catch (error) {
             console.error("Erro ao atualizar loja:", error);
-            alert("Erro ao guardar alterações.");
+            toast.error("Erro ao guardar alterações.");
         }
     };
 
     const handleDelete = async () => {
-        const confirm = window.confirm('Eliminar esta loja e dados associados?');
-        if (!confirm) return;
-        try {
-            await api.delete(`/stores/${store.id}`, formData, {
-                headers: {
-                    Authorization: `Bearer ${token}`
+        showConfirmationToast({
+            message: 'Eliminar esta loja e dados associados?',
+            onConfirm: async () => {
+                try {
+                    await api.delete(`/stores/${store.id}`, {
+                        data: formData,
+                    });
+                    toast.success('Loja eliminada com sucesso!');
+                    navigate('/home');
+                } catch (error) {
+                    console.error('Erro ao eliminar loja:', error);
+                    toast.error('Erro ao eliminar loja.');
                 }
-            });
-            alert("Loja eliminada com sucesso!");
-            navigate("/home")
-
-        } catch (error) {
-            console.error("Erro ao eliminar loja:", error);
-            alert("Erro ao eliminar loja.");
-        }
+            },
+        });
     };
-
 
 
     if (loading) return <CircularProgress />;
@@ -265,12 +258,23 @@ export default function StoreDetails() {
                             </FormControl>
                             <FormControl sx={{ flex: 1, maxWidth: '160px' }}>
                                 <FormLabel>Região</FormLabel>
-                                <Select value={store.storeRegion} disabled size="lg" sx={{ height: '40px' }}>
+                                <Select
+                                    value={formData.storeRegion}
+                                    onChange={(event, newValue) => {
+                                        setFormData((prev) => ({
+                                            ...prev,
+                                            storeRegion: newValue,
+                                        }));
+                                    }}
+                                    disabled={!isEditing}
+                                    size="lg"
+                                >
                                     <Option value="Norte">Norte</Option>
                                     <Option value="Centro">Centro</Option>
                                     <Option value="Sul">Sul</Option>
                                     <Option value="Oeste">Oeste</Option>
                                 </Select>
+
                             </FormControl>
                         </div>
                         <FormControl>

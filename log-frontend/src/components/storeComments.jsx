@@ -20,6 +20,8 @@ import SaveIcon from '@mui/icons-material/Save';
 import IconButton from '@mui/joy/IconButton';
 import DeleteIcon from '@mui/icons-material/Delete';
 import Tooltip from '@mui/joy/Tooltip';
+import { toast } from 'react-toastify';
+import { showConfirmationToast } from '../utils/showConfirmationToast';
 
 
 
@@ -45,14 +47,11 @@ export default function StoreComments({ storeId, initialData }) {
         try {
             const res = await api.get('/comments', {
                 params: { storeId },
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
             });
             setStoreComments(res.data);
         } catch (err) {
             console.error('Erro ao carregar comentários:', err);
-            alert('Não foi possível carregar os comentários.');
+            toast.info('Não foi possível carregar os comentários.');
         }
     };
 
@@ -81,9 +80,6 @@ export default function StoreComments({ storeId, initialData }) {
                     {
                         message: newComment,
                         updated: true,
-                    },
-                    {
-                        headers: { Authorization: `Bearer ${token}` },
                     }
                 );
             } else {
@@ -93,9 +89,6 @@ export default function StoreComments({ storeId, initialData }) {
                         message: newComment,
                         userId: currentLoggedUser.id,
                         storeId,
-                    },
-                    {
-                        headers: { Authorization: `Bearer ${token}` },
                     }
                 );
             }
@@ -105,7 +98,7 @@ export default function StoreComments({ storeId, initialData }) {
             await fetchComments();
         } catch (err) {
             console.error('Erro ao enviar comentário:', err);
-            alert('Não foi possível enviar o comentário.');
+            toast.error('Não foi possível enviar o comentário.');
         } finally {
             setIsSubmitting(false);
         }
@@ -117,18 +110,18 @@ export default function StoreComments({ storeId, initialData }) {
     };
 
     const handleDelete = async (commentId) => {
-        const confirm = window.confirm('Apagar este comentário?');
-        if (!confirm) return;
-
-        try {
-            await api.delete(`/comments/${commentId}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            await fetchComments();
-        } catch (err) {
-            console.error('Erro ao apagar comentário:', err);
-            alert('Não foi possível apagar o comentário.');
-        }
+        showConfirmationToast({
+            message: 'Apagar este comentário?',
+            onConfirm: async () => {
+                try {
+                    await api.delete(`/comments/${commentId}`);
+                    await fetchComments();
+                } catch (err) {
+                    console.error('Erro ao apagar comentário:', err);
+                    toast.error('Não foi possível apagar o comentário.');
+                }
+            }
+        })
     };
 
 

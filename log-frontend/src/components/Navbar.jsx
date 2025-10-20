@@ -3,17 +3,17 @@ import { useEffect, useState } from "react";
 import { Box, Typography } from '@mui/joy';
 import Button from '@mui/joy/Button';
 import Sheet from '@mui/joy/Sheet';
+import { useAuth } from '../contexts/AuthContext.jsx';
+
 
 export default function Navbar() {
-    const navigate = useNavigate();
-    const [currentLoggedUser, setCurrentLoggedUser] = useState({});
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
-    useEffect(() => {
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-            setCurrentLoggedUser(JSON.parse(storedUser));
-        }
-    }, []);
+if (!user) return null; // ou um loader, ou uma versão mínima da navbar
+
+
+  console.log(user)
 
     function Logout(e) {
         e.preventDefault();
@@ -37,7 +37,7 @@ export default function Navbar() {
                 justifyContent: 'space-between',
                 px: 4,
                 py: 3,
-                height: '100px',
+                height: '70px',
                 boxShadow: '0 6px 12px -2px rgba(0, 0, 0, 0.4)',
                 position: 'fixed',
                 top: 0,
@@ -78,7 +78,7 @@ export default function Navbar() {
                     onMouseEnter={(e) => (e.target.style.color = '#212121')}
                     onMouseLeave={(e) => (e.target.style.color = '#fff')}>Próximas</Link>
 
-                {[1, 2].includes(currentLoggedUser.role) && (
+                {[1, 2].includes(user.role) && (
                     <Link
                         to="/NewStore"
                         style={{
@@ -95,7 +95,7 @@ export default function Navbar() {
                     </Link>
                 )}
 
-                {[2].includes(currentLoggedUser.role) && (
+                {[2].includes(user.role) && (
                     <Link
                         to="/Users"
                         style={{
@@ -115,7 +115,7 @@ export default function Navbar() {
 
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
                 <Typography level="body-md" sx={{ color: '#fff', fontSize: '1.3rem', fontWeight: 'bold' }}>
-                    Bem-vindo, {currentLoggedUser.name}
+                    Bem-vindo, {user.name}
                 </Typography>
                 <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
                     <Button variant="soft" onClick={MyProfile}>Meu Perfil</Button>
@@ -125,76 +125,3 @@ export default function Navbar() {
         </Sheet>
     );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*import { useNavigate, Link } from "react-router-dom";
-import Button from '@mui/joy/Button';
-import { use, useEffect, useState } from "react";
-import './components.css'
-
-
-export default function Navbar() {
-
-
-    const navigate = useNavigate();
-    const [currentLoggedUser, setCurrentLoggedUser] = useState([])
-
-
-
-    useEffect(() => {
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-            setCurrentLoggedUser(JSON.parse(storedUser));
-        }
-    }, []);
-
-
-    function Logout(e) {
-        e.preventDefault();
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        navigate('/');
-
-    }
-    function MyProfile() {
-        navigate("/EditUser")
-    }
-
-    return (
-        <div id="navbarDiv">
-            <div id="imgNavbarDiv">
-                <img src="/src/images/LOG.png" alt="LOG logo" style={{height: "60%"}}/>
-            </div>
-            <div id="navbarCenter">
-                <div id="navbarLinksDiv">
-                    <Link to="/Home" id="navbarLink" >Home</Link>
-                    <Link to="/components/MyFlats" id="navbarLink">My Flats</Link>
-                    <Link to="/components/Favorites" id="navbarLink">Favorite Flats</Link>
-                </div>
-            </div>
-            <div id="navbarProfileDiv">
-                <div >
-                    <div id="userIdDiv">
-                        <h3>Welcome {currentLoggedUser.name}</h3>
-                    </div>
-                    <div>
-                        <Button size="lg" variant="plain" onClick={MyProfile}>My Profile</Button>
-                        <Button size="lg" color="danger" variant="solid" onClick={Logout}>Logout</Button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    )
-}*/

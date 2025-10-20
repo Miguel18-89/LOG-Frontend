@@ -10,6 +10,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api'
+import { toast } from 'react-toastify';
 
 
 
@@ -105,7 +106,9 @@ export default function SignUp({ props }) {
                 email: userEmail,
                 password: password
             }).then(response => {
-                alert(JSON.stringify(response?.data));
+                if (response.status === 201) {
+                    toast.success('Utilizador criado com sucesso. Aguarda aprovação do administrador.');
+                }
                 setUserEmail("")
                 setPassword("")
                 setPasswordConfirmation("")
@@ -113,16 +116,16 @@ export default function SignUp({ props }) {
                 navigate("/")
             })
                 .catch(error => {
-                    alert(JSON.stringify(error.response?.data));
+                    toast.error(JSON.stringify(error.response?.data));
                     setUserEmail("")
                     setPassword("")
                     setPasswordConfirmation("")
                     setUserName("")
-                    
+
                 });
         }
         else {
-            alert("Dados inválidos.");
+            toast.error("Dados inválidos.");
         }
     }
 
@@ -131,25 +134,21 @@ export default function SignUp({ props }) {
     }
 
     return (
-        <div id='containerLogin'>
+        <>
+        <div id='containerLogin' style={{maxHeight: "100vh"}}>
             <div id='imageDiv'>
                 <img src="/src/images/LOG.png" alt="LOG Logo" />
             </div>
-
-            <div id='verticalSeparatorDiv'>
-            </div>
-
             <main id='form'>
-
-                <CssVarsProvider {...props}>
+                <CssVarsProvider >
                     <CssBaseline />
                     <Sheet
                         sx={{
                             width: 700,
-                            mx: 'auto', // margin left & right
-                            my: 4, // margin top & bottom
-                            py: 3, // padding top & bottom
-                            px: 2, // padding left & right
+                            mx: 'auto', 
+                            my: 4, 
+                            py: 3, 
+                            px: 2, 
                             display: 'flex',
                             flexDirection: 'column',
                             gap: 2,
@@ -159,7 +158,7 @@ export default function SignUp({ props }) {
                         variant="outlined"
                     >
                         <div>
-                            <Typography style={{fontWeight: 'bold', color: '#f57c00' }}level="h4" component="h1">
+                            <Typography style={{ fontWeight: 'bold', color: '#f57c00' }} level="h4" component="h1">
                                 <b>Novo utilizador</b>
                             </Typography>
                             <Typography level="body-sm">Preencha todos os campos para criar um novo utilizador.</Typography>
@@ -196,5 +195,6 @@ export default function SignUp({ props }) {
 
             </main>
         </div>
+        </>
     );
 }

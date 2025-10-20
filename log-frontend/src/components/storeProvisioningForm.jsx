@@ -17,6 +17,7 @@ import { useState, useEffect } from 'react';
 import api from '../services/api';
 import { format } from 'date-fns';
 import { pt } from 'date-fns/locale';
+import { toast } from 'react-toastify';
 
 export default function StoreProvisioningForm({ storeId, initialData }) {
     const [provisioning, setProvisioning] = useState("")
@@ -69,9 +70,7 @@ export default function StoreProvisioningForm({ storeId, initialData }) {
         const fetchUpdatedByName = async () => {
             if (initialData?.updated_by) {
                 try {
-                    const res = await api.get(`/users/${initialData.updated_by}`, {
-                        headers: { Authorization: `Bearer ${token}` },
-                    });
+                    const res = await api.get(`/users/${initialData.updated_by}`);
                     setUpdatedByName(res.data.name ?? 'Desconhecido20');
                 } catch (err) {
                     console.error('Erro ao buscar nome do utilizador:', err);
@@ -99,12 +98,8 @@ export default function StoreProvisioningForm({ storeId, initialData }) {
                 ...formData,
                 storeId,
                 userId: currentLoggedUser.id,
-            }, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
             });
-            alert("Guardado com sucesso!");
+            toast.success("Actualizado com sucesso!");
              const updated = res.data;
             setFormData(updated);
             setIsEditing(false);
@@ -112,11 +107,7 @@ export default function StoreProvisioningForm({ storeId, initialData }) {
 
             if (updated?.updated_by) {
                 try {
-                    const updatedUser = await api.get(`/users/${updated.updated_by}`, {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
-                    });
+                    const updatedUser = await api.get(`/users/${updated.updated_by}`);
 
                     setUpdatedByName(updatedUser.data.name ?? 'Desconhecido');
 
@@ -131,7 +122,7 @@ export default function StoreProvisioningForm({ storeId, initialData }) {
 
         } catch (error) {
             console.error("Erro ao guardar:", error);
-            alert("Ocorreu um erro ao guardar.");
+            toast.error("Ocorreu um erro ao guardar.");
         }
     };
 

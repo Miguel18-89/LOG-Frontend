@@ -14,6 +14,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 import Checkbox from '@mui/joy/Checkbox';
+import { toast } from 'react-toastify';
+import { showConfirmationToast } from '../utils/showConfirmationToast';
 
 const roleLabels = {
     0: 'Instalador',
@@ -68,31 +70,33 @@ export default function UserList() {
             console.error('Erro ao guardar utilizador:', error);
 
             if (error.response?.status === 403) {
-                alert('Não é possível alterar o role porque este é o único administrador ativo.');
+                toast.info('Não é possível alterar o role ou aprovação porque este é o único administrador ativo.');
             } else {
-                alert('Erro ao guardar utilizador. Tente novamente.');
+                toast.error('Erro ao guardar utilizador. Tente novamente.');
             }
         } finally {
             setEditingUserId(null);
         }
     };
 
+   
     const handleDelete = async (id) => {
-        const confirm = window.confirm('Tem a certeza que deseja apagar este utilizador?');
-
-        if (!confirm) return;
-
-        try {
-            await api.delete(`/users/${id}`);
-            setUsers((prev) => prev.filter((u) => u.id !== id));
-        } catch (error) {
-            console.error('Erro ao apagar utilizador:', error);
-            alert('Não foi possível apagar o utilizador. Verifique se é o único administrador.');
-        }
+        showConfirmationToast({
+            message: 'Tem a certeza que deseja apagar este utilizador?',
+            onConfirm: async () => {
+                try {
+                    await api.delete(`/users/${id}`);
+                    toast.success("Utilizador apagado com sucesso")
+                    setUsers((prev) => prev.filter((u) => u.id !== id));
+                } catch (error) {
+                    console.error('Erro ao apagar utilizador:', error);
+                    toast.info('Não foi possível apagar o utilizador. Verifique se é o único administrador.');
+                }
+            }
+        })
     };
 
-
-    return (
+            return(
         <>
             <Navbar />
             <CssVarsProvider>
