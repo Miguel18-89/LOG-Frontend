@@ -309,7 +309,6 @@ export default function StoreDetails() {
                                 />
                             </FormControl>
                         </div>
-
                         <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: '8px' }}>
 
                             {!isEditing ? (

@@ -10,7 +10,6 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext.jsx';
-import './components.css';
 import { toast } from 'react-toastify';
 import { showConfirmationToast } from '../utils/showConfirmationToast';
 
@@ -86,25 +85,25 @@ export default function EditUser() {
     return (
         <>
             <Navbar />
-            <div id="editUsersDiv">
-                <main id="form">
+            <div>
+                <main  style={{ padding: '1.5rem' }}>
                     <CssVarsProvider>
                         <Sheet
                             sx={{
-                                width: 700,
+                                maxWidth: 1000,
                                 mx: 'auto',
-                                my: 4,
                                 py: 3,
                                 px: 2,
                                 display: 'flex',
                                 flexDirection: 'column',
                                 gap: 2,
                                 borderRadius: 'sm',
-                                boxShadow: 'md',
+                                boxShadow: 'lg',
+                                backgroundColor: '#fff',
                             }}
                             variant="outlined"
                         >
-                            <Typography sx={{ fontWeight: 'bold', color: '#f57c00' }} level="h4" component="h1">
+                            <Typography sx={{ fontWeight: 'bold', color: '#f57c00', textAlign: 'center'}} level="h4" component="h1">
                                 <p style={{ margin: 0 }}>Meu perfil</p>
                             </Typography>
 
@@ -132,8 +131,7 @@ export default function EditUser() {
                                 Atualizar perfil
                             </Button>
 
-                            <br />
-                            <p>Precisa alterar a password? Por favor clicar no botão abaixo.</p>
+                            
                             <Button sx={{ mt: 1 }} onClick={ResetPassword}>
                                 Alterar password
                             </Button>

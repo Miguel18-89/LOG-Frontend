@@ -3,6 +3,7 @@ import { CssVarsProvider } from '@mui/joy/styles';
 import Sheet from '@mui/joy/Sheet';
 import Typography from '@mui/joy/Typography';
 import Table from '@mui/joy/Table';
+import Button from '@mui/joy/Button';
 import Box from '@mui/joy/Box';
 import Navbar from './Navbar';
 import api from '../services/api';
@@ -16,6 +17,9 @@ import SaveIcon from '@mui/icons-material/Save';
 import Checkbox from '@mui/joy/Checkbox';
 import { toast } from 'react-toastify';
 import { showConfirmationToast } from '../utils/showConfirmationToast';
+import FormControl from '@mui/joy/FormControl';
+import FormLabel from '@mui/joy/FormLabel';
+import Input from '@mui/joy/Input';
 
 const roleLabels = {
     0: 'Instalador',
@@ -27,18 +31,28 @@ export default function UserList() {
     const [users, setUsers] = useState([]);
     const [editingUserId, setEditingUserId] = useState(null);
     const [editedUsers, setEditedUsers] = useState({});
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
+    const [total, setTotal] = useState(0);
+    const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
         const fetchUsers = async () => {
             try {
-                const response = await api.get('/users');
+                const response = await api.get('/users', {
+                    params: {
+                        page,
+                        pageSize,
+                        search: searchTerm || undefined,
+                    }
+                });
                 setUsers(response.data.allUsers);
             } catch (error) {
                 console.error('Erro ao buscar utilizadores:', error);
             }
         };
         fetchUsers();
-    }, []);
+    }, [page, pageSize, searchTerm]);
 
     const handleEdit = (id) => {
         setEditingUserId(id);
@@ -79,7 +93,7 @@ export default function UserList() {
         }
     };
 
-   
+
     const handleDelete = async (id) => {
         showConfirmationToast({
             message: 'Tem a certeza que deseja apagar este utilizador?',
@@ -96,11 +110,11 @@ export default function UserList() {
         })
     };
 
-            return(
+    return (
         <>
             <Navbar />
             <CssVarsProvider>
-                <main style={{ padding: '2rem' }}>
+                <main style={{ padding: '1.5rem' }}>
                     <Sheet
                         sx={{
                             maxWidth: 1000,
@@ -123,8 +137,19 @@ export default function UserList() {
                         >
                             Lista de Utilizadores
                         </Typography>
-
-                        <Table borderAxis="xBetween" size="md" stripe="odd">
+                        <FormControl size="sm" sx={{ mb: 2 }}>
+                            <FormLabel>Pesquisar utilizador</FormLabel>
+                            <Input
+                                placeholder="Nome ou email"
+                                value={searchTerm}
+                                onChange={(e) => {
+                                    setSearchTerm(e.target.value);
+                                    setPage(1);
+                                }}
+                                variant="soft"
+                            />
+                        </FormControl>
+                        <Table borderAxis="xBetween" size="sm" stripe="odd">
                             <thead>
                                 <tr>
                                     <th>Nome</th>
@@ -220,6 +245,41 @@ export default function UserList() {
                                     })}
                             </tbody>
                         </Table>
+                        <br />
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
+                                <Typography level="body-sm" sx={{ mr: 1 }}>
+                                    Resultados por página:
+                                </Typography>
+                                <Select
+                                    value={pageSize}
+                                    onChange={(_, value) => {
+                                        setPageSize(Number(value));
+                                        setPage(1);
+                                    }}
+                                    size="sm"
+                                >
+                                    {[10, 15, 20, 25].map((size) => (
+                                        <Option key={size} value={size}>
+                                            {size}
+                                        </Option>
+                                    ))}
+                                </Select>
+                            </Box>
+                            <Button
+                                disabled={page === 1}
+                                onClick={() => setPage((prev) => prev - 1)}
+                            >
+                                Anterior
+                            </Button>
+                            <Typography level="body-md">Página {page} de {Math.ceil(total / pageSize) || 1}</Typography>
+                            <Button
+                                disabled={page * pageSize >= total}
+                                onClick={() => setPage((prev) => prev + 1)}
+                            >
+                                Seguinte
+                            </Button>
+                        </Box>
                     </Sheet>
                 </main>
             </CssVarsProvider>

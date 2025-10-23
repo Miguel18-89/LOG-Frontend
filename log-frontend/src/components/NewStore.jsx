@@ -18,6 +18,19 @@ export default function NewStore() {
     const navigate = useNavigate();
     const token = localStorage.getItem('token');
     const currentLoggedUser = JSON.parse(localStorage.getItem('user'));
+    const [counter, setCounter] = useState(0)
+    const [storeNameError, setStoreNameError] = useState("")
+    const [validStoreName, setValidStoreName] = useState(false)
+    const [storeNumberError, setStoreNumberError] = useState("")
+    const [validStoreNumber, setValidStoreNumber] = useState(false)
+    const [storeAddressError, setStoreAddressError] = useState("")
+    const [validStoreAddress, setValidStoreAddress] = useState(false)
+    const [storeRegionError, setStoreRegionError] = useState("")
+    const [validStoreRegion, setValidStoreRegion] = useState(false)
+    const [storeInspectorNameError, setStoreInspectorNameError] = useState("")
+    const [validStoreInspectorName, setValidStoreInspectorName] = useState(false)
+    const [storeInspectorContactError, setStoreInspectorContactError] = useState("")
+    const [validStoreInspectorContact, setValidStoreInspectorContact] = useState(false)
     const [formData, setFormData] = useState({
         storeName: '',
         storeNumber: '',
@@ -36,60 +49,143 @@ export default function NewStore() {
         }));
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-
-        const errors = [];
-
-        if (!formData.storeName.trim()) {
-            errors.push("O campo Nome é obrigatório.");
-        }
-
-        if (!formData.storeNumber.trim()) {
-            errors.push("O campo Número da Loja é obrigatório.");
-        }
-
-        if (Number(formData.storeNumber) <= 0 || (!Number(formData.storeNumber))) {
-            errors.push("A Número de loja não é válido.");
-        }
-
-        if (isNaN(formData.storeNumber) || Number(formData.storeNumber) <= 0) {
-            errors.push("O Número da Loja deve ser um número válido.");
-        }
-
-        if (formData.storeInspectorContact == "") {
-        }
-
-
-        if (formData.storeInspectorContact == "" || formData.storeInspectorName.length < 3) {
-            errors.push("O nome do Fiscal é obrigatório e deve conter 3 ou mais caracteres.");
-        }
-        else {
-            if (isNaN(formData.storeInspectorContact) || formData.storeInspectorContact.length < 9) {
-                errors.push("O telefone da fiscalização deve conter apenas números e ter pelo menos 9 dígitos.");
+    useEffect(() => {
+        if (counter == 1) {
+            if (!formData.storeName.trim() || formData.storeName.length < 3) {
+                setStoreNameError("O nome da loja deve conter 3 ou mais letras.");
+                setValidStoreName(false)
+            }
+            else {
+                setStoreNameError("");
+                setValidStoreName(true)
             }
         }
+        else {
+            setCounter(1)
+        }
+    }, [formData.storeName])
 
-        if (errors.length > 0) {
-            toast.error("Erros no formulário:\n\n" + errors.join("\n"));
+    useEffect(() => {
+        if (counter == 1) {
+            if (isNaN(formData.storeNumber) || Number(formData.storeNumber) <= 0) {
+                setStoreNumberError("O número de loja é obrigatório.");
+                setValidStoreNumber(false)
+            }
+            else {
+                setStoreNumberError("");
+                setValidStoreNumber(true)
+            }
+        }
+        else {
+            setCounter(1)
+        }
+    }, [formData.storeNumber])
+
+    useEffect(() => {
+        if (counter == 1) {
+
+            const isOnlyNumbers = /^\d+$/.test(formData.storeAddress);
+
+            if (!formData.storeAddress.trim() || formData.storeAddress.length < 3 || isOnlyNumbers) {
+                setStoreAddressError("A morada da Loja é obrigatória.");
+                setValidStoreAddress(false)
+            }
+            else {
+                setStoreAddressError("");
+                setValidStoreAddress(true)
+            }
+        }
+        else {
+            setCounter(1)
+        }
+    }, [formData.storeAddress])
+
+    useEffect(() => {
+        if (counter == 1) {
+
+            if (!formData.storeRegion.trim()) {
+                setStoreRegionError("A regional da loja é obrigatória");
+                setValidStoreRegion(false)
+            }
+            else {
+                setStoreRegionError("");
+                setValidStoreRegion(true)
+            }
+        }
+        else {
+            setCounter(1)
+        }
+    }, [formData.storeRegion])
+
+
+    useEffect(() => {
+        if (counter == 1) {
+
+            if (!formData.storeInspectorName.trim() || formData.storeInspectorName.length < 3) {
+                setStoreInspectorNameError("O nome do fiscal é obrigatório e deve conter 3 ou mais letras.");
+                setValidStoreInspectorName(false)
+            }
+            else {
+                setStoreInspectorNameError("");
+                setValidStoreInspectorName(true)
+            }
+        }
+        else {
+            setCounter(1)
+        }
+    }, [formData.storeInspectorName])
+
+    useEffect(() => {
+        if (counter == 1) {
+
+            const contact = formData.storeInspectorContact.trim();
+
+            const isValidMobile = /^9[1236]\d{7}$/.test(contact);
+
+            if (!isValidMobile) {
+                setStoreInspectorContactError("O contacto do fiscal deve ser um número de telemóvel válido.");
+                setValidStoreInspectorContact(false);
+            } else {
+                setStoreInspectorContactError("");
+                setValidStoreInspectorContact(true);
+            }
+        }
+        else {
+            setCounter(1)
+        }
+    }, [formData.storeInspectorContact])
+
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!formData.storeRegion.trim()) {
+            setStoreRegionError("A regional da loja é obrigatória");
+            toast.error("Dados inválidos, verifique formulário.")
+            setValidStoreRegion(false)
             return;
         }
+        else {
+            setStoreRegionError("");
+            setValidStoreRegion(true)
+        }
 
-        console.log(formData)
-        try {
-            await api.post('/stores', {
-                ...formData,
-                storeNumber: Number(formData.storeNumber),
-                storeInspectorContact: formData.storeInspectorContact ? Number(formData.storeInspectorContact) : null,
-            });
-            toast.success("Loja adicionada com sucesso!");
-            navigate("/Home");
+        if (validStoreName, validStoreNumber, validStoreAddress, validStoreRegion, validStoreInspectorName, validStoreInspectorContact) {
+            try {
+                await api.post('/stores', {
+                    ...formData,
+                    storeNumber: Number(formData.storeNumber),
+                    storeInspectorContact: formData.storeInspectorContact ? Number(formData.storeInspectorContact) : null,
+                    createdById: currentLoggedUser.id
+                });
+                toast.success("Loja adicionada com sucesso!");
+                navigate("/Home");
 
-        } catch (error) {
-            if (error.response) {
-                toast.error(JSON.stringify(error.response?.data));
-            } else {
-                toast.error("Erro ao comunicar com o servidor.");
+            } catch (error) {
+                if (error.response) {
+                    toast.error("Erro ao adicionar a loja.");
+                } else {
+                    toast.error("Erro ao comunicar com o servidor.");
+                }
             }
         }
     };
@@ -99,40 +195,43 @@ export default function NewStore() {
             <div><Navbar></Navbar></div>
             <div>
                 <CssVarsProvider>
-                    <main id="form">
+                    <main style={{ padding: '1.5rem' }}>
                         <Sheet
                             sx={{
-                                width: 700,
+                                maxWidth: 1000,
                                 mx: 'auto',
                                 py: 3,
                                 px: 2,
                                 display: 'flex',
                                 flexDirection: 'column',
-                                gap: 2,
+                                gap: 0,
                                 borderRadius: 'sm',
                                 boxShadow: 'lg',
                                 backgroundColor: '#fff',
                             }}
                             variant="outlined"
                         >
-                            <Typography level="h4" component="h1" sx={{ fontWeight: 'bold', color: '#f57c00' }}>
+                            <Typography level="h4" component="h1" sx={{ fontWeight: 'bold', color: '#f57c00', textAlign: 'center', }}>
                                 Adicionar Nova Loja
                             </Typography>
 
                             <FormControl>
                                 <FormLabel>Nome da Loja</FormLabel>
-                                <Input name="storeName" value={formData.storeName} onChange={handleChange} required />
+                                <Input name="storeName" size= "sm" value={formData.storeName} onChange={handleChange} required />
+                                <p style={{ color: "red", fontSize: "12px" }}>{storeNameError}</p>
                             </FormControl>
 
                             <FormControl>
                                 <FormLabel>Número (PT)</FormLabel>
-                                <Input name="storeNumber"
+                                <Input name="storeNumber" size= "sm"
                                     value={formData.storeNumber} onChange={handleChange} required />
+                                <p style={{ color: "red", fontSize: "12px" }}>{storeNumberError}</p>
                             </FormControl>
 
                             <FormControl>
                                 <FormLabel>Morada</FormLabel>
-                                <Input name="storeAddress" value={formData.storeAddress} onChange={handleChange} required />
+                                <Input name="storeAddress" size= "sm" value={formData.storeAddress} onChange={handleChange} required />
+                                <p style={{ color: "red", fontSize: "12px" }}>{storeAddressError}</p>
                             </FormControl>
 
                             <FormControl>
@@ -151,19 +250,22 @@ export default function NewStore() {
                                     <Option value="Sul">Sul</Option>
                                     <Option value="Oeste">Oeste</Option>
                                 </Select>
+                                <p style={{ color: "red", fontSize: "12px" }}>{storeRegionError}</p>
                             </FormControl>
 
-                            <Typography level="h5" sx={{ mt: 2, fontWeight: 'bold' }}>Contacto da Fiscalização</Typography>
+                            <Typography level="h5" sx={{ mt: 2, fontWeight: 'bold', textAlign: "center" }}>Dados da Fiscalização</Typography>
 
                             <FormControl>
                                 <FormLabel>Nome</FormLabel>
-                                <Input name="storeInspectorName" value={formData.storeInspectorName} onChange={handleChange} required />
+                                <Input name="storeInspectorName" size= "sm" value={formData.storeInspectorName} onChange={handleChange} required />
+                                <p style={{ color: "red", fontSize: "12px" }}>{storeInspectorNameError}</p>
                             </FormControl>
 
                             <FormControl>
                                 <FormLabel>Telefone</FormLabel>
-                                <Input name="storeInspectorContact" type="tel" pattern="[0-9]{9}"
+                                <Input name="storeInspectorContact" type="tel" pattern="[0-9]{9}" size= "sm"
                                     value={formData.storeInspectorContact} onChange={handleChange} required />
+                                <p style={{ color: "red", fontSize: "12px" }}>{storeInspectorContactError}</p>
                             </FormControl>
 
                             <Button variant="solid" color="primary" onClick={handleSubmit}>

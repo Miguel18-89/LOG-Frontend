@@ -13,6 +13,9 @@ import Tooltip from '@mui/joy/Tooltip';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import Select from '@mui/joy/Select';
 import Option from '@mui/joy/Option';
+import FormControl from '@mui/joy/FormControl';
+import FormLabel from '@mui/joy/FormLabel';
+import Input from '@mui/joy/Input';
 
 const statusColors = {
     //notStarted: '#B0BEC5',   // cinza
@@ -54,13 +57,18 @@ export default function UpCommingStores() {
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
     const [total, setTotal] = useState(0);
+    const [searchTerm, setSearchTerm] = useState('');
     const navigate = useNavigate();
 
 
     const fetchStores = async () => {
         try {
             const response = await api.get('/stores/UpComming', {
-                params: { page, pageSize },
+                params: {
+                    page,
+                    pageSize,
+                    search: searchTerm || undefined,
+                },
             });
             setStores(response.data.allUpCommingStores); // ajusta conforme estrutura da API
             setTotal(response.data.total);
@@ -71,16 +79,15 @@ export default function UpCommingStores() {
 
     useEffect(() => {
         fetchStores();
-    }, [page, pageSize]);
+    }, [page, pageSize, searchTerm]);
 
     return (
         <>
             <Navbar />
             <CssVarsProvider>
-                <main style={{ padding: '2rem' }}>
+                <main style={{ padding: '1.5rem' }}>
                     <Sheet
                         sx={{
-                            maxWidth: 1000,
                             mx: 'auto',
                             p: 3,
                             borderRadius: 'sm',
@@ -100,11 +107,22 @@ export default function UpCommingStores() {
                         >
                             Próximas lojas
                         </Typography>
-
-                        <Table borderAxis="xBetween" size="md" stripe="odd">
+                        <FormControl size="sm" sx={{ mb: 2 }}>
+                            <FormLabel>Pesquisar loja</FormLabel>
+                            <Input
+                                placeholder="Nome ou número"
+                                value={searchTerm}
+                                onChange={(e) => {
+                                    setSearchTerm(e.target.value);
+                                    setPage(1);
+                                }}
+                                variant="soft"
+                            />
+                        </FormControl>
+                        <Table borderAxis="xBetween" size="sm" stripe="odd">
                             <thead>
                                 <tr>
-                                    <th>Nome</th>
+                                    <th style={{  width: '20%' }}>Nome</th>
                                     <th style={{ textAlign: 'center' }}>Número</th>
                                     <th style={{ textAlign: 'center' }}>Regional</th>
                                     <th style={{ textAlign: 'center' }}>Survey</th>

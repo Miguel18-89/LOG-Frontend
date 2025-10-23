@@ -83,10 +83,9 @@ export default function StoreList() {
         <>
             <Navbar />
             <CssVarsProvider>
-                <main style={{ padding: '1rem' }}>
+                <main style={{ padding: '1.5rem' }}>
                     <Sheet
                         sx={{
-                            maxWidth: 1000,
                             mx: 'auto',
                             p: 3,
                             borderRadius: 'sm',
@@ -118,10 +117,10 @@ export default function StoreList() {
                                 variant="soft"
                             />
                         </FormControl>
-                        <Table borderAxis="xBetween" size="md" stripe="odd">
+                        <Table borderAxis="xBetween" size="sm" stripe="odd">
                             <thead>
                                 <tr>
-                                    <th style={{  width: '15%' }}>Nome</th>
+                                    <th style={{  width: '20%' }}>Nome</th>
                                     <th style={{ textAlign: 'center' }}>Número</th>
                                     <th style={{ textAlign: 'center' }}>Regional</th>
                                     <th style={{ textAlign: 'center' }}>Survey</th>
