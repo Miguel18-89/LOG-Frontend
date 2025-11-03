@@ -31,6 +31,7 @@ export default function NewStore() {
     const [validStoreInspectorName, setValidStoreInspectorName] = useState(false)
     const [storeInspectorContactError, setStoreInspectorContactError] = useState("")
     const [validStoreInspectorContact, setValidStoreInspectorContact] = useState(false)
+    const [isValidData, setIsValidData] = useState()
     const [formData, setFormData] = useState({
         storeName: '',
         storeNumber: '',
@@ -52,7 +53,7 @@ export default function NewStore() {
     useEffect(() => {
         if (counter == 1) {
             if (!formData.storeName.trim() || formData.storeName.length < 3) {
-                setStoreNameError("O nome da loja deve conter 3 ou mais letras.");
+                setStoreNameError("O nome da loja é obrigatório e deve conter 3 ou mais letras.");
                 setValidStoreName(false)
             }
             else {
@@ -63,7 +64,7 @@ export default function NewStore() {
         else {
             setCounter(1)
         }
-    }, [formData.storeName])
+    }, [formData.storeName, isValidData])
 
     useEffect(() => {
         if (counter == 1) {
@@ -79,7 +80,7 @@ export default function NewStore() {
         else {
             setCounter(1)
         }
-    }, [formData.storeNumber])
+    }, [formData.storeNumber, isValidData])
 
     useEffect(() => {
         if (counter == 1) {
@@ -98,7 +99,7 @@ export default function NewStore() {
         else {
             setCounter(1)
         }
-    }, [formData.storeAddress])
+    }, [formData.storeAddress, isValidData])
 
     useEffect(() => {
         if (counter == 1) {
@@ -115,7 +116,7 @@ export default function NewStore() {
         else {
             setCounter(1)
         }
-    }, [formData.storeRegion])
+    }, [formData.storeRegion, isValidData])
 
 
     useEffect(() => {
@@ -133,7 +134,7 @@ export default function NewStore() {
         else {
             setCounter(1)
         }
-    }, [formData.storeInspectorName])
+    }, [formData.storeInspectorName, isValidData])
 
     useEffect(() => {
         if (counter == 1) {
@@ -145,7 +146,8 @@ export default function NewStore() {
             if (!isValidMobile) {
                 setStoreInspectorContactError("O contacto do fiscal deve ser um número de telemóvel válido.");
                 setValidStoreInspectorContact(false);
-            } else {
+            } 
+            else {
                 setStoreInspectorContactError("");
                 setValidStoreInspectorContact(true);
             }
@@ -153,23 +155,13 @@ export default function NewStore() {
         else {
             setCounter(1)
         }
-    }, [formData.storeInspectorContact])
+    }, [formData.storeInspectorContact, isValidData])
 
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.storeRegion.trim()) {
-            setStoreRegionError("A regional da loja é obrigatória");
-            toast.error("Dados inválidos, verifique formulário.")
-            setValidStoreRegion(false)
-            return;
-        }
-        else {
-            setStoreRegionError("");
-            setValidStoreRegion(true)
-        }
-
-        if (validStoreName, validStoreNumber, validStoreAddress, validStoreRegion, validStoreInspectorName, validStoreInspectorContact) {
+        setIsValidData(true)
+        if (validStoreName && validStoreNumber && validStoreAddress && validStoreRegion && validStoreInspectorName && validStoreInspectorContact) {
             try {
                 await api.post('/stores', {
                     ...formData,
@@ -187,6 +179,11 @@ export default function NewStore() {
                     toast.error("Erro ao comunicar com o servidor.");
                 }
             }
+        }
+        else {
+            toast.error("Dados inválidos, verifique formulário.")
+            setIsValidData(false)
+            return;
         }
     };
 

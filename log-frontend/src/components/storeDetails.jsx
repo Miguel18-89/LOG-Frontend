@@ -16,6 +16,7 @@ import IconButton from '@mui/joy/IconButton';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SaveIcon from '@mui/icons-material/Save';
+import CloseIcon from '@mui/icons-material/Close';
 import Tooltip from '@mui/joy/Tooltip';
 import StoreSurveyForm from './storeSurveyForm';
 import StoreProvisioningForm from './storeProvisioningForm';
@@ -27,6 +28,8 @@ import { format } from 'date-fns';
 import { pt } from 'date-fns/locale';
 import { toast } from 'react-toastify';
 import { showConfirmationToast } from '../utils/showConfirmationToast';
+import DocumentUpload from './UploadDocument'
+import DocumentViewer from './storeDocuments'
 
 
 export default function StoreDetails() {
@@ -40,12 +43,13 @@ export default function StoreDetails() {
     const [isSurveyEditing, setIsSurveyEditing] = useState(false);
 
 
+
     const [survey, setSurvey] = useState({
         surveyHasFalseCeilling: false,
         surveyMetalFalseCeilling: false,
-        surveyCheckoutCount: 0,
+        surveyCheckoutCount: null,
         surveyHasElectronicGates: false,
-        surveyArea: 0,
+        surveyArea: null,
         surveyPhase1Date: '',
         surveyPhase1Type: '',
         surveyPhase2Date: '',
@@ -88,6 +92,7 @@ export default function StoreDetails() {
         hotButtons: false,
         eas: false,
         tiko: false,
+        quailDigital: false,
         ovens: false,
         smc: false,
         amplifier: false,
@@ -101,6 +106,18 @@ export default function StoreDetails() {
     })
 
     const [currentLoggedUser, setCurrentLoggedUser] = useState({});
+
+    const [documents, setDocuments] = useState([]);
+
+    const fetchDocuments = async () => {
+        const res = await api.get(`/documents/${id}`);
+        setDocuments(res.data);
+    };
+
+    useEffect(() => {
+        fetchDocuments();
+    }, [id]);
+
 
 
     const formatDate = (isoDate) => {
@@ -174,18 +191,64 @@ export default function StoreDetails() {
     };
 
     const handleSave = async () => {
-        try {
-            const res = await api.put(`/stores/${store.id}`, formData);
-            console.log(res.data)
-            setFormData(res.data)
-            toast.success("Atualizado com sucesso!");
-            setIsEditing(false);
-            setStore(formData);
+        const errors = [];
 
+        if (!formData.storeName || formData.storeName.length < 3) {
+            errors.push("O nome da loja é obrigatório e deve conter 3 ou mais letras.");
+        }
+
+        if (!formData.storeRegion) {
+            errors.push("A regional da loja é obrigatória");
+        }
+        const isOnlyNumbers = /^\d+$/.test(formData.storeAddress);
+
+        if (!formData.storeAddress.trim() || formData.storeAddress.length < 3 || isOnlyNumbers) {
+            errors.push("A morada da Loja é obrigatória e deve conter 3 ou mais letras.");
+        }
+        if (!formData.storeInspectorName.trim() || formData.storeInspectorName.length < 3) {
+            errors.push("O nome do fiscal é obrigatório e deve conter 3 ou mais letras.");
+        }
+        const contact = formData.storeInspectorContact;
+
+        const isValidMobile = /^9[1236]\d{7}$/.test(contact);
+
+        if (!isValidMobile) {
+            errors.push("O contacto do fiscal deve ser um número de telemóvel válido.");
+        }
+        if (errors.length > 0) {
+            toast.error(
+                <div>
+                    <p>Dados inválidos:</p>
+                    <ul>
+                        {errors.map((err, i) => (
+                            <li key={i}>{err}</li>
+                        ))}
+                    </ul>
+                </div>
+            );
+            return;
+        }
+
+        try {
+            const res = await toast.promise(
+                api.put(`/stores/${store.id}`, {
+                    formData,
+                    userId: currentLoggedUser.id,
+                }),
+                {
+                    pending: 'A atualizar...',
+                    success: 'Atualizada com sucesso!',
+                    error: 'Erro ao actualizar.',
+                }
+            );
+
+            setFormData(res.data);
+            setStore(res.data);
+            setIsEditing(false);
 
         } catch (error) {
             console.error("Erro ao atualizar loja:", error);
-            toast.error("Erro ao guardar alterações.");
+            toast.error("Erro ao atualizar a loja no servidor.");
         }
     };
 
@@ -309,18 +372,21 @@ export default function StoreDetails() {
                                 />
                             </FormControl>
                         </div>
+                        <DocumentViewer documents={documents} isEditing={isEditing} onDeleteSuccess={fetchDocuments} ></DocumentViewer>
+                        {isEditing ? (<DocumentUpload storeId={store.id} onUploadSuccess={fetchDocuments}></DocumentUpload>) : null}
+
                         <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: '8px' }}>
 
                             {!isEditing ? (
                                 <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '8px', gap: '6px' }}>
                                     {isValidDate(formData.updated_at) && (
                                         <Typography level="body-xs" sx={{ color: 'neutral.500' }}>
-                                            Atualizado por {formData.updatedBy.name ?? 'Desconhecido'} em {format(new Date(formData.updated_at), "dd/MM/yyyy 'às' HH:mm", { locale: pt })}
+                                            Atualizado por {formData.updatedBy.name ?? 'Desconhecido'} em{" "}
+                                            {format(new Date(formData.updated_at), "dd/MM/yyyy 'às' HH:mm", { locale: pt })}
                                         </Typography>
                                     )}
                                     {[1, 2].includes(currentLoggedUser.role) && (
                                         <Box>
-
                                             <Tooltip title="Editar">
                                                 <IconButton onClick={() => setIsEditing(true)}>
                                                     <EditIcon />
@@ -334,16 +400,27 @@ export default function StoreDetails() {
                                         </Box>
                                     )}
                                 </div>
-
                             ) : (
-                                <Tooltip title="Guardar">
-                                    <IconButton onClick={handleSave}>
-                                        <SaveIcon />
-                                    </IconButton>
-                                </Tooltip>
+                                <Box sx={{ display: 'flex', gap: 1 }}>
+                                    <Tooltip title="Guardar">
+                                        <IconButton onClick={handleSave}>
+                                            <SaveIcon />
+                                        </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title="Sair sem guardar">
+                                        <IconButton
+                                            color="neutral"
+                                            onClick={() => {
+                                                setFormData(store);
+                                                setIsEditing(false);
+                                            }}
+                                        >
+                                            <CloseIcon />
+                                        </IconButton>
+                                    </Tooltip>
+                                </Box>
                             )}
                         </div>
-
                     </Sheet>
                     {survey && (
                         <StoreSurveyForm

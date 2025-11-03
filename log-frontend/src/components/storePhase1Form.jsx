@@ -10,9 +10,11 @@ import {
     IconButton,
     Tooltip,
     Divider,
+    Box
 } from '@mui/joy';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
+import CloseIcon from '@mui/icons-material/Close';
 import { useState, useEffect } from 'react';
 import api from '../services/api';
 import Gesture from '@mui/icons-material/Gesture';
@@ -30,6 +32,7 @@ export default function StorePhase1Form({ storeId, initialData }) {
     const [formData, setFormData] = useState({ ...initialData });
     const [currentLoggedUser, setCurrentLoggedUser] = useState({});
     const [updatedByName, setUpdatedByName] = useState("")
+    const [updatedData, setUpdatedData] = useState({ ...initialData })
 
     const formatDate = (isoDate) => {
         const date = new Date(isoDate);
@@ -49,13 +52,6 @@ export default function StorePhase1Form({ storeId, initialData }) {
     const [surveyPhase1Text, setSurveyPhase1Text] = useState('');
     const [surveyPhase2Text, setSurveyPhase2Text] = useState('');
     const [surveyOpeningDate, setSurveyOpeningDateText] = useState('');
-
-    const sanitizeSurveyDates = (data) => ({
-        ...data,
-        surveyPhase1Date: isValidDate(data.surveyPhase1Date) ? data.surveyPhase1Date : null,
-        surveyPhase2Date: isValidDate(data.surveyPhase2Date) ? data.surveyPhase2Date : null,
-        updated_at: isValidDate(data.updated_at) ? data.updated_at : null,
-    });
 
     const isValidDate = (value) => {
         const date = new Date(value);
@@ -97,16 +93,24 @@ export default function StorePhase1Form({ storeId, initialData }) {
         try {
             console.log("Dados enviados:", formData, storeId);
 
-            const res = await api.put(`/phase1/${formData.id}`, {
+            const res = await toast.promise(
+            api.put(`/phase1/${formData.id}`, {
                 ...formData,
                 storeId,
                 userId: currentLoggedUser.id,
-            });
-            toast.success("Actualizado com sucesso!");
+            }),
+            {
+                    pending: 'A atualizar...',
+                    success: 'Actualizado com sucesso!',
+                    error: 'Erro ao atualizar o survey.',
+                }
+            );
+
             setIsEditing(false);
 
             const updated = res.data;
             setFormData(updated);
+            setUpdatedData(updated);
 
             if (updated?.updated_by) {
                 try {
@@ -170,11 +174,24 @@ export default function StorePhase1Form({ storeId, initialData }) {
                         )}
                     </div>
                 ) : (
-                    <Tooltip title="Guardar">
-                        <IconButton onClick={handleSave}>
-                            <SaveIcon />
-                        </IconButton>
-                    </Tooltip>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Tooltip title="Guardar">
+                            <IconButton onClick={handleSave}>
+                                <SaveIcon />
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Sair sem guardar">
+                            <IconButton
+                                color="neutral"
+                                onClick={() => {
+                                    setFormData(updatedData);
+                                    setIsEditing(false);
+                                }}
+                            >
+                                <CloseIcon />
+                            </IconButton>
+                        </Tooltip>
+                    </Box>
                 )}
             </div>
             <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>

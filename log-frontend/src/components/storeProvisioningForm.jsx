@@ -10,9 +10,12 @@ import {
     IconButton,
     Tooltip,
     Divider,
+    Box
 } from '@mui/joy';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
+import CloseIcon from '@mui/icons-material/Close';
+import SearchIcon from '@mui/icons-material/Search';
 import { useState, useEffect } from 'react';
 import api from '../services/api';
 import { format } from 'date-fns';
@@ -26,6 +29,7 @@ export default function StoreProvisioningForm({ storeId, initialData }) {
     const [formData, setFormData] = useState({ ...initialData });
     const [currentLoggedUser, setCurrentLoggedUser] = useState({});
     const [updatedByName, setUpdatedByName] = useState("")
+    const [updatedData, setUpdatedData] = useState({ ...initialData })
 
     const formatDate = (isoDate) => {
         const date = new Date(isoDate);
@@ -46,18 +50,10 @@ export default function StoreProvisioningForm({ storeId, initialData }) {
     const [surveyPhase2Text, setSurveyPhase2Text] = useState('');
     const [surveyOpeningDate, setSurveyOpeningDateText] = useState('');
 
-    const sanitizeSurveyDates = (data) => ({
-        ...data,
-        surveyPhase1Date: isValidDate(data.surveyPhase1Date) ? data.surveyPhase1Date : null,
-        surveyPhase2Date: isValidDate(data.surveyPhase2Date) ? data.surveyPhase2Date : null,
-        updated_at: isValidDate(data.updated_at) ? data.updated_at : null,
-    });
-
     const isValidDate = (value) => {
         const date = new Date(value);
         return value && !isNaN(date.getTime());
     };
-
 
     useEffect(() => {
         const storedUser = localStorage.getItem('user');
@@ -65,6 +61,8 @@ export default function StoreProvisioningForm({ storeId, initialData }) {
             setCurrentLoggedUser(JSON.parse(storedUser));
         }
     }, []);
+
+
 
     useEffect(() => {
         const fetchUpdatedByName = async () => {
@@ -94,14 +92,23 @@ export default function StoreProvisioningForm({ storeId, initialData }) {
         try {
             console.log("Dados enviados:", formData, storeId);
 
-            const res = await api.put(`/provisioning/${formData.id}`, {
-                ...formData,
-                storeId,
-                userId: currentLoggedUser.id,
-            });
-            toast.success("Actualizado com sucesso!");
-             const updated = res.data;
+            const res = await toast.promise(
+                api.put(`/provisioning/${formData.id}`, {
+                    ...formData,
+                    storeId,
+                    userId: currentLoggedUser.id,
+                    updated_by: currentLoggedUser.id
+                }),
+                {
+                    pending: 'A atualizar...',
+                    success: 'Actualizado com sucesso!',
+                    error: 'Erro ao atualizar o survey.',
+                }
+            );
+
+            const updated = res.data;
             setFormData(updated);
+            setUpdatedData(updated);
             setIsEditing(false);
             console.log(formData)
 
@@ -152,10 +159,10 @@ export default function StoreProvisioningForm({ storeId, initialData }) {
                 {!isEditing ? (
                     <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '8px', gap: '6px' }}>
                         {isValidDate(formData.updated_at) && (
-                                <Typography level="body-xs" sx={{ color: 'neutral.500' }}>
-                                    Atualizado por {updatedByName ?? 'Desconhecido'} em {format(new Date(formData.updated_at), "dd/MM/yyyy 'às' HH:mm", { locale: pt })}
-                                </Typography>
-                            )}
+                            <Typography level="body-xs" sx={{ color: 'neutral.500' }}>
+                                Atualizado por {updatedByName ?? 'Desconhecido'} em {format(new Date(formData.updated_at), "dd/MM/yyyy 'às' HH:mm", { locale: pt })}
+                            </Typography>
+                        )}
 
                         <Tooltip title="Editar">
                             <IconButton onClick={() => setIsEditing(true)}>
@@ -164,11 +171,24 @@ export default function StoreProvisioningForm({ storeId, initialData }) {
                         </Tooltip>
                     </div>
                 ) : (
-                    <Tooltip title="Guardar">
-                        <IconButton onClick={handleSave}>
-                            <SaveIcon />
-                        </IconButton>
-                    </Tooltip>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Tooltip title="Guardar">
+                            <IconButton onClick={handleSave}>
+                                <SaveIcon />
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Sair sem guardar">
+                            <IconButton
+                                color="neutral"
+                                onClick={() => {
+                                    setFormData(updatedData);
+                                    setIsEditing(false);
+                                }}
+                            >
+                                <CloseIcon />
+                            </IconButton>
+                        </Tooltip>
+                    </Box>
                 )}
             </div>
             <div style={{ display: 'flex', gap: '16px' }}>
@@ -203,6 +223,23 @@ export default function StoreProvisioningForm({ storeId, initialData }) {
                         value={formData.trackingNumber}
                         onChange={(e) => handleChange('trackingNumber', e.target.value)}
                         readOnly={!isEditing}
+                        endDecorator={
+                            !isEditing && formData.trackingNumber && (
+                                <Tooltip title="Localizar">
+                                    <IconButton
+                                        component="a"
+                                        href={`https://elogistics.dachser.com/shp2s/?search=${encodeURIComponent(formData.trackingNumber)}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        size="sm"
+                                        variant="soft"
+                                        color="primary"
+                                    >
+                                        <SearchIcon />
+                                    </IconButton>
+                                </Tooltip>
+                            )
+                        }
                     />
                 </FormControl>
             </div>

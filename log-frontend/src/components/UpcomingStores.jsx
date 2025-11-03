@@ -224,7 +224,7 @@ export default function UpCommingStores() {
                                             }}
                                             size="sm"
                                         >
-                                            {[10, 2, 20, 25].map((size) => (
+                                            {[10, 15, 20, 25].map((size) => (
                                                 <Option key={size} value={size}>
                                                     {size}
                                                 </Option>

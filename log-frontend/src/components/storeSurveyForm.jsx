@@ -10,9 +10,11 @@ import {
     IconButton,
     Tooltip,
     Divider,
+    Box
 } from '@mui/joy';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
+import CloseIcon from '@mui/icons-material/Close';
 import { useState, useEffect } from 'react';
 import api from '../services/api';
 import { format } from 'date-fns';
@@ -26,6 +28,7 @@ export default function StoreSurveyForm({ storeId, initialData }) {
     const [formData, setFormData] = useState({ ...initialData });
     const [updatedByName, setUpdatedByName] = useState("")
     const [currentLoggedUser, setCurrentLoggedUser] = useState({});
+    const [updatedData, setUpdatedData] = useState({ ...initialData })
     const formatDate = (isoDate) => {
         const date = new Date(isoDate);
         if (!isoDate || isNaN(date)) return '';
@@ -44,13 +47,6 @@ export default function StoreSurveyForm({ storeId, initialData }) {
     const [surveyPhase1Text, setSurveyPhase1Text] = useState('');
     const [surveyPhase2Text, setSurveyPhase2Text] = useState('');
     const [surveyOpeningDate, setSurveyOpeningDateText] = useState('');
-
-    const sanitizeSurveyDates = (data) => ({
-        ...data,
-        surveyPhase1Date: isValidDate(data.surveyPhase1Date) ? data.surveyPhase1Date : null,
-        surveyPhase2Date: isValidDate(data.surveyPhase2Date) ? data.surveyPhase2Date : null,
-        updated_at: isValidDate(data.updated_at) ? data.updated_at : null,
-    });
 
     const isValidDate = (value) => {
         const date = new Date(value);
@@ -128,18 +124,24 @@ export default function StoreSurveyForm({ storeId, initialData }) {
         try {
             console.log("Dados enviados:", cleanedFormData, storeId);
 
-            const res = await api.put(`/surveys/${formData.id}`, {
-                ...cleanedFormData,
-                storeId,
-                userId: currentLoggedUser.id,
-            });
+            const res = await toast.promise(
+                api.put(`/surveys/${formData.id}`, {
+                    ...cleanedFormData,
+                    storeId,
+                    userId: currentLoggedUser.id,
+                }),
+                {
+                    pending: 'A atualizar...',
+                    success: 'Actualizado com sucesso!',
+                    error: 'Erro ao atualizar o survey.',
+                }
+            );
 
-            toast.success("Actualizado com sucesso!");
-            setIsEditing(false);
-
-            const updated = sanitizeSurveyDates(res.data);
+            const updated = res.data;
             setFormData(updated);
-            console.log(updated);
+            setUpdatedData(updated);
+            setIsEditing(false);
+            console.log("Resposta da API:", updated);
 
             if (updated?.updated_by) {
                 try {
@@ -150,7 +152,6 @@ export default function StoreSurveyForm({ storeId, initialData }) {
                     setUpdatedByName('Desconhecido');
                 }
             } else {
-                console.warn('updated_by está ausente na resposta');
                 setUpdatedByName('Desconhecido');
             }
 
@@ -158,7 +159,7 @@ export default function StoreSurveyForm({ storeId, initialData }) {
             console.error("Erro ao guardar survey:", error);
             toast.error("Ocorreu um erro ao guardar o survey.");
         }
-    };
+    }; 
 
     return (
         <Sheet
@@ -199,11 +200,24 @@ export default function StoreSurveyForm({ storeId, initialData }) {
                         )}
                     </div>
                 ) : (
-                    <Tooltip title="Guardar">
-                        <IconButton onClick={handleSave}>
-                            <SaveIcon />
-                        </IconButton>
-                    </Tooltip>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Tooltip title="Guardar">
+                            <IconButton onClick={handleSave}>
+                                <SaveIcon />
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Sair sem guardar">
+                            <IconButton
+                                color="neutral"
+                                onClick={() => {
+                                    setFormData(updatedData);
+                                    setIsEditing(false);
+                                }}
+                            >
+                                <CloseIcon />
+                            </IconButton>
+                        </Tooltip>
+                    </Box>
                 )}
             </div>
             <div style={{ display: 'flex', gap: '16px' }}>
@@ -230,13 +244,15 @@ export default function StoreSurveyForm({ storeId, initialData }) {
                 <FormControl sx={{ flex: 1 }}>
                     <FormLabel>Data prevista para 1ª fase</FormLabel>
                     <Input
-                        type="text"
-                        value={surveyPhase1Text}
-                        onChange={(e) => setSurveyPhase1Text(e.target.value)} // permite digitar livremente
+                        type="date"
+                        value={formData.surveyPhase1Date
+                            ? new Date(formData.surveyPhase1Date).toISOString().split("T")[0]
+                            : ""}
+                        onChange={(e) => handleChange("surveyPhase1Date", e.target.value)}
                         onBlur={(e) => {
                             const parsed = parseDate(e.target.value);
                             if (parsed) {
-                                handleChange('surveyPhase1Date', parsed); // só atualiza o estado real se for válido
+                                handleChange('surveyPhase1Date', parsed);
                             }
                         }}
                         placeholder="DD/MM/AAAA"
@@ -265,13 +281,15 @@ export default function StoreSurveyForm({ storeId, initialData }) {
                 <FormControl sx={{ flex: 1 }}>
                     <FormLabel>Data prevista para 2ª fase</FormLabel>
                     <Input
-                        type="text"
-                        value={surveyPhase2Text}
-                        onChange={(e) => setSurveyPhase2Text(e.target.value)} // permite digitar livremente
+                        type="date"
+                        value={formData.surveyPhase2Date
+                            ? new Date(formData.surveyPhase2Date).toISOString().split("T")[0]
+                            : ""}
+                        onChange={(e) => handleChange("surveyPhase2Date", e.target.value)}
                         onBlur={(e) => {
                             const parsed = parseDate(e.target.value);
                             if (parsed) {
-                                handleChange('surveyPhase2Date', parsed); // só atualiza o estado real se for válido
+                                handleChange('surveyPhase2Date', parsed);
                             }
                         }}
                         placeholder="DD/MM/AAAA"
@@ -291,6 +309,7 @@ export default function StoreSurveyForm({ storeId, initialData }) {
                         onChange={(e, val) => handleChange('surveyPhase2Type', val)}
                         disabled={!isEditing}
                     >
+
                         <Option value="Diurno">Diurno</Option>
                         <Option value="Nocturno">Nocturno</Option>
                     </Select>
@@ -300,9 +319,11 @@ export default function StoreSurveyForm({ storeId, initialData }) {
                 <FormControl sx={{ flex: 1 }}>
                     <FormLabel>Data prevista para a abertura</FormLabel>
                     <Input
-                        type="text"
-                        value={surveyOpeningDate}
-                        onChange={(e) => setSurveyOpeningDateText(e.target.value)}
+                        type="date"
+                        value={formData.surveyOpeningDate
+                            ? new Date(formData.surveyOpeningDate).toISOString().split("T")[0]
+                            : ""}
+                        onChange={(e) => handleChange("surveyOpeningDate", e.target.value)}
                         onBlur={(e) => {
                             const parsed = parseDate(e.target.value);
                             if (parsed) {

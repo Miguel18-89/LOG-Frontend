@@ -80,6 +80,8 @@ export default function StoreComments({ storeId, initialData }) {
                     {
                         message: newComment,
                         updated: true,
+                        userId: currentLoggedUser.id,
+                        storeId:storeId
                     }
                 );
             } else {
@@ -88,7 +90,7 @@ export default function StoreComments({ storeId, initialData }) {
                     {
                         message: newComment,
                         userId: currentLoggedUser.id,
-                        storeId,
+                        storeId: storeId
                     }
                 );
             }
