@@ -9,7 +9,7 @@ import { showConfirmationToast } from '../utils/showConfirmationToast';
 
 const StoreDocuments = ({ documents, isEditing, onDeleteSuccess }) => {
     const handleDownload = (id, filename) => {
-        window.open(`http://localhost:3000/documents/view/${id}`, '_blank');
+        window.open(`${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/documents/view/${id}`, '_blank');
     };
 
     const handleDelete = async (id) => {
