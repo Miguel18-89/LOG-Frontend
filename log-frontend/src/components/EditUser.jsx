@@ -59,12 +59,22 @@ export default function EditUser() {
         setError('');
 
         try {
-            await api.post('/users/forgot-password', { email: user.email });
-            toast.success('Email enviado com sucesso! Verifica a tua caixa de entrada.');
-        } catch (err) {
-            toast.error('Erro ao enviar email.');
+            await toast.promise(
+                api.post('/users/forgot-password', {
+                    email: user.email,
+                }),
+                {
+                    pending: 'A enviar email...',
+                    success: 'Email enviado com sucesso! Verifica a tua caixa de entrada.',
+                    error: 'Erro ao enviar email.',
+                }
+            );
+        } catch (error) {
+            console.error("Erro ao enviar pedido de redefinição:", error);
         }
     };
+
+
 
     const deleteUser = async () => {
         showConfirmationToast({
@@ -86,7 +96,7 @@ export default function EditUser() {
         <>
             <Navbar />
             <div>
-                <main  style={{ padding: '1.5rem' }}>
+                <main style={{ padding: '1.5rem' }}>
                     <CssVarsProvider>
                         <Sheet
                             sx={{
@@ -103,7 +113,7 @@ export default function EditUser() {
                             }}
                             variant="outlined"
                         >
-                            <Typography sx={{ fontWeight: 'bold', color: '#f57c00', textAlign: 'center'}} level="h4" component="h1">
+                            <Typography sx={{ fontWeight: 'bold', color: '#f57c00', textAlign: 'center' }} level="h4" component="h1">
                                 <p style={{ margin: 0 }}>Meu perfil</p>
                             </Typography>
 
@@ -131,7 +141,7 @@ export default function EditUser() {
                                 Atualizar perfil
                             </Button>
 
-                            
+
                             <Button sx={{ mt: 1 }} onClick={ResetPassword}>
                                 Alterar password
                             </Button>

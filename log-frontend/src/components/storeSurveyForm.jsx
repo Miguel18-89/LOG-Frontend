@@ -85,7 +85,7 @@ export default function StoreSurveyForm({ storeId, initialData }) {
             if (initialData?.updated_by) {
                 try {
                     const res = await api.get(`/users/${initialData.updated_by}`);
-                    setUpdatedByName(res.data.name ?? 'Desconhecido20');
+                    setUpdatedByName(res.data.name ?? 'Desconhecido');
                 } catch (err) {
                     console.error('Erro ao buscar nome do utilizador:', err);
                     setUpdatedByName('Desconhecido');
@@ -94,7 +94,11 @@ export default function StoreSurveyForm({ storeId, initialData }) {
         };
 
         if (initialData) {
-            setFormData((prev) => ({ ...prev, ...initialData }));
+            setFormData((prev) => ({
+                ...prev,
+                ...initialData,
+                id: initialData.id ?? prev.id
+            }));
             fetchUpdatedByName();
         }
     }, [initialData]);
@@ -105,6 +109,8 @@ export default function StoreSurveyForm({ storeId, initialData }) {
     };
 
     const handleSave = async () => {
+        
+
         const cleanedFormData = {
             ...formData,
             surveyOpeningDate:
@@ -159,7 +165,7 @@ export default function StoreSurveyForm({ storeId, initialData }) {
             console.error("Erro ao guardar survey:", error);
             toast.error("Ocorreu um erro ao guardar o survey.");
         }
-    }; 
+    };
 
     return (
         <Sheet
@@ -255,7 +261,6 @@ export default function StoreSurveyForm({ storeId, initialData }) {
                                 handleChange('surveyPhase1Date', parsed);
                             }
                         }}
-                        placeholder="DD/MM/AAAA"
                         readOnly={!isEditing}
                     />
                 </FormControl>
@@ -292,7 +297,6 @@ export default function StoreSurveyForm({ storeId, initialData }) {
                                 handleChange('surveyPhase2Date', parsed);
                             }
                         }}
-                        placeholder="DD/MM/AAAA"
                         readOnly={!isEditing}
                     />
                 </FormControl>
@@ -330,7 +334,7 @@ export default function StoreSurveyForm({ storeId, initialData }) {
                                 handleChange('surveyOpeningDate', parsed);
                             }
                         }}
-                        placeholder="DD/MM/AAAA"
+
                         readOnly={!isEditing}
                     />
                 </FormControl>

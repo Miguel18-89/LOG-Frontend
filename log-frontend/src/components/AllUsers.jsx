@@ -74,20 +74,30 @@ export default function UserList() {
     };
 
     const handleSave = async (id) => {
+        const updated = editedUsers[id];
+
+        const savePromise = api.put(`/users/${id}`, updated);
+
+        toast.promise(savePromise, {
+            pending: 'A guardar alterações...',
+            success: 'Actualizado com sucesso!',
+            error: {
+                render({ data }) {
+                    if (data?.response?.status === 403) {
+                        return 'Não é possível alterar o role ou aprovação porque este é o único administrador ativo.';
+                    }
+                    return 'Erro ao guardar utilizador. Tente novamente.';
+                }
+            }
+        });
+
         try {
-            const updated = editedUsers[id];
-            await api.put(`/users/${id}`, updated);
+            await savePromise;
             setUsers((prev) =>
                 prev.map((u) => (u.id === id ? { ...u, ...updated } : u))
             );
         } catch (error) {
             console.error('Erro ao guardar utilizador:', error);
-
-            if (error.response?.status === 403) {
-                toast.info('Não é possível alterar o role ou aprovação porque este é o único administrador ativo.');
-            } else {
-                toast.error('Erro ao guardar utilizador. Tente novamente.');
-            }
         } finally {
             setEditingUserId(null);
         }

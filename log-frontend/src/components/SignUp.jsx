@@ -99,102 +99,112 @@ export default function SignUp({ props }) {
 
     async function handleSubmit(e) {
         e.preventDefault();
-        if (validEmail == true && validPassword == true && validPasswordConfirmation == true && validUserName == true) {
-            setCounter(0)
-            await api.post('/users', {
+
+        if (validEmail && validPassword && validPasswordConfirmation && validUserName) {
+            setCounter(0);
+
+            const userData = {
                 name: userName,
                 email: userEmail,
                 password: password
-            }).then(response => {
-                if (response.status === 201) {
-                    toast.success('Utilizador criado com sucesso. Aguarda aprovação do administrador.');
-                }
-                setUserEmail("")
-                setPassword("")
-                setPasswordConfirmation("")
-                setUserName("")
-                navigate("/")
-            })
-                .catch(error => {
-                    toast.error(JSON.stringify(error.response?.data));
-                    setUserEmail("")
-                    setPassword("")
-                    setPasswordConfirmation("")
-                    setUserName("")
+            };
 
-                });
-        }
-        else {
+            const createUserPromise = api.post('/users', userData);
+
+            toast.promise(createUserPromise, {
+                pending: 'A criar utilizador...',
+                success: 'Utilizador criado com sucesso. Aguarda aprovação do administrador.',
+                error: {
+                    render({ data }) {
+                        const msg = data?.response?.data?.message || 'Erro ao criar utilizador.';
+                        return typeof msg === 'string' ? msg : JSON.stringify(msg);
+                    }
+                }
+            });
+
+            try {
+                const response = await createUserPromise;
+                if (response.status === 201) {
+                }
+                setUserEmail("");
+                setPassword("");
+                setPasswordConfirmation("");
+                setUserName("");
+                navigate("/");
+            } catch (error) {
+                console.error("Erro ao criar utilizador:", error);
+            }
+        } else {
             toast.error("Dados inválidos.");
         }
     }
 
     function closePage() {
         navigate("/")
-    }
+    }x
 
     return (
         <>
-        <div id='containerLogin' style={{maxHeight: "100vh"}}>
-            <div id='imageDiv'>
-                <img src="/src/images/LOG.png" alt="LOG Logo" />
+            <div id='containerLogin' style={{ maxHeight: "100vh" }}>
+                <div id='imageDiv'>
+                    <img src="/src/images/LOG.png" alt="LOG Logo" />
+                </div>
+                <main id='form'>
+                    <CssVarsProvider >
+                        <CssBaseline />
+                        <Sheet
+                            sx={{
+                                width: 700,
+                                mx: 'auto',
+                                my: 4,
+                                py: 3,
+                                px: 2,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 2,
+                                borderRadius: 'sm',
+                                boxShadow: 'md',
+                            }}
+                            variant="outlined"
+                        >
+                            <div>
+                                <Typography style={{ fontWeight: 'bold', color: '#f57c00' }} level="h4" component="h1">
+                                    <b>Novo utilizador</b>
+                                </Typography>
+                                <Typography level="body-sm">Preencha todos os campos para criar um novo utilizador.</Typography>
+                            </div>
+
+                            <FormControl>
+                                <FormLabel>Nome</FormLabel>
+                                <Input name="name" type="text" value={userName} onChange={e => setUserName(e.target.value)} />
+                                <p style={{ color: "red", fontSize: "12px" }}>{userNameError}</p>
+                            </FormControl>
+
+                            <FormControl>
+                                <FormLabel>Email</FormLabel>
+                                <Input name="email" type="email" value={userEmail} onChange={e => setUserEmail(e.target.value.toLowerCase())} />
+                                <p style={{ color: "red", fontSize: "12px" }}>{userEmailError}</p>
+                            </FormControl>
+
+                            <FormControl>
+                                <FormLabel>Password</FormLabel>
+                                <Input name="password" type="password" value={password} onChange={e => setPassword(e.target.value)} />
+                                <p style={{ color: "red", fontSize: "12px", width: "90%" }}>{passwordError}</p>
+                            </FormControl>
+
+                            <FormControl>
+                                <FormLabel >Confirmação de Password</FormLabel>
+                                <Input name="password" type="password" value={passwordConfirmation} onChange={e => setPasswordConfirmation(e.target.value)} />
+                                <p style={{ color: "red", fontSize: "12px" }}>{passwordConfirmationError}</p>
+                            </FormControl>
+
+                            <Button sx={{ mt: 1 /* margin top */ }} onClick={handleSubmit}>Registar</Button>
+                            <Button sx={{ mt: 1 /* margin top */ }} onClick={closePage}>Voltar</Button>
+                        </Sheet>
+                    </CssVarsProvider>
+
+                </main>
             </div>
-            <main id='form'>
-                <CssVarsProvider >
-                    <CssBaseline />
-                    <Sheet
-                        sx={{
-                            width: 700,
-                            mx: 'auto', 
-                            my: 4, 
-                            py: 3, 
-                            px: 2, 
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 2,
-                            borderRadius: 'sm',
-                            boxShadow: 'md',
-                        }}
-                        variant="outlined"
-                    >
-                        <div>
-                            <Typography style={{ fontWeight: 'bold', color: '#f57c00' }} level="h4" component="h1">
-                                <b>Novo utilizador</b>
-                            </Typography>
-                            <Typography level="body-sm">Preencha todos os campos para criar um novo utilizador.</Typography>
-                        </div>
-
-                        <FormControl>
-                            <FormLabel>Nome</FormLabel>
-                            <Input name="name" type="text" value={userName} onChange={e => setUserName(e.target.value)} />
-                            <p style={{ color: "red", fontSize: "12px" }}>{userNameError}</p>
-                        </FormControl>
-
-                        <FormControl>
-                            <FormLabel>Email</FormLabel>
-                            <Input name="email" type="email" value={userEmail} onChange={e => setUserEmail(e.target.value.toLowerCase())} />
-                            <p style={{ color: "red", fontSize: "12px" }}>{userEmailError}</p>
-                        </FormControl>
-
-                        <FormControl>
-                            <FormLabel>Password</FormLabel>
-                            <Input name="password" type="password" value={password} onChange={e => setPassword(e.target.value)} />
-                            <p style={{ color: "red", fontSize: "12px", width: "90%" }}>{passwordError}</p>
-                        </FormControl>
-
-                        <FormControl>
-                            <FormLabel >Confirmação de Password</FormLabel>
-                            <Input name="password" type="password" value={passwordConfirmation} onChange={e => setPasswordConfirmation(e.target.value)} />
-                            <p style={{ color: "red", fontSize: "12px" }}>{passwordConfirmationError}</p>
-                        </FormControl>
-
-                        <Button sx={{ mt: 1 /* margin top */ }} onClick={handleSubmit}>Registar</Button>
-                        <Button sx={{ mt: 1 /* margin top */ }} onClick={closePage}>Voltar</Button>
-                    </Sheet>
-                </CssVarsProvider>
-
-            </main>
-        </div>
         </>
     );
 }
