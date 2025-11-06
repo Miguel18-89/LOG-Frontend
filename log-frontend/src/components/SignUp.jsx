@@ -141,7 +141,7 @@ export default function SignUp({ props }) {
 
     function closePage() {
         navigate("/")
-    }x
+    }
 
     return (
         <>
