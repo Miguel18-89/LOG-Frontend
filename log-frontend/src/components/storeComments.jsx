@@ -128,7 +128,7 @@ export default function StoreComments({ storeId, initialData }) {
 
 
     return (
-        <Box sx={{ mt: 6, mx: 'auto', px: 3, maxWidth: 730 }}>
+        <Box sx={{ mt: 6, mx: 'auto', px: 3, maxWidth: 900 }}>
             <Typography level="title-lg" fontWeight="bold" sx={{ color: '#f57c00', textAlign: 'center' }}>
                 Comentários
             </Typography>

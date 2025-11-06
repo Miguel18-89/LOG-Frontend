@@ -281,7 +281,7 @@ export default function StoreDetails() {
                 <main style={{ paddingTop: '30px' }}>
                     <Sheet
                         sx={{
-                            width: 700,
+                            
                             mx: 'auto',
                             py: 3,
                             px: 2,
