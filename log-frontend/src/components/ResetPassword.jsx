@@ -30,7 +30,7 @@ const ResetPassword = () => {
     if (counter == 1) {
       let checkPassword = /^(?=.*[a-z])(?=.*\d)(?=.*[@.#$!%*?&])[A-Za-z\d@.#$!%*?&]{6,100}$/;
       if (checkPassword.test(password) == false) {
-        setPasswordError("The password must be at least 6 characters and must contain letters, numbers and a character that is neither a letter nor a number")
+        setPasswordError("A password deve conter pelo menos 6 caracteres, letras, números e um caracter especial.")
         setValidPassword(false)
       }
       else {
@@ -38,7 +38,7 @@ const ResetPassword = () => {
         setValidPassword(true)
       }
       if (password != passwordConfirmation) {
-        setPasswordConfirmationError("The password's doens't match")
+        setPasswordConfirmationError("As passwords não coincidem.")
         setValidPasswordConfirmation(false)
       }
       else {

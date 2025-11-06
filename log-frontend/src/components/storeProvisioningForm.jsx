@@ -231,9 +231,9 @@ export default function StoreProvisioningForm({ storeId, initialData }) {
                                         href={`https://elogistics.dachser.com/shp2s/?search=${encodeURIComponent(formData.trackingNumber)}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        size="sm"
-                                        variant="soft"
-                                        color="primary"
+                                        size="ml"
+                                        //variant="soft"
+                                        color="neutral"
                                     >
                                         <SearchIcon />
                                     </IconButton>

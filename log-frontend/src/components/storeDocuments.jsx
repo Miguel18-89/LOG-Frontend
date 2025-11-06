@@ -8,8 +8,35 @@ import { toast } from 'react-toastify';
 import { showConfirmationToast } from '../utils/showConfirmationToast';
 
 const StoreDocuments = ({ documents, isEditing, onDeleteSuccess }) => {
-    const handleDownload = (id, filename) => {
-        window.open(`http://localhost:3000/documents/view/${id}`, '_blank');
+
+    const handleDownload = async (id, filename) => {
+        try {
+            const res = await api.get(`/documents/view/${id}`, {
+                responseType: 'blob' 
+            });
+
+            const contentType = res.headers['content-type'] || '';
+            const blob = new Blob([res.data], { type: contentType });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename || 'download';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            const status = err.response?.status;
+            if (status === 401) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                toast.warn('Sessão inválida. Por favor, inicie sessão novamente.');
+                if (typeof onUnauthorized === 'function') onUnauthorized();
+                return;
+            }
+            console.error('Erro ao descarregar documento:', err);
+            toast.error('Erro ao descarregar o documento');
+        }
     };
 
     const handleDelete = async (id) => {
