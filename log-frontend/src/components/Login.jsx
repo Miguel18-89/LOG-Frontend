@@ -74,7 +74,7 @@ export default function Login() {
         <>
             <div id='containerLogin'>
                 <div id='imageDiv'>
-                    <img src="/src/images/LOG.png" alt="LOG Logo" />
+                    <img src="./images/LOG.png" alt="LOG Logo" />
                 </div>
                 <main id='form'>
                     <CssVarsProvider >

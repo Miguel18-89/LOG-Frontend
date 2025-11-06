@@ -45,7 +45,7 @@ if (!user) return null;
             }}
         >
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <img src="/src/images/LOG.png" alt="LOG logo" style={{ display: "flex", maxHeight: "3.5rem", marginRight: "1rem" }} onClick={() => navigate('/Home')}
+                <img src="./images/LOG.png" alt="LOG logo" style={{ display: "flex", maxHeight: "3.5rem", marginRight: "1rem" }} onClick={() => navigate('/Home')}
                 />
             </Box>
 
