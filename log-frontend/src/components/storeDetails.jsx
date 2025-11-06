@@ -276,7 +276,7 @@ export default function StoreDetails() {
 
     return (
         <>
-            <Navbar />
+           <Navbar></Navbar>
             <CssVarsProvider>
                 <main style={{ paddingTop: '30px' }}>
                     <Sheet

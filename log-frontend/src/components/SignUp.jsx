@@ -147,7 +147,7 @@ export default function SignUp({ props }) {
         <>
             <div id='containerLogin' style={{ maxHeight: "100vh" }}>
                 <div id='imageDiv'>
-                    <img src="./images/LOG.png" alt="LOG Logo" />
+                    <img src="/images/LOG.png" alt="LOG Logo" />
                 </div>
                 <main id='form'>
                     <CssVarsProvider >
