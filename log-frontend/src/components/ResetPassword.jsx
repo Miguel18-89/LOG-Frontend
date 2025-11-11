@@ -9,8 +9,8 @@ import Button from '@mui/joy/Button';
 import { useParams, useNavigate } from 'react-router-dom';
 import React, { useState, useEffect } from "react";
 import api from '../services/api'
-import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
+import '../styles/resetPasswordForm.css';
 
 
 
@@ -94,12 +94,12 @@ const ResetPassword = () => {
         <div id='imageDiv'>
           <img src="/images/LOG.png" alt="LOG Logo" />
         </div>
-        <main id='form'>
+        <main id='resetPasswordForm'>
           <CssVarsProvider >
             <CssBaseline />
             <Sheet
               sx={{
-                width: 400,
+                width: { xs: '90%' },
                 mx: 'auto',
                 my: 4,
                 py: 3,

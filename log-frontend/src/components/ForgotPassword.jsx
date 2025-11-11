@@ -8,8 +8,10 @@ import Input from '@mui/joy/Input';
 import Button from '@mui/joy/Button';
 import { useNavigate } from 'react-router-dom';
 import React, { useState, useEffect } from "react";
-import api from '../services/api'
+import api from '../services/api';
 import { toast } from 'react-toastify';
+import '../styles/forgotPasswordForm.css';
+
 
 export default function Login() {
     const [emailInput, setEmailInput] = useState("");
@@ -57,16 +59,16 @@ const handleSubmit = async (e) => {
                 <div id='imageDiv'>
                     <img src="/images/LOG.png" alt="LOG Logo" />
                 </div>
-                <main id='form'>
+                <main id='forgotPasswordform'>
                     <CssVarsProvider >
                         <CssBaseline />
                         <Sheet
                             sx={{
-                                width: 400,
-                                mx: 'auto', // margin left & right
-                                my: 4, // margin top & bottom
-                                py: 3, // padding top & bottom
-                                px: 2, // padding left & right
+                                width: { xs: '90%' },
+                                mx: 'auto', 
+                                my: 4,
+                                py: 3,
+                                px: 2, 
                                 display: 'flex',
                                 flexDirection: 'column',
                                 gap: 2,

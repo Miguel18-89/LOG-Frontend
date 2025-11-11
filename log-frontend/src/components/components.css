@@ -37,12 +37,11 @@ nav a:hover {
 }
 
 main {
-  padding: 2rem;
   background-color: var(--light);
   border-radius: var(--border-radius);
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   max-width: 900px;
-  margin: 8rem auto;
+
 }
 
 h1, h2 {
@@ -90,61 +89,12 @@ body {
     overflow-y: scroll;
 }
 
-#containerLogin {
-    width: 100%;
-    display: flex;
-    flex-direction: row;
-    justify-self: center;
-    align-items: center;
-    position: relative;
-}
 
-#imageDiv {
-    display: flex;
-    width: 45%;
-    height: 100vh;
-    justify-content: center;
-    align-items: center;
-}
 
-#containerLogin img {
-    width: 80%;
-}
+/*
 
-#verticalSeparatorDiv {
-    background-color: grey;
-    height: 72vh;
-    width: 0.1%;
-    border-radius: 10px;
-}
+*/
 
-#containerLogin #form {
-    display: flex;
-    align-items: center;
-    width: 55%;
-    position: relative;
-}
-
-#passwordDiv {
-    display: flex;
-    flex-direction: row;
-}
-
-#namesDiv {
-    display: flex;
-    flex-direction: row;
-}
-
-#closeIcon {
-    display: flex;
-    align-items: center;
-    border-radius: 10px;
-    color: white;
-    font-size: 20px;
-    position: absolute;
-    right: 195px;
-    top: 40px;
-}
 
 /* NAVBAR */
 

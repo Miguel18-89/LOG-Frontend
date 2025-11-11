@@ -6,12 +6,11 @@ import FormControl from '@mui/joy/FormControl';
 import FormLabel from '@mui/joy/FormLabel';
 import Input from '@mui/joy/Input';
 import Button from '@mui/joy/Button';
-import CloseIcon from '@mui/icons-material/Close';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api'
 import { toast } from 'react-toastify';
-
+import '../Styles/SignUp.css';
 
 
 export default function SignUp({ props }) {
@@ -149,13 +148,12 @@ export default function SignUp({ props }) {
                 <div id='imageDiv'>
                     <img src="/images/LOG.png" alt="LOG Logo" />
                 </div>
-                <main id='form'>
+                <main id='SignUpForm'>
                     <CssVarsProvider >
                         <CssBaseline />
                         <Sheet
                             sx={{
-                                width: 700,
-                                mx: 'auto',
+                                width: { xs: '90%' },
                                 my: 4,
                                 py: 3,
                                 px: 2,
