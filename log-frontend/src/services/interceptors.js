@@ -40,8 +40,6 @@ export const setupInterceptors = (navigate) => {
             navigate('/', { replace: true });
           }
 
-          // opcional: mostrar toast com message aqui (depende do teu UI)
-          // toast.error(message);
 
         } finally {
           setTimeout(() => {

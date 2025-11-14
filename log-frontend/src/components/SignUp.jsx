@@ -10,7 +10,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api'
 import { toast } from 'react-toastify';
-import '../Styles/SignUp.css';
+import '../styles/SignUp.css';
 
 
 export default function SignUp({ props }) {

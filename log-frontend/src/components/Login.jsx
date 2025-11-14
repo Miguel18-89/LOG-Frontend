@@ -11,7 +11,7 @@ import React, { useState, useEffect } from "react";
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
-import '../Styles/Login.css';
+import '../styles/Login.css';
 
 export default function Login() {
     const [emailInput, setEmailInput] = useState("");
