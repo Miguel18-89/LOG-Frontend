@@ -13,6 +13,7 @@ import Navbar from './Navbar';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api'
 import { toast } from 'react-toastify';
+import '../styles/HomePage.css';
 
 export default function NewStore() {
     const navigate = useNavigate();
@@ -192,10 +193,10 @@ export default function NewStore() {
             <div><Navbar></Navbar></div>
             <div>
                 <CssVarsProvider>
-                    <main style={{ padding: '1.5rem' }}>
+                    <main className="store-container" >
                         <Sheet
                             sx={{
-                                maxWidth: 1000,
+                                maxWidth: "100%",
                                 mx: 'auto',
                                 py: 3,
                                 px: 2,

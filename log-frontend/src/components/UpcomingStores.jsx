@@ -16,6 +16,7 @@ import Option from '@mui/joy/Option';
 import FormControl from '@mui/joy/FormControl';
 import FormLabel from '@mui/joy/FormLabel';
 import Input from '@mui/joy/Input';
+import '../styles/HomePage.css';
 
 const statusColors = {
     //notStarted: '#B0BEC5',   // cinza
@@ -85,7 +86,7 @@ export default function UpCommingStores() {
         <>
             <Navbar />
             <CssVarsProvider>
-                <main style={{ padding: '1.5rem' }}>
+                <main className="store-container">
                     <Sheet
                         sx={{
                             mx: 'auto',
@@ -98,6 +99,7 @@ export default function UpCommingStores() {
                     >
                         <Typography
                             level="h4"
+                            className="header-title"
                             sx={{
                                 mb: 2,
                                 fontWeight: 'bold',
@@ -119,6 +121,7 @@ export default function UpCommingStores() {
                                 variant="soft"
                             />
                         </FormControl>
+                        <div className="responsive-table-wrapper">
                         <Table borderAxis="xBetween" size="sm" stripe="odd">
                             <thead>
                                 <tr>
@@ -185,9 +188,10 @@ export default function UpCommingStores() {
                                     ))}
                             </tbody>
                         </Table>
-                        <br />
+                        </div>
                         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', gap: '16px' }}>
                             <Box
+                            className="pagination-controls"
                                 sx={{
                                     display: 'flex',
                                     justifyContent: 'space-between',
@@ -217,6 +221,7 @@ export default function UpCommingStores() {
                                             Resultados por página:
                                         </Typography>
                                         <Select
+                                        className="page-size-select"
                                             value={pageSize}
                                             onChange={(_, value) => {
                                                 setPageSize(Number(value));

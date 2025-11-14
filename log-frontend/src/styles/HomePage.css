@@ -1,0 +1,215 @@
+/* ---------------------------
+   Área principal
+---------------------------- */
+
+.store-container {
+    padding: 1.5rem;
+    margin-top: 2rem;
+    width: 100%;
+    max-width: 50%; /* Adicione isto */
+    margin-left: auto;  /* Adicione isto */
+    margin-right: auto; /* Adicione isto */
+}
+
+/* Título da página */
+.header-title {
+    text-align: center;
+}
+
+/* ---------------------------
+   TABELA RESPONSIVA
+---------------------------- */
+
+/* Wrapper para permitir scroll horizontal em mobile */
+.responsive-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 1rem;
+}
+
+/* Evita que as colunas quebrem (com exceções abaixo) */
+.responsive-table-wrapper table th,
+.responsive-table-wrapper table td {
+    white-space: nowrap;
+}
+
+/* PERMITIR QUEBRA NO PRIMEIRO TH E TD */
+.responsive-table-wrapper table th:first-child,
+.responsive-table-wrapper table td:first-child {
+    white-space: normal !important;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    max-width: 180px;
+}
+
+/* ---------------------------
+   PAGINAÇÃO
+---------------------------- */
+.pagination-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.page-size-select {
+    min-width: 80px;
+}
+
+/* ---------------------------
+   RESPONSIVIDADE
+---------------------------- */
+
+/* ----------- TABLETS (<= 992px) ----------- */
+@media (max-width: 992px) {
+    .store-container {
+        padding: 1rem;
+        max-width: 100%;
+        margin-top: 0;
+    }
+
+    .responsive-table-wrapper table th,
+    .responsive-table-wrapper table td {
+        font-size: 0.85rem;
+    }
+
+    .pagination-controls {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+}
+
+/* ----------- TELEMÓVEIS (<= 600px) ----------- */
+@media (max-width: 600px) {
+
+    .store-container {
+        padding: 0.5rem;
+    }
+
+    .header-title {
+        font-size: 1.3rem;
+    }
+
+    /* Reduzir texto */
+    .responsive-table-wrapper table th,
+    .responsive-table-wrapper table td {
+        font-size: 0.75rem;
+        padding: 6px;
+    }
+
+    /* Esconder colunas não essenciais no telemóvel */
+    /* 3: Regional, 6: 1ª Fase, 7: 2ª Fase */
+    .responsive-table-wrapper table th:nth-child(3),
+    .responsive-table-wrapper table td:nth-child(3),
+    .responsive-table-wrapper table th:nth-child(4),
+    .responsive-table-wrapper table td:nth-child(4),
+    .responsive-table-wrapper table th:nth-child(5),
+    .responsive-table-wrapper table td:nth-child(5),
+    .responsive-table-wrapper table th:nth-child(8),
+    .responsive-table-wrapper table td:nth-child(8) {
+        display: none;
+    }
+
+/* 1ª coluna – Nome */
+.responsive-table-wrapper table th:nth-child(1),
+.responsive-table-wrapper table td:nth-child(1) {
+    width: 40%; /* ajusta aqui */
+    width: 40%;
+    white-space: normal; /* deixa quebrar texto */
+    word-break: break-word;
+}
+
+/* 2ª coluna – Número */
+.responsive-table-wrapper table th:nth-child(2),
+.responsive-table-wrapper table td:nth-child(2) {
+    width: 15%;
+    text-align: center;
+}
+
+/* 3ª coluna – Regional */
+.responsive-table-wrapper table th:nth-child(3),
+.responsive-table-wrapper table td:nth-child(3) {
+   width: 10%;
+    text-align: center;
+}
+
+/* 4ª coluna – Survey */
+.responsive-table-wrapper table th:nth-child(4),
+.responsive-table-wrapper table td:nth-child(4) {
+    width: 10%;
+    text-align: center;
+}
+
+/* 5ª coluna – Aprovisionamento */
+.responsive-table-wrapper table th:nth-child(5),
+.responsive-table-wrapper table td:nth-child(5) {
+    width: 10%;
+    text-align: center;
+}
+
+/* 6ª coluna – 1ª Fase */
+.responsive-table-wrapper table th:nth-child(6),
+.responsive-table-wrapper table td:nth-child(6) {
+    width: 15%;
+    text-align: center;
+}
+
+/* 7ª coluna – 2ª Fase */
+.responsive-table-wrapper table th:nth-child(7),
+.responsive-table-wrapper table td:nth-child(7) {
+    width: 15%;
+    text-align: center;
+}
+
+/* 8ª coluna – Abertura */
+.responsive-table-wrapper table th:nth-child(8),
+.responsive-table-wrapper table td:nth-child(8) {
+    width: 15%;
+    text-align: center;
+}
+
+/* 9ª coluna – Detalhes */
+.responsive-table-wrapper table th:nth-child(9),
+.responsive-table-wrapper table td:nth-child(9) {
+    width: 15%;
+    text-align: center;
+}
+
+
+    /* Controles de página reorganizados */
+    .pagination-controls {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+    }
+
+    .page-size-select {
+        width: 100%;
+    }
+}
+
+/* ----------- TELEMÓVEIS MUITO PEQUENOS (<= 400px) ----------- */
+@media (max-width: 400px) {
+
+    .responsive-table-wrapper table th,
+    .responsive-table-wrapper table td {
+        font-size: 0.7rem;
+        padding: 4px;
+    }
+
+    /* Esconder coluna "Abertura" para evitar quebra extrema */
+    .responsive-table-wrapper table th:nth-child(8),
+    .responsive-table-wrapper table td:nth-child(8) {
+        display: none;
+    }
+
+    /* Ajustar mais ainda a coluna Nome */
+    .responsive-table-wrapper table th:first-child,
+    .responsive-table-wrapper table td:first-child {
+        width: 20%;
+    }
+
+    
+}

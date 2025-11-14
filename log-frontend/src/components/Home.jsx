@@ -16,6 +16,7 @@ import Option from '@mui/joy/Option';
 import FormControl from '@mui/joy/FormControl';
 import FormLabel from '@mui/joy/FormLabel';
 import Input from '@mui/joy/Input';
+import '../styles/HomePage.css';
 
 const statusColors = {
     partial: '#fbc02d',
@@ -78,12 +79,11 @@ export default function StoreList() {
         fetchStores();
     }, [page, pageSize, searchTerm]);
 
-
     return (
         <>
             <Navbar />
             <CssVarsProvider>
-                <main style={{ padding: '1.5rem' }}>
+                <main className="store-container">
                     <Sheet
                         sx={{
                             mx: 'auto',
@@ -96,6 +96,7 @@ export default function StoreList() {
                     >
                         <Typography
                             level="h4"
+                            className="header-title"
                             sx={{
                                 mb: 2,
                                 fontWeight: 'bold',
@@ -105,6 +106,7 @@ export default function StoreList() {
                         >
                             Lista de Lojas
                         </Typography>
+
                         <FormControl size="sm" sx={{ mb: 2 }}>
                             <FormLabel>Pesquisar loja</FormLabel>
                             <Input
@@ -117,61 +119,67 @@ export default function StoreList() {
                                 variant="soft"
                             />
                         </FormControl>
-                        <Table borderAxis="xBetween" size="sm" stripe="odd">
-                            <thead>
-                                <tr>
-                                    <th style={{  width: '20%' }}>Nome</th>
-                                    <th style={{ textAlign: 'center' }}>Número</th>
-                                    <th style={{ textAlign: 'center' }}>Regional</th>
-                                    <th style={{ textAlign: 'center' }}>Survey</th>
-                                    <th style={{ textAlign: 'center' }}>Aprovisionamento</th>
-                                    <th style={{ textAlign: 'center' }}>1ª Fase</th>
-                                    <th style={{ textAlign: 'center' }}>2ª Fase</th>
-                                    <th style={{ textAlign: 'center' }}>Abertura</th>
-                                    <th style={{ textAlign: 'center' }}>Detalhes</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {Array.isArray(stores) &&
-                                    stores.map((store) => (
-                                        <tr key={store.id}>
-                                            <td>{store.storeName}</td>
-                                            <td style={{ textAlign: 'center' }}>PT {store.storeNumber}</td>
-                                            <td style={{ textAlign: 'center' }}>{store.storeRegion}</td>
-                                            <td style={{ textAlign: 'center' }}>
-                                                <StatusDot value={getStatus(store.storeSurveys)} />
-                                            </td>
-                                            <td style={{ textAlign: 'center' }}>
-                                                <StatusDot value={getStatus(store.storeProvisioning)} />
-                                            </td>
-                                            <td style={{ textAlign: 'center' }}>
-                                                <StatusDot value={getStatus(store.storePhase1)} />
-                                            </td>
-                                            <td style={{ textAlign: 'center' }}>
-                                                <StatusDot value={getStatus(store.storePhase2)} />
-                                            </td>
-                                            <td style={{ textAlign: 'center' }}>
-                                                {store.storeSurveys?.[0]?.surveyOpeningDate
-                                                    ? new Date(store.storeSurveys[0].surveyOpeningDate).toLocaleDateString('pt-PT')
-                                                    : '---'}
-                                            </td>
-                                            <td style={{ textAlign: 'center' }}>
-                                                <Tooltip title="Ver detalhes" placement="top">
-                                                    <IconButton
-                                                        size="sm"
-                                                        variant="plain"
-                                                        color="neutral"
-                                                        onClick={() => navigate(`/stores/${store.id}`)}
-                                                    >
-                                                        <VisibilityIcon />
-                                                    </IconButton>
-                                                </Tooltip>
-                                            </td>
-                                        </tr>
-                                    ))}
-                            </tbody>
-                        </Table>
+
+                        {/* Wrapper responsivo */}
+                        <div className="responsive-table-wrapper">
+                            <Table borderAxis="xBetween" size="sm" stripe="odd">
+                                <thead>
+                                    <tr>
+                                        <th style={{ width: '20%' }}>Nome</th>
+                                        <th style={{ textAlign: 'center' }}>Número</th>
+                                        <th style={{ textAlign: 'center' }}>Regional</th>
+                                        <th style={{ textAlign: 'center' }}>Survey</th>
+                                        <th style={{ textAlign: 'center' }}>Aprovisionamento</th>
+                                        <th style={{ textAlign: 'center' }}>1ª Fase</th>
+                                        <th style={{ textAlign: 'center' }}>2ª Fase</th>
+                                        <th style={{ textAlign: 'center' }}>Abertura</th>
+                                        <th style={{ textAlign: 'center' }}>Detalhes</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {Array.isArray(stores) &&
+                                        stores.map((store) => (
+                                            <tr key={store.id}>
+                                                <td>{store.storeName}</td>
+                                                <td style={{ textAlign: 'center' }}>PT {store.storeNumber}</td>
+                                                <td style={{ textAlign: 'center' }}>{store.storeRegion}</td>
+                                                <td style={{ textAlign: 'center' }}>
+                                                    <StatusDot value={getStatus(store.storeSurveys)} />
+                                                </td>
+                                                <td style={{ textAlign: 'center' }}>
+                                                    <StatusDot value={getStatus(store.storeProvisioning)} />
+                                                </td>
+                                                <td style={{ textAlign: 'center' }}>
+                                                    <StatusDot value={getStatus(store.storePhase1)} />
+                                                </td>
+                                                <td style={{ textAlign: 'center' }}>
+                                                    <StatusDot value={getStatus(store.storePhase2)} />
+                                                </td>
+                                                <td style={{ textAlign: 'center' }}>
+                                                    {store.storeSurveys?.[0]?.surveyOpeningDate
+                                                        ? new Date(store.storeSurveys[0].surveyOpeningDate).toLocaleDateString('pt-PT')
+                                                        : '---'}
+                                                </td>
+                                                <td style={{ textAlign: 'center' }}>
+                                                    <Tooltip title="Ver detalhes" placement="top">
+                                                        <IconButton
+                                                            size="sm"
+                                                            variant="plain"
+                                                            color="neutral"
+                                                            onClick={() => navigate(`/stores/${store.id}`)}
+                                                        >
+                                                            <VisibilityIcon />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                </tbody>
+                            </Table>
+                        </div>
+
                         <Box
+                            className="pagination-controls"
                             sx={{
                                 display: 'flex',
                                 justifyContent: 'space-between',
@@ -195,12 +203,14 @@ export default function StoreList() {
                                     <Typography level="body-sm" sx={{ ml: 1 }}>Completo</Typography>
                                 </Box>
                             </Box>
+
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
                                     <Typography level="body-sm" sx={{ mr: 1 }}>
                                         Resultados por página:
                                     </Typography>
                                     <Select
+                                        className="page-size-select"
                                         value={pageSize}
                                         onChange={(_, value) => {
                                             setPageSize(Number(value));
@@ -215,17 +225,16 @@ export default function StoreList() {
                                         ))}
                                     </Select>
                                 </Box>
-                                <Button
-                                    disabled={page === 1}
-                                    onClick={() => setPage((prev) => prev - 1)}
-                                >
+
+                                <Button disabled={page === 1} onClick={() => setPage((prev) => prev - 1)}>
                                     Anterior
                                 </Button>
-                                <Typography level="body-md">Página {page} de {Math.ceil(total / pageSize)}</Typography>
-                                <Button
-                                    disabled={page * pageSize >= total}
-                                    onClick={() => setPage((prev) => prev + 1)}
-                                >
+
+                                <Typography level="body-md">
+                                    Página {page} de {Math.ceil(total / pageSize)}
+                                </Typography>
+
+                                <Button disabled={page * pageSize >= total} onClick={() => setPage((prev) => prev + 1)}>
                                     Seguinte
                                 </Button>
                             </Box>

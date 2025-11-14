@@ -20,6 +20,7 @@ import { showConfirmationToast } from '../utils/showConfirmationToast';
 import FormControl from '@mui/joy/FormControl';
 import FormLabel from '@mui/joy/FormLabel';
 import Input from '@mui/joy/Input';
+import '../styles/AllUsers.css';
 
 const roleLabels = {
     0: 'Instalador',
@@ -124,7 +125,8 @@ export default function UserList() {
         <>
             <Navbar />
             <CssVarsProvider>
-                <main style={{ padding: '1.5rem' }}>
+                <main className="store-container"
+                >
                     <Sheet
                         sx={{
                             maxWidth: 1000,
@@ -138,6 +140,7 @@ export default function UserList() {
                     >
                         <Typography
                             level="h4"
+                            className="header-title"
                             sx={{
                                 mb: 2,
                                 fontWeight: 'bold',
@@ -159,6 +162,7 @@ export default function UserList() {
                                 variant="soft"
                             />
                         </FormControl>
+                        <div className="responsive-table-wrapper-users">
                         <Table borderAxis="xBetween" size="sm" stripe="odd">
                             <thead>
                                 <tr>
@@ -255,13 +259,16 @@ export default function UserList() {
                                     })}
                             </tbody>
                         </Table>
-                        <br />
-                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                        </div>
+                        
+                        <Box className="pagination-controls" 
+                        sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
                                 <Typography level="body-sm" sx={{ mr: 1 }}>
                                     Resultados por página:
                                 </Typography>
                                 <Select
+                                className="page-size-select"
                                     value={pageSize}
                                     onChange={(_, value) => {
                                         setPageSize(Number(value));
