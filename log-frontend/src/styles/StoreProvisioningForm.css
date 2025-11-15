@@ -1,0 +1,93 @@
+/* Sheet do formulário Provisioning */
+.provisioning-form-sheet {
+    max-width: 100%;
+    margin: 0 auto 2rem auto;
+}
+
+/* Área de botões de ação no topo - ALINHADOS À DIREITA */
+.provisioning-action-buttons-area {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    width: 100%;
+}
+
+/* Informação de atualização */
+.provisioning-update-info {
+    display: flex;
+    align-items: center;
+    text-align: right;
+}
+
+/* Botões de edição agrupados */
+.provisioning-edit-buttons-group {
+    display: flex;
+}
+
+/* Linha de campos em flex */
+.provisioning-form-row {
+    display: flex;
+    gap: 16px;
+}
+
+/* Checkboxes em linha */
+.provisioning-checkbox-row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+/* ----------- RESPONSIVIDADE ----------- */
+
+/* Tablets (<= 992px) */
+@media (max-width: 992px) {
+    .provisioning-form-sheet {
+        max-width: 100%;
+    }
+}
+
+/* Telemóveis (<= 768px) */
+@media (max-width: 768px) {
+    .provisioning-action-buttons-area {
+        align-items: flex-end;
+    }
+
+    .provisioning-update-info {
+        flex-direction: column;
+        align-items: flex-end;
+    }
+}
+
+/* Telemóveis (<= 600px) */
+@media (max-width: 600px) {
+
+    /* Empilhar campos verticalmente */
+    .provisioning-form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+
+    /* Forçar todos os FormControl a terem a mesma largura em mobile */
+    .provisioning-form-row .MuiFormControl-root {
+        flex: 1 1 100% !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    .provisioning-action-buttons-area {
+        margin-bottom: 0rem;
+    }
+
+    /* Checkboxes empilhados em mobile */
+    .provisioning-checkbox-row {
+        flex-direction: column;
+        gap: 8px;
+    }
+}
+
+/* Telemóveis pequenos (<= 400px) */
+@media (max-width: 400px) {
+    .provisioning-edit-buttons-group {
+        justify-content: flex-end;
+    }
+}

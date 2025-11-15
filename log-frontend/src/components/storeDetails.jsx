@@ -30,6 +30,7 @@ import { toast } from 'react-toastify';
 import { showConfirmationToast } from '../utils/showConfirmationToast';
 import DocumentUpload from './UploadDocument'
 import DocumentViewer from './storeDocuments'
+import '../styles/StoreDetails.css';
 
 
 export default function StoreDetails() {
@@ -276,13 +277,12 @@ export default function StoreDetails() {
 
     return (
         <>
-           <Navbar></Navbar>
+            <Navbar />
             <CssVarsProvider>
-                <main style={{ paddingTop: '30px' }}>
+                <main className="store-details-container">
                     <Sheet
+                        className="store-details-sheet"
                         sx={{
-                            
-                            mx: 'auto',
                             py: 3,
                             px: 2,
                             display: 'flex',
@@ -291,16 +291,63 @@ export default function StoreDetails() {
                             borderRadius: 'sm',
                             boxShadow: 'lg',
                             backgroundColor: '#fff',
-                            position: 'relative',
-
                         }}
                         variant="outlined"
                     >
-                        <Typography level="h4" sx={{ fontWeight: 'bold', color: '#f57c00' }}>
+                        {/* Botões de ação no topo, alinhados à direita */}
+                        <div className="action-buttons-area">
+                            {!isEditing ? (
+                                <>
+                                    {isValidDate(formData.updated_at) && (
+                                        <Typography level="body-xs" sx={{ color: 'neutral.500' }}>
+                                            Atualizado por {formData.updatedBy.name ?? 'Desconhecido'} em{" "}
+                                            {format(new Date(formData.updated_at), "dd/MM/yyyy 'às' HH:mm", { locale: pt })}
+                                        </Typography>
+                                    )}
+                                    {[1, 2].includes(currentLoggedUser.role) && (
+                                        <div className="edit-buttons-group">
+                                            <Tooltip title="Editar">
+                                                <IconButton onClick={() => setIsEditing(true)}>
+                                                    <EditIcon />
+                                                </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title="Eliminar Loja">
+                                                <IconButton onClick={handleDelete}>
+                                                    <DeleteIcon />
+                                                </IconButton>
+                                            </Tooltip>
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
+                                <div className="edit-buttons-group">
+                                    <Tooltip title="Guardar">
+                                        <IconButton onClick={handleSave}>
+                                            <SaveIcon />
+                                        </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title="Sair sem guardar">
+                                        <IconButton
+                                            color="neutral"
+                                            onClick={() => {
+                                                setFormData(store);
+                                                setIsEditing(false);
+                                            }}
+                                        >
+                                            <CloseIcon />
+                                        </IconButton>
+                                    </Tooltip>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Título */}
+                        <Typography level="h4" sx={{ fontWeight: 'bold', color: '#f57c00', mb: 2 }}>
                             Detalhes da Loja
                         </Typography>
 
-                        <div style={{ display: 'flex', gap: '16px' }}>
+                        {/* Resto do formulário */}
+                        <div className="form-row">
                             <FormControl sx={{ flex: 2 }}>
                                 <FormLabel>Nome da Loja</FormLabel>
                                 <Input
@@ -337,9 +384,9 @@ export default function StoreDetails() {
                                     <Option value="Sul">Sul</Option>
                                     <Option value="Oeste">Oeste</Option>
                                 </Select>
-
                             </FormControl>
                         </div>
+
                         <FormControl>
                             <FormLabel>Morada</FormLabel>
                             <Input
@@ -349,10 +396,12 @@ export default function StoreDetails() {
                                 readOnly={!isEditing}
                             />
                         </FormControl>
+
                         <Typography level="h5" sx={{ mt: 2, fontWeight: 'bold' }}>
                             Fiscalização
                         </Typography>
-                        <div style={{ display: 'flex', gap: '16px' }}>
+
+                        <div className="form-row">
                             <FormControl sx={{ flex: 1 }}>
                                 <FormLabel>Nome</FormLabel>
                                 <Input
@@ -372,55 +421,19 @@ export default function StoreDetails() {
                                 />
                             </FormControl>
                         </div>
-                        <DocumentViewer documents={documents} isEditing={isEditing} onDeleteSuccess={fetchDocuments} ></DocumentViewer>
-                        {isEditing ? (<DocumentUpload storeId={store.id} onUploadSuccess={fetchDocuments}></DocumentUpload>) : null}
 
-                        <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: '8px' }}>
+                        <DocumentViewer
+                            documents={documents}
+                            isEditing={isEditing}
+                            onDeleteSuccess={fetchDocuments}
+                        />
 
-                            {!isEditing ? (
-                                <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '8px', gap: '6px' }}>
-                                    {isValidDate(formData.updated_at) && (
-                                        <Typography level="body-xs" sx={{ color: 'neutral.500' }}>
-                                            Atualizado por {formData.updatedBy.name ?? 'Desconhecido'} em{" "}
-                                            {format(new Date(formData.updated_at), "dd/MM/yyyy 'às' HH:mm", { locale: pt })}
-                                        </Typography>
-                                    )}
-                                    {[1, 2].includes(currentLoggedUser.role) && (
-                                        <Box>
-                                            <Tooltip title="Editar">
-                                                <IconButton onClick={() => setIsEditing(true)}>
-                                                    <EditIcon />
-                                                </IconButton>
-                                            </Tooltip>
-                                            <Tooltip title="Eliminar Loja">
-                                                <IconButton onClick={handleDelete}>
-                                                    <DeleteIcon />
-                                                </IconButton>
-                                            </Tooltip>
-                                        </Box>
-                                    )}
-                                </div>
-                            ) : (
-                                <Box sx={{ display: 'flex', gap: 1 }}>
-                                    <Tooltip title="Guardar">
-                                        <IconButton onClick={handleSave}>
-                                            <SaveIcon />
-                                        </IconButton>
-                                    </Tooltip>
-                                    <Tooltip title="Sair sem guardar">
-                                        <IconButton
-                                            color="neutral"
-                                            onClick={() => {
-                                                setFormData(store);
-                                                setIsEditing(false);
-                                            }}
-                                        >
-                                            <CloseIcon />
-                                        </IconButton>
-                                    </Tooltip>
-                                </Box>
-                            )}
-                        </div>
+                        {isEditing && (
+                            <DocumentUpload
+                                storeId={store.id}
+                                onUploadSuccess={fetchDocuments}
+                            />
+                        )}
                     </Sheet>
                     {survey && (
                         <StoreSurveyForm
@@ -446,14 +459,12 @@ export default function StoreDetails() {
                             storeId={store.id}
                         />
                     )}
-
                     {comments && (
                         <StoreComments
                             initialData={comments}
                             storeId={store.id}
                         />
                     )}
-
                 </main>
             </CssVarsProvider>
         </>

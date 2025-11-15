@@ -21,6 +21,7 @@ import api from '../services/api';
 import { format } from 'date-fns';
 import { pt } from 'date-fns/locale';
 import { toast } from 'react-toastify';
+import '../styles/StoreProvisioningForm.css';
 
 export default function StoreProvisioningForm({ storeId, initialData }) {
     const [provisioning, setProvisioning] = useState("")
@@ -135,9 +136,9 @@ export default function StoreProvisioningForm({ storeId, initialData }) {
 
     return (
         <Sheet
+            className="provisioning-form-sheet"
             sx={{
                 position: 'relative',
-                //width: 700,
                 mx: 'auto',
                 py: 3,
                 px: 2,
@@ -151,27 +152,27 @@ export default function StoreProvisioningForm({ storeId, initialData }) {
             }}
             variant="outlined"
         >
-            <Typography level="h4" sx={{ fontWeight: 'bold', color: '#f57c00' }}>
-                Aprovisionamento
-            </Typography>
-
-            <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: '8px' }}>
+            {/* Botões de ação no topo, alinhados à direita */}
+            <div className="provisioning-action-buttons-area">
                 {!isEditing ? (
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '8px', gap: '6px' }}>
+                    <>
                         {isValidDate(formData.updated_at) && (
                             <Typography level="body-xs" sx={{ color: 'neutral.500' }}>
                                 Atualizado por {updatedByName ?? 'Desconhecido'} em {format(new Date(formData.updated_at), "dd/MM/yyyy 'às' HH:mm", { locale: pt })}
                             </Typography>
                         )}
-
-                        <Tooltip title="Editar">
-                            <IconButton onClick={() => setIsEditing(true)}>
-                                <EditIcon />
-                            </IconButton>
-                        </Tooltip>
-                    </div>
+                        {[1, 2].includes(currentLoggedUser.role) && (
+                            <div className="provisioning-edit-buttons-group">
+                                <Tooltip title="Editar">
+                                    <IconButton onClick={() => setIsEditing(true)}>
+                                        <EditIcon />
+                                    </IconButton>
+                                </Tooltip>
+                            </div>
+                        )}
+                    </>
                 ) : (
-                    <Box sx={{ display: 'flex', gap: 1 }}>
+                    <div className="provisioning-edit-buttons-group">
                         <Tooltip title="Guardar">
                             <IconButton onClick={handleSave}>
                                 <SaveIcon />
@@ -188,11 +189,16 @@ export default function StoreProvisioningForm({ storeId, initialData }) {
                                 <CloseIcon />
                             </IconButton>
                         </Tooltip>
-                    </Box>
+                    </div>
                 )}
             </div>
-            <div style={{ display: 'flex', gap: '16px' }}>
 
+            {/* Título */}
+            <Typography level="h4" sx={{ fontWeight: 'bold', color: '#f57c00' }}>
+                Aprovisionamento
+            </Typography>
+
+            <div className="provisioning-checkbox-row">
                 <Checkbox
                     label="Encomendado"
                     checked={formData.ordered}
@@ -213,9 +219,7 @@ export default function StoreProvisioningForm({ storeId, initialData }) {
                 />
             </div>
 
-            <div style={{ display: 'flex', gap: '16px' }}>
-
-
+            <div className="provisioning-form-row">
                 <FormControl sx={{ flex: 1 }}>
                     <FormLabel>Número de tracking</FormLabel>
                     <Input
@@ -232,7 +236,6 @@ export default function StoreProvisioningForm({ storeId, initialData }) {
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         size="ml"
-                                        //variant="soft"
                                         color="neutral"
                                     >
                                         <SearchIcon />
@@ -248,9 +251,7 @@ export default function StoreProvisioningForm({ storeId, initialData }) {
                 <FormLabel>Status</FormLabel>
                 <Select
                     size="lg"
-                    sx={{
-                        minHeight: '48px'
-                    }}
+                    sx={{ minHeight: '48px' }}
                     value={formData.status}
                     onChange={(e, val) => handleChange('status', parseInt(val))}
                     disabled={!isEditing}

@@ -20,6 +20,7 @@ import api from '../services/api';
 import { format } from 'date-fns';
 import { pt } from 'date-fns/locale';
 import { toast } from 'react-toastify';
+import '../styles/StoreSurveyForm.css';
 
 export default function StoreSurveyForm({ storeId, initialData }) {
     const [survey, setSurvey] = useState("")
@@ -109,7 +110,7 @@ export default function StoreSurveyForm({ storeId, initialData }) {
     };
 
     const handleSave = async () => {
-        
+
 
         const cleanedFormData = {
             ...formData,
@@ -169,9 +170,9 @@ export default function StoreSurveyForm({ storeId, initialData }) {
 
     return (
         <Sheet
+            className="survey-form-sheet"
             sx={{
                 position: 'relative',
-                //width: 700,
                 mx: 'auto',
                 py: 3,
                 px: 2,
@@ -185,28 +186,27 @@ export default function StoreSurveyForm({ storeId, initialData }) {
             }}
             variant="outlined"
         >
-            <Typography level="h4" sx={{ fontWeight: 'bold', color: '#f57c00' }}>
-                Survey da Loja
-            </Typography>
-
-            <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: '8px' }}>
+            {/* Botões de ação no topo, alinhados à direita */}
+            <div className="survey-action-buttons-area">
                 {!isEditing ? (
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '8px', gap: '6px' }}>
+                    <>
                         {isValidDate(formData.updated_at) && (
                             <Typography level="body-xs" sx={{ color: 'neutral.500' }}>
                                 Atualizado por {updatedByName ?? 'Desconhecido'} em {format(new Date(formData.updated_at), "dd/MM/yyyy 'às' HH:mm", { locale: pt })}
                             </Typography>
                         )}
                         {[1, 2].includes(currentLoggedUser.role) && (
-                            <Tooltip title="Editar">
-                                <IconButton onClick={() => setIsEditing(true)}>
-                                    <EditIcon />
-                                </IconButton>
-                            </Tooltip>
+                            <div className="survey-edit-buttons-group">
+                                <Tooltip title="Editar">
+                                    <IconButton onClick={() => setIsEditing(true)}>
+                                        <EditIcon />
+                                    </IconButton>
+                                </Tooltip>
+                            </div>
                         )}
-                    </div>
+                    </>
                 ) : (
-                    <Box sx={{ display: 'flex', gap: 1 }}>
+                    <div className="survey-edit-buttons-group">
                         <Tooltip title="Guardar">
                             <IconButton onClick={handleSave}>
                                 <SaveIcon />
@@ -223,10 +223,16 @@ export default function StoreSurveyForm({ storeId, initialData }) {
                                 <CloseIcon />
                             </IconButton>
                         </Tooltip>
-                    </Box>
+                    </div>
                 )}
             </div>
-            <div style={{ display: 'flex', gap: '16px' }}>
+
+            {/* Título */}
+            <Typography level="h4" sx={{ fontWeight: 'bold', color: '#f57c00' }}>
+                Survey da Loja
+            </Typography>
+
+            <div className="survey-form-row">
                 <FormControl sx={{ flex: 1 }}>
                     <FormLabel>Área de Vendas</FormLabel>
                     <Input
@@ -246,7 +252,8 @@ export default function StoreSurveyForm({ storeId, initialData }) {
                     />
                 </FormControl>
             </div>
-            <div style={{ display: 'flex', gap: '16px' }}>
+
+            <div className="survey-form-row">
                 <FormControl sx={{ flex: 1 }}>
                     <FormLabel>Data prevista para 1ª fase</FormLabel>
                     <Input
@@ -265,14 +272,11 @@ export default function StoreSurveyForm({ storeId, initialData }) {
                     />
                 </FormControl>
 
-
                 <FormControl sx={{ flex: 1 }}>
                     <FormLabel>1ª Fase: Nocturno / Diurno</FormLabel>
                     <Select
                         size="lg"
-                        sx={{
-                            minHeight: '48px'
-                        }}
+                        sx={{ minHeight: '48px' }}
                         value={formData.surveyPhase1Type}
                         onChange={(e, val) => handleChange('surveyPhase1Type', val)}
                         disabled={!isEditing}
@@ -282,7 +286,8 @@ export default function StoreSurveyForm({ storeId, initialData }) {
                     </Select>
                 </FormControl>
             </div>
-            <div style={{ display: 'flex', gap: '16px' }}>
+
+            <div className="survey-form-row">
                 <FormControl sx={{ flex: 1 }}>
                     <FormLabel>Data prevista para 2ª fase</FormLabel>
                     <Input
@@ -305,21 +310,18 @@ export default function StoreSurveyForm({ storeId, initialData }) {
                     <FormLabel>2ª Fase: Nocturno / Diurno</FormLabel>
                     <Select
                         size="lg"
-                        sx={{
-                            minHeight: '48px'
-                        }}
-
+                        sx={{ minHeight: '48px' }}
                         value={formData.surveyPhase2Type}
                         onChange={(e, val) => handleChange('surveyPhase2Type', val)}
                         disabled={!isEditing}
                     >
-
                         <Option value="Diurno">Diurno</Option>
                         <Option value="Nocturno">Nocturno</Option>
                     </Select>
                 </FormControl>
             </div>
-            <div style={{ display: 'flex', gap: '16px' }}>
+
+            <div className="survey-form-row">
                 <FormControl sx={{ flex: 1 }}>
                     <FormLabel>Data prevista para a abertura</FormLabel>
                     <Input
@@ -334,7 +336,6 @@ export default function StoreSurveyForm({ storeId, initialData }) {
                                 handleChange('surveyOpeningDate', parsed);
                             }
                         }}
-
                         readOnly={!isEditing}
                     />
                 </FormControl>
@@ -343,9 +344,7 @@ export default function StoreSurveyForm({ storeId, initialData }) {
                     <FormLabel>Headsets</FormLabel>
                     <Select
                         size="lg"
-                        sx={{
-                            minHeight: '48px'
-                        }}
+                        sx={{ minHeight: '48px' }}
                         value={formData.surveyHeadsets}
                         onChange={(e, val) => handleChange('surveyHeadsets', val)}
                         disabled={!isEditing}
@@ -355,7 +354,8 @@ export default function StoreSurveyForm({ storeId, initialData }) {
                     </Select>
                 </FormControl>
             </div>
-            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+
+            <div className="survey-checkbox-row">
                 <Checkbox
                     label="Pão Quente"
                     checked={formData.surveyHasBread}
@@ -381,7 +381,8 @@ export default function StoreSurveyForm({ storeId, initialData }) {
                     disabled={!isEditing}
                 />
             </div>
-            <div style={{ display: 'flex', gap: '16px' }}>
+
+            <div className="survey-checkbox-row">
                 <Checkbox
                     label="Teto Falso"
                     checked={formData.surveyHasFalseCeilling}
@@ -406,9 +407,7 @@ export default function StoreSurveyForm({ storeId, initialData }) {
                 <FormLabel>Status</FormLabel>
                 <Select
                     size="lg"
-                    sx={{
-                        minHeight: '48px'
-                    }}
+                    sx={{ minHeight: '48px' }}
                     value={formData.status}
                     onChange={(e, val) => handleChange('status', parseInt(val))}
                     disabled={!isEditing}

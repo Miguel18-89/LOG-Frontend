@@ -1,0 +1,168 @@
+/* Container principal dos comentários */
+.comments-container {
+    margin-top: 3rem;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0 1.5rem;
+    max-width: 900px;
+}
+
+/* Título dos comentários */
+.comments-title {
+    font-weight: bold;
+    color: #f57c00;
+    text-align: center;
+}
+
+/* Lista de comentários */
+.comments-list {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* Item individual do comentário */
+.comment-item {
+    display: flex;
+    width: 100%;
+    padding: 0;
+}
+
+/* Alinhamento do comentário próprio */
+.comment-item-own {
+    justify-content: flex-end;
+    
+}
+
+/* Alinhamento do comentário de outros */
+.comment-item-other {
+    justify-content: flex-start;
+    max-width: 90%;
+}
+
+/* Box do comentário */
+.comment-box {
+    max-width: 500px;
+    min-width: 300px;
+    width: 100%;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Box do comentário próprio */
+.comment-box-own {
+    background-color: #e3f2fd;
+    border-radius: 8px 8px 0px 8px;
+    text-align: right;
+}
+
+/* Box do comentário de outros */
+.comment-box-other {
+    background-color: #f5f5f5;
+    border-radius: 8px 8px 8px 0px;
+    text-align: left;
+}
+
+/* Cabeçalho do comentário (autor e data) */
+.comment-header {
+    font-size: 0.75rem;
+    color: #757575;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+/* Conteúdo do comentário */
+.comment-content {
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+/* Botões de ação do comentário */
+.comment-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-top: 0.5rem;
+    gap: 0.25rem;
+}
+
+/* Área de textarea para edição */
+.comment-edit-textarea {
+    width: 100%;
+    margin-top: 0.5rem;
+    resize: none;
+    border-radius: 8px;
+}
+
+/* Formulário de novo comentário */
+.new-comment-form {
+    margin-top: 2rem;
+}
+
+/* Mensagem de sem comentários */
+.no-comments-message {
+    margin-top: 1rem;
+    color: #757575;
+    text-align: center;
+    font-size: 0.875rem;
+}
+
+/* ----------- RESPONSIVIDADE ----------- */
+
+/* Tablets (<= 992px) */
+@media (max-width: 992px) {
+    .comments-container {
+        max-width: 100%;
+        padding: 0 1rem;
+    }
+
+    .comment-box {
+        max-width: 450px;
+        min-width: 250px;
+    }
+}
+
+/* Telemóveis (<= 600px) */
+@media (max-width: 600px) {
+    .comments-container {
+        padding: 0 0.5rem;
+        margin-top: 2rem;
+    }
+
+    .comment-box {
+        max-width: 100%;
+        min-width: 0;
+        width: 100%;
+    }
+
+    .comment-item {
+        padding: 0;
+    }
+
+    .new-comment-form {
+        margin-top: 1.5rem;
+    }
+}
+
+.comment-item-own {
+    justify-content: flex-end;
+    max-width: 90%;
+    align-self: flex-end; /* Adicione isto */
+}
+
+/* Telemóveis pequenos (<= 400px) */
+@media (max-width: 400px) {
+    .comments-container {
+        padding: 0 0.25rem;
+    }
+
+    .comment-box {
+        padding: 0.75rem 1rem;
+    }
+
+    .comment-actions {
+        gap: 0;
+    }
+}

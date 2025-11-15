@@ -1,0 +1,73 @@
+/* Sheet do formulário Phase 2 */
+.phase2-form-sheet {
+    max-width: 100%;
+    margin: 0 auto 2rem auto;
+}
+
+/* Área de botões de ação no topo - ALINHADOS À DIREITA */
+.phase2-action-buttons-area {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    width: 100%;
+}
+
+/* Informação de atualização */
+.phase2-update-info {
+    display: flex;
+    align-items: center;
+    text-align: right;
+}
+
+/* Botões de edição agrupados */
+.phase2-edit-buttons-group {
+    display: flex;
+}
+
+/* Checkboxes em linha */
+.phase2-checkbox-row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+/* ----------- RESPONSIVIDADE ----------- */
+
+/* Tablets (<= 992px) */
+@media (max-width: 992px) {
+    .phase2-form-sheet {
+        max-width: 100%;
+    }
+}
+
+/* Telemóveis (<= 768px) */
+@media (max-width: 768px) {
+    .phase2-action-buttons-area {
+        align-items: flex-end;
+    }
+
+    .phase2-update-info {
+        flex-direction: column;
+        align-items: flex-end;
+    }
+}
+
+/* Telemóveis (<= 600px) */
+@media (max-width: 600px) {
+    .phase2-action-buttons-area {
+        margin-bottom: 0rem;
+    }
+
+    /* Checkboxes empilhados em mobile */
+    .phase2-checkbox-row {
+        flex-direction: column;
+        gap: 8px;
+    }
+}
+
+/* Telemóveis pequenos (<= 400px) */
+@media (max-width: 400px) {
+    .phase2-edit-buttons-group {
+        justify-content: flex-end;
+    }
+}

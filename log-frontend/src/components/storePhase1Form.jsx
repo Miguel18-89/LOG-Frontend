@@ -22,7 +22,7 @@ import Speaker from '@mui/icons-material/Speaker';
 import { format } from 'date-fns';
 import { pt } from 'date-fns/locale';
 import { toast } from 'react-toastify';
-
+import '../styles/StorePhase1Form.css';
 
 
 export default function StorePhase1Form({ storeId, initialData }) {
@@ -94,12 +94,12 @@ export default function StorePhase1Form({ storeId, initialData }) {
             console.log("Dados enviados:", formData, storeId);
 
             const res = await toast.promise(
-            api.put(`/phase1/${formData.id}`, {
-                ...formData,
-                storeId,
-                userId: currentLoggedUser.id,
-            }),
-            {
+                api.put(`/phase1/${formData.id}`, {
+                    ...formData,
+                    storeId,
+                    userId: currentLoggedUser.id,
+                }),
+                {
                     pending: 'A atualizar...',
                     success: 'Actualizado com sucesso!',
                     error: 'Erro ao atualizar o survey.',
@@ -135,9 +135,9 @@ export default function StorePhase1Form({ storeId, initialData }) {
 
     return (
         <Sheet
+            className="phase1-form-sheet"
             sx={{
                 position: 'relative',
-                //width: 700,
                 mx: 'auto',
                 py: 3,
                 px: 2,
@@ -151,30 +151,27 @@ export default function StorePhase1Form({ storeId, initialData }) {
             }}
             variant="outlined"
         >
-            <Typography level="h4" sx={{ fontWeight: 'bold', color: '#f57c00' }}>
-                1ª Fase
-            </Typography>
-
-            <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: '8px' }}>
+            {/* Botões de ação no topo, alinhados à direita */}
+            <div className="phase1-action-buttons-area">
                 {!isEditing ? (
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '8px', gap: '6px' }}>
+                    <>
                         {isValidDate(formData.updated_at) && (
                             <Typography level="body-xs" sx={{ color: 'neutral.500' }}>
                                 Atualizado por {updatedByName ?? 'Desconhecido'} em {format(new Date(formData.updated_at), "dd/MM/yyyy 'às' HH:mm", { locale: pt })}
                             </Typography>
                         )}
-
-
                         {[0, 2].includes(currentLoggedUser.role) && (
-                            <Tooltip title="Editar">
-                                <IconButton onClick={() => setIsEditing(true)}>
-                                    <EditIcon />
-                                </IconButton>
-                            </Tooltip>
+                            <div className="phase1-edit-buttons-group">
+                                <Tooltip title="Editar">
+                                    <IconButton onClick={() => setIsEditing(true)}>
+                                        <EditIcon />
+                                    </IconButton>
+                                </Tooltip>
+                            </div>
                         )}
-                    </div>
+                    </>
                 ) : (
-                    <Box sx={{ display: 'flex', gap: 1 }}>
+                    <div className="phase1-edit-buttons-group">
                         <Tooltip title="Guardar">
                             <IconButton onClick={handleSave}>
                                 <SaveIcon />
@@ -191,12 +188,18 @@ export default function StorePhase1Form({ storeId, initialData }) {
                                 <CloseIcon />
                             </IconButton>
                         </Tooltip>
-                    </Box>
+                    </div>
                 )}
             </div>
-            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+
+            {/* Título */}
+            <Typography level="h4" sx={{ fontWeight: 'bold', color: '#f57c00' }}>
+                1ª Fase
+            </Typography>
+
+            <div className="phase1-checkbox-group">
                 <Gesture sx={{ fontSize: 24 }} />
-                <Typography level="title-md">Cabos  :  </Typography>
+                <Typography level="title-md">Cabos :</Typography>
                 <Checkbox
                     label="Loja"
                     checked={formData.cablesSalesArea}
@@ -223,9 +226,9 @@ export default function StorePhase1Form({ storeId, initialData }) {
                 />
             </div>
 
-            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+            <div className="phase1-checkbox-group">
                 <Speaker sx={{ fontSize: 24 }} />
-                <Typography level="title-md">Colunas : </Typography>
+                <Typography level="title-md">Colunas :</Typography>
                 <Checkbox
                     label="Loja"
                     checked={formData.speakersSalesArea}
@@ -251,13 +254,12 @@ export default function StorePhase1Form({ storeId, initialData }) {
                     disabled={!isEditing}
                 />
             </div>
+
             <FormControl>
                 <FormLabel>Status</FormLabel>
                 <Select
                     size="lg"
-                    sx={{
-                        minHeight: '48px'
-                    }}
+                    sx={{ minHeight: '48px' }}
                     value={formData.status}
                     onChange={(e, val) => handleChange('status', parseInt(val))}
                     disabled={!isEditing}

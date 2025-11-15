@@ -12,7 +12,7 @@ import {
     ListItemContent,
     Avatar,
 } from '@mui/joy';
-import api from '../services/api'; // ajusta o caminho conforme tua estrutura
+import api from '../services/api';
 import { format } from 'date-fns';
 import { pt } from 'date-fns/locale';
 import EditIcon from '@mui/icons-material/Edit';
@@ -22,6 +22,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import Tooltip from '@mui/joy/Tooltip';
 import { toast } from 'react-toastify';
 import { showConfirmationToast } from '../utils/showConfirmationToast';
+import '../styles/StoreComments.css';
 
 
 
@@ -81,7 +82,7 @@ export default function StoreComments({ storeId, initialData }) {
                         message: newComment,
                         updated: true,
                         userId: currentLoggedUser.id,
-                        storeId:storeId
+                        storeId: storeId
                     }
                 );
             } else {
@@ -128,13 +129,13 @@ export default function StoreComments({ storeId, initialData }) {
 
 
     return (
-        <Box sx={{ mt: 6, mx: 'auto', px: 3, maxWidth: 900 }}>
-            <Typography level="title-lg" fontWeight="bold" sx={{ color: '#f57c00', textAlign: 'center' }}>
+        <Box className="comments-container">
+            <Typography level="title-lg" className="comments-title">
                 Comentários
             </Typography>
 
             {storeComments.length > 0 ? (
-                <List sx={{ mt: 2, gap: 2 }}>
+                <List className="comments-list">
                     {storeComments.map((comment) => {
                         const isOwnComment = comment.created_by === currentLoggedUser.id;
                         const isEdited = comment.updated === true;
@@ -143,67 +144,25 @@ export default function StoreComments({ storeId, initialData }) {
                         return (
                             <ListItem
                                 key={comment.id}
-                                sx={{
-                                    display: 'flex',
-                                    width: '100%',
-                                    justifyContent: isOwnComment ? 'flex-end' : 'flex-start',
-                                    px: 0,
-                                }}
+                                className={`comment-item ${isOwnComment ? 'comment-item-own' : 'comment-item-other'}`}
                             >
-                                <Box
-                                    sx={{
-                                        maxWidth: 500,
-                                        minWidth: 300,
-                                        width: '100%',
-                                        bgcolor: isOwnComment ? 'primary.softBg' : 'neutral.softBg',
-                                        px: 2,
-                                        py: 1.5,
-                                        borderRadius: isOwnComment
-                                            ? '8px 8px 0px 8px'
-                                            : '8px 8px 8px 0px',
-                                        boxShadow: 'sm',
-                                        textAlign: isOwnComment ? 'right' : 'left',
-                                    }}
-                                >
-                                    <Typography
-                                        level="body-xs"
-                                        sx={{
-                                            color: 'neutral.500',
-                                            textAlign: isOwnComment ? 'right' : 'left',
-                                            flex: 1,
-                                            fontWeight: "xl"
-                                        }}
-                                    >
+                                <Box className={`comment-box ${isOwnComment ? 'comment-box-own' : 'comment-box-other'}`}>
+                                    <Typography level="body-xs" className="comment-header">
                                         {comment.createdBy.name ?? 'Desconhecido'} —{' '}
                                         {safeFormatDate(comment.created_at)}
                                         {isEdited && ' (editado)'}
                                     </Typography>
+
                                     {isEditing ? (
                                         <>
                                             <Textarea
+                                                className="comment-edit-textarea"
                                                 minRows={2}
                                                 value={newComment}
                                                 onChange={(e) => setNewComment(e.target.value)}
                                                 placeholder="Edita o teu comentário..."
-                                                sx={{
-                                                    width: '100%',
-                                                    mt: 0.5,
-                                                    resize: 'none',
-                                                    borderRadius: 'md',
-                                                    bgcolor: 'background.surface',
-                                                }}
                                             />
-                                            <Box
-                                                sx={{
-                                                    display: 'flex',
-                                                    justifyContent: 'flex-end',
-                                                    alignItems: 'center',
-                                                    mt: 1,
-                                                    width: '100%',
-                                                    textAlign: 'right',
-                                                }}
-                                            >
-
+                                            <Box className="comment-actions">
                                                 <Tooltip title="Guardar" placement="top">
                                                     <IconButton size="sm" onClick={handleCommentSubmit}>
                                                         <SaveIcon />
@@ -213,49 +172,32 @@ export default function StoreComments({ storeId, initialData }) {
                                         </>
                                     ) : (
                                         <>
-                                            <Typography level="body-sm">{comment.message}</Typography>
-                                            <Box
-                                                sx={{
-                                                    display: 'flex',
-                                                    justifyContent: 'space-between',
-                                                    alignItems: 'center',
-                                                    mt: 1,
-                                                }}
-                                            >
+                                            <Typography level="body-sm" className="comment-content">
+                                                {comment.message}
+                                            </Typography>
 
-                                                {isOwnComment && (
-                                                    <Box
-                                                        sx={{
-                                                            display: 'flex',
-                                                            justifyContent: 'flex-end',
-                                                            alignItems: 'center',
-                                                            mt: 1,
-                                                            width: '100%',
-                                                            textAlign: 'right',
-                                                        }}
-                                                    >
-                                                        <Tooltip title="Editar" placement="top">
-                                                            <IconButton
-                                                                size="sm"
-                                                                variant="plain"
-                                                                onClick={() => handleEdit(comment)}
-                                                            >
-                                                                <EditIcon />
-                                                            </IconButton>
-                                                        </Tooltip>
-                                                        <Tooltip title="Eliminar" placement="top">
-                                                            <IconButton
-                                                                size="sm"
-                                                                variant="plain"
-                                                                onClick={() => handleDelete(comment.id)}
-                                                            >
-                                                                <DeleteIcon />
-                                                            </IconButton>
-                                                        </Tooltip>
-                                                    </Box>
-                                                )}
-
-                                            </Box>
+                                            {isOwnComment && (
+                                                <Box className="comment-actions">
+                                                    <Tooltip title="Editar" placement="top">
+                                                        <IconButton
+                                                            size="sm"
+                                                            variant="plain"
+                                                            onClick={() => handleEdit(comment)}
+                                                        >
+                                                            <EditIcon />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                    <Tooltip title="Eliminar" placement="top">
+                                                        <IconButton
+                                                            size="sm"
+                                                            variant="plain"
+                                                            onClick={() => handleDelete(comment.id)}
+                                                        >
+                                                            <DeleteIcon />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                </Box>
+                                            )}
                                         </>
                                     )}
                                 </Box>
@@ -263,14 +205,13 @@ export default function StoreComments({ storeId, initialData }) {
                         );
                     })}
                 </List>
-
             ) : (
-                <Typography level="body-xs" sx={{ mt: 2, color: 'neutral.500' }}>
+                <Typography level="body-xs" className="no-comments-message">
                     Nenhum comentário ainda.
                 </Typography>
             )}
 
-            <Box sx={{ mt: 3 }}>
+            <Box className="new-comment-form">
                 <FormControl>
                     <FormLabel>Adicionar comentário</FormLabel>
                     <Textarea

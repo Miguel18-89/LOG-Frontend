@@ -1,0 +1,103 @@
+/* Container principal */
+.store-details-container {
+    padding: 2rem 1.5rem;
+    padding-top: 1rem;
+    max-width: 50%;
+    margin: 0 auto;
+    margin-top: 2rem;
+}
+
+/* Sheet principal (detalhes da loja) */
+.store-details-sheet {
+    max-width: 100%;
+    margin: 0 auto 2rem auto;
+}
+
+/* Área de botões de ação no topo - ALINHADOS À DIREITA */
+.action-buttons-area {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    width: 100%;
+}
+
+/* Informação de atualização */
+.update-info {
+    display: flex;
+    align-items: center;
+    text-align: right;
+}
+
+/* Botões de edição agrupados */
+.edit-buttons-group {
+    display: flex;
+}
+
+/* Linha de campos em flex */
+.form-row {
+    display: flex;
+    gap: 16px;
+}
+
+/* ----------- RESPONSIVIDADE ----------- */
+
+/* Tablets (<= 992px) */
+@media (max-width: 992px) {
+    .store-details-container {
+        padding: 1.5rem 1rem;
+        max-width: 100%;
+        margin-top: 0rem;
+    }
+
+    .store-details-sheet {
+        max-width: 100%;
+    }
+}
+
+/* Telemóveis (<= 768px) */
+@media (max-width: 768px) {
+    .action-buttons-area {
+        align-items: flex-end;
+    }
+
+    .update-info {
+        flex-direction: column;
+        align-items: flex-end;
+
+    }
+}
+
+/* Telemóveis (<= 600px) */
+@media (max-width: 600px) {
+    .store-details-container {
+        padding: 1rem 0.5rem;
+    }
+
+    /* Empilhar campos verticalmente */
+    .form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+
+    /* Forçar todos os FormControl a terem a mesma largura em mobile */
+    .form-row .MuiFormControl-root {
+        flex: 1 1 100% !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    .action-buttons-area {
+        margin-bottom: 0rem;
+    }
+}   
+
+/* Telemóveis pequenos (<= 400px) */
+@media (max-width: 400px) {
+    .store-details-container {
+        padding: 0.75rem 0.25rem;
+    }
+
+    .edit-buttons-group {
+        justify-content: flex-end;
+    }
+}
