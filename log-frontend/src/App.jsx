@@ -2,6 +2,7 @@ import './App.css'
 import Login from "./components/Login"
 import SignUp from "./components/SignUp"
 import Home from "./components/Home"
+import HomePage from "./components/HomePage"
 import { CssVarsProvider } from '@mui/joy/styles';
 import theme from '/src/styles/theme';
 import { Routes, Route } from "react-router-dom"
@@ -43,7 +44,7 @@ function App() {
         <Route path="/SignUp" element={<SignUp />} />
         <Route path="/ForgotPassword" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
-        <Route path="/Home" element={<PrivateRoute><Home /></PrivateRoute>} />
+        <Route path="/Home" element={<PrivateRoute><HomePage /></PrivateRoute>} />
         <Route path="/EditUser" element={<PrivateRoute><EditUser /></PrivateRoute>} />
         <Route path="/NewStore" element={<PrivateRoute><NewStore /></PrivateRoute>} />
         <Route path="/Completed" element={<PrivateRoute><CompletedStores /></PrivateRoute>} />

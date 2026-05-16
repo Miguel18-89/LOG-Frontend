@@ -34,76 +34,47 @@ export default function Navbar() {
             </Box>
 
             {/* HAMBÚRGUER (mobile only) */}
-            <div
-                className="navbar-hamburger"
-                onClick={() => setOpenMenu(!openMenu)}
-            >
+            <div className="navbar-hamburger" onClick={() => setOpenMenu(!openMenu)}>
                 ☰
             </div>
 
             {/* LINKS */}
-            <Box className={`navbar-links ${openMenu ? "open" : ""}`}>
-                <Link className="navbar-link" to="/Home">Lojas</Link>
-                <Link className="navbar-link" to="/Completed">Completas</Link>
-                <Link className="navbar-link" to="/InProgress">Em curso</Link>
-                <Link className="navbar-link" to="/UpComming">Próximas</Link>
-
-                {[1, 2].includes(user.role) && (
-                    <Link className="navbar-link" to="/NewStore">Adicionar Loja</Link>
-                )}
+            <Box className={`navbar-links ${openMenu ? 'open' : ''}`}>
+                <Link className="navbar-link" to="/EMG/Assistencia" onClick={() => setOpenMenu(false)}>Assistência Técnica</Link>
+                <Link className="navbar-link" to="/EMG/Frota" onClick={() => setOpenMenu(false)}>Frota</Link>
+                <Link className="navbar-link" to="/EMG/Pessoal" onClick={() => setOpenMenu(false)}>Pessoal</Link>
+                <Link className="navbar-link" to="/EMG/HorasExtra" onClick={() => setOpenMenu(false)}>Horas Extra</Link>
 
                 {user.role === 2 && (
-                    <Link className="navbar-link" to="/Users">Utilizadores</Link>
-                    
+                    <Link className="navbar-link" to="/Users" onClick={() => setOpenMenu(false)}>Utilizadores</Link>
                 )}
-                
-                {user.role === 2 && (
-                    <Link className="navbar-link" to="/EMG">EMG</Link>
-                )}
-                
-                {/* USER BOX MOBILE (só aparece no mobile) */}
+
+                {/* USER BOX MOBILE */}
                 <div className="navbar-user-box-mobile">
                     <Typography level="body-md" sx={{ color: '#fff', fontWeight: 'bold' }}>
                         Bem-vindo, {user.name}
                     </Typography>
-
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1 }}>
-                        <Button
-                            variant="soft"
-                            size="sm"
-                            onClick={() => navigate("/EditUser")}
-                        >
+                        <Button variant="soft" size="sm" onClick={() => { navigate('/EditUser'); setOpenMenu(false); }}>
                             Meu Perfil
                         </Button>
-
-                        <Button
-                            variant="solid"
-                            color="neutral"
-                            size="sm"
-                            onClick={Logout}
-                        >
+                        <Button variant="solid" color="neutral" size="sm" onClick={Logout}>
                             Sair
                         </Button>
                     </Box>
                 </div>
-
             </Box>
 
-            {/* USER BOX */}
+            {/* USER BOX DESKTOP */}
             <Box className="navbar-user-box">
-                <Typography level="body-md"
-                    sx={{ color: '#fff', fontSize: '1rem', fontWeight: 'bold' }}>
+                <Typography level="body-md" sx={{ color: '#fff', fontSize: '1rem', fontWeight: 'bold' }}>
                     Bem-vindo, {user.name}
                 </Typography>
-
                 <Box className="navbar-buttons">
-                    <Button variant="soft" size="sm" className="navbar-button"
-                        onClick={() => navigate("/EditUser")}>
+                    <Button variant="soft" size="sm" className="navbar-button" onClick={() => navigate('/EditUser')}>
                         Meu Perfil
                     </Button>
-
-                    <Button variant="solid" color="neutral" size="sm" className="navbar-button"
-                        onClick={Logout}>
+                    <Button variant="solid" color="neutral" size="sm" className="navbar-button" onClick={Logout}>
                         Sair
                     </Button>
                 </Box>
