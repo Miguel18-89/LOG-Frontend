@@ -17,6 +17,7 @@ import AllUsers from './components/AllUsers';
 import StoreDetails from './components/storeDetails';
 import EMG from './components/EMG';
 import EMGHorasExtra from './components/EMGHorasExtra';
+import QuickOvertimeEntry from './components/QuickOvertimeEntry';
 import { useNavigate } from 'react-router-dom';
 import { setupInterceptors } from './services/interceptors';
 import { useEffect } from 'react';
@@ -37,6 +38,7 @@ function App() {
   return (
     <CssVarsProvider theme={theme}>
       {<Routes>
+        <Route path="/horas-extra" element={<QuickOvertimeEntry />} />
         <Route path="/" element={<Login />} />
         <Route path="/SignUp" element={<SignUp />} />
         <Route path="/ForgotPassword" element={<ForgotPassword />} />
