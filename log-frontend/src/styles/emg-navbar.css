@@ -1,0 +1,67 @@
+/* =========================== */
+/* EMG MINI NAVBAR             */
+/* =========================== */
+.emg-navbar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+    padding: 0.6rem 1.5rem;
+    background: linear-gradient(90deg, #ffe0b2 0%, #ffcc80 50%, #ffb74d 100%);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    margin-bottom: 1.5rem;
+}
+
+.emg-navbar-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #7a3900;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 0.95rem;
+    padding: 0.4rem 1rem;
+    border-radius: 6px;
+    transition: background 0.2s, color 0.2s;
+}
+
+.emg-navbar-item:hover {
+    background: rgba(255, 255, 255, 0.35);
+    color: #212121;
+}
+
+.emg-navbar-item.active {
+    background: rgba(255, 255, 255, 0.45);
+    color: #212121;
+    border-bottom: 2px solid #f57c00;
+}
+
+.emg-navbar-icon {
+    display: flex;
+    align-items: center;
+    font-size: 1rem;
+}
+
+/* =========================== */
+/* MOBILE (<768px)             */
+/* =========================== */
+@media (max-width: 768px) {
+    .emg-navbar {
+        gap: 0.5rem;
+        padding: 0.5rem;
+    }
+
+    .emg-navbar-item {
+        font-size: 0.8rem;
+        padding: 0.3rem 0.5rem;
+    }
+
+    .emg-navbar-label {
+        display: none;
+    }
+
+    .emg-navbar-icon {
+        font-size: 1.3rem;
+    }
+}

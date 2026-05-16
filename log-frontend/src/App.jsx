@@ -15,6 +15,8 @@ import InProgressStores from './components/InProgressStores';
 import UpCommingStores from './components/UpcomingStores';
 import AllUsers from './components/AllUsers';
 import StoreDetails from './components/storeDetails';
+import EMG from './components/EMG';
+import EMGHorasExtra from './components/EMGHorasExtra';
 import { useNavigate } from 'react-router-dom';
 import { setupInterceptors } from './services/interceptors';
 import { useEffect } from 'react';
@@ -47,6 +49,9 @@ function App() {
         <Route path="/Upcomming" element={<PrivateRoute><UpCommingStores /></PrivateRoute>} />
         <Route path="/Users" element={<PrivateRoute><AllUsers /></PrivateRoute>} />
         <Route path="/stores/:id" element={<PrivateRoute><StoreDetails /></PrivateRoute>} />
+        <Route path="/EMG" element={<PrivateRoute><EMG /></PrivateRoute>}>
+          <Route path="HorasExtra" element={<EMGHorasExtra />} />
+        </Route>
       </Routes>}
       <ToastContainer
         position="top-center"

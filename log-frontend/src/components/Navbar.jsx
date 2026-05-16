@@ -54,6 +54,11 @@ export default function Navbar() {
 
                 {user.role === 2 && (
                     <Link className="navbar-link" to="/Users">Utilizadores</Link>
+                    
+                )}
+                
+                {user.role === 2 && (
+                    <Link className="navbar-link" to="/EMG">EMG</Link>
                 )}
                 
                 {/* USER BOX MOBILE (só aparece no mobile) */}
