@@ -11,11 +11,12 @@ import ModalDialog from '@mui/joy/ModalDialog';
 import ModalClose from '@mui/joy/ModalClose';
 import Divider from '@mui/joy/Divider';
 import Chip from '@mui/joy/Chip';
-import { MdAdd, MdCheck, MdClose, MdDelete, MdChevronLeft, MdChevronRight } from 'react-icons/md';
+import { MdAdd, MdCheck, MdClose, MdChevronLeft, MdChevronRight, MdPictureAsPdf } from 'react-icons/md';
 import { toast } from 'react-toastify';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext.jsx';
-import Navbar from './Navbar';
 
 const MONTHS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 const COLOR_APPROVED = '#c8e6c9';
@@ -27,6 +28,14 @@ const NAME_W = 170;
 function isWeekend(date) {
     const d = date.getDay();
     return d === 0 || d === 6;
+}
+
+// Always use local date parts to avoid UTC timezone off-by-one
+function localDateStr(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
 }
 
 function getDaysInYear(year) {
@@ -42,11 +51,12 @@ function getDaysInYear(year) {
 function buildVacationMap(vacations) {
     const map = {};
     for (const v of vacations) {
+        if (v.status === 'cancelado') continue;
         const start = new Date(v.startDate);
         const end = new Date(v.endDate);
         const d = new Date(start);
         while (d <= end) {
-            const key = `${v.employee_id}|${d.toISOString().slice(0, 10)}`;
+            const key = `${v.employee_id}|${localDateStr(d)}`;
             if (!map[key] || v.status === 'aprovado') {
                 map[key] = { status: v.status, id: v.id };
             }
@@ -54,6 +64,79 @@ function buildVacationMap(vacations) {
         }
     }
     return map;
+}
+
+const MONTH_NAMES_FULL = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+function generateVacationPDF(employees, vacations, year) {
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const vMap = buildVacationMap(vacations);
+
+    for (let m = 0; m < 12; m++) {
+        if (m > 0) doc.addPage();
+        const daysInMonth = new Date(year, m + 1, 0).getDate();
+
+        doc.setFontSize(14);
+        doc.setTextColor(245, 124, 0);
+        doc.text(`Mapa de Férias ${year} – ${MONTH_NAMES_FULL[m]}`, 10, 12);
+        doc.setFontSize(7);
+        doc.setTextColor(150);
+        doc.text(`Gerado em ${new Date().toLocaleDateString('pt-PT')}`, 10, 18);
+        doc.setTextColor(0);
+
+        const head = [['Colaborador', ...Array.from({ length: daysInMonth }, (_, i) => String(i + 1))]];
+        const body = employees.map(emp => [
+            emp.fullName,
+            ...Array.from({ length: daysInMonth }, (_, i) => {
+                const dateStr = `${year}-${String(m + 1).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`;
+                const entry = vMap[`${emp.id}|${dateStr}`];
+                return entry ? (entry.status === 'aprovado' ? 'A' : 'P') : '';
+            }),
+        ]);
+
+        const usableWidth = 277;
+        const nameColW = 50;
+        const dayColW = (usableWidth - nameColW) / daysInMonth;
+
+        autoTable(doc, {
+            head,
+            body,
+            startY: 22,
+            margin: { left: 10, right: 10 },
+            styles: { fontSize: 6, cellPadding: 0.8, halign: 'center', valign: 'middle' },
+            headStyles: { fillColor: [245, 124, 0], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7 },
+            columnStyles: Object.fromEntries([
+                [0, { cellWidth: nameColW, halign: 'left' }],
+                ...Array.from({ length: daysInMonth }, (_, i) => [i + 1, { cellWidth: dayColW }]),
+            ]),
+            didParseCell: (data) => {
+                if (data.section !== 'body' || data.column.index === 0) return;
+                const val = data.cell.raw;
+                if (val === 'A') {
+                    data.cell.styles.fillColor = [200, 230, 201];
+                } else if (val === 'P') {
+                    data.cell.styles.fillColor = [255, 249, 196];
+                } else {
+                    const date = new Date(year, m, data.column.index);
+                    if (date.getDay() === 0 || date.getDay() === 6) {
+                        data.cell.styles.fillColor = [235, 235, 235];
+                    }
+                }
+            },
+        });
+    }
+
+    // Legend on last page
+    const finalY = (doc.lastAutoTable?.finalY ?? 180) + 8;
+    doc.setFontSize(7);
+    doc.setFillColor(200, 230, 201); doc.rect(10, finalY, 5, 4, 'F');
+    doc.text('Aprovado', 17, finalY + 3);
+    doc.setFillColor(255, 249, 196); doc.rect(35, finalY, 5, 4, 'F');
+    doc.text('Pendente', 42, finalY + 3);
+    doc.setFillColor(235, 235, 235); doc.rect(60, finalY, 5, 4, 'F');
+    doc.text('Fim de semana', 67, finalY + 3);
+
+    doc.save(`mapa_ferias_${year}.pdf`);
 }
 
 function buildMonthGroups(days) {
@@ -80,6 +163,23 @@ function isMonthEnd(d) {
 
 const BLANK_FORM = { employee_id: '', startDate: '', endDate: '', notes: '' };
 
+function buildApprovedDaysMap(vacations) {
+    const map = {};
+    for (const v of vacations) {
+        if (v.status !== 'aprovado') continue;
+        const d = new Date(v.startDate);
+        const end = new Date(v.endDate);
+        while (d <= end) {
+            const day = d.getDay();
+            if (day !== 0 && day !== 6) {
+                map[v.employee_id] = (map[v.employee_id] || 0) + 1;
+            }
+            d.setDate(d.getDate() + 1);
+        }
+    }
+    return map;
+}
+
 export default function Ferias() {
     const { user } = useAuth();
     const currentYear = new Date().getFullYear();
@@ -90,11 +190,16 @@ export default function Ferias() {
     const [showAddModal, setShowAddModal] = useState(false);
     const [form, setForm] = useState(BLANK_FORM);
     const [submitting, setSubmitting] = useState(false);
-    const [deleteConfirm, setDeleteConfirm] = useState(null);
+    const [cancelConfirm, setCancelConfirm] = useState(null); // vacation id
+    const [rejectModal, setRejectModal] = useState(null); // { id, reason }
 
     const days = getDaysInYear(year);
     const monthGroups = buildMonthGroups(days);
     const vacationMap = buildVacationMap(vacations);
+    const approvedDaysMap = buildApprovedDaysMap(vacations);
+
+    // For role 0: find own employee record by matching workEmail
+    const ownEmployee = user?.role < 1 ? employees.find(e => e.workEmail === user?.email) : null;
 
     const fetchVacations = useCallback(async () => {
         setLoading(true);
@@ -144,24 +249,16 @@ export default function Ferias() {
         }
     }
 
-    async function handleStatus(id, status) {
+    async function handleStatus(id, status, rejectionReason) {
+        const messages = { aprovado: 'Férias aprovadas.', rejeitado: 'Férias rejeitadas.', cancelado: 'Pedido cancelado.' };
         try {
-            await api.put(`/emg/ferias/${id}/status`, { status });
-            toast.success(status === 'aprovado' ? 'Férias aprovadas.' : 'Férias rejeitadas.');
+            await api.put(`/emg/ferias/${id}/status`, { status, rejectionReason: rejectionReason || undefined });
+            toast.success(messages[status] ?? 'Estado atualizado.');
+            setRejectModal(null);
+            setCancelConfirm(null);
             fetchVacations();
         } catch {
             toast.error('Erro ao atualizar estado.');
-        }
-    }
-
-    async function handleDelete(id) {
-        try {
-            await api.delete(`/emg/ferias/${id}`);
-            toast.success('Pedido eliminado.');
-            setDeleteConfirm(null);
-            fetchVacations();
-        } catch {
-            toast.error('Erro ao eliminar pedido.');
         }
     }
 
@@ -169,8 +266,7 @@ export default function Ferias() {
 
     return (
         <>
-            <Navbar />
-            <Box sx={{ minHeight: '100vh', bgcolor: '#fafafa', pt: 'calc(8vh + 1.5rem)', pb: 5, px: { xs: 1, md: 3 } }}>
+            <Box sx={{ pb: 4 }}>
 
                 {/* Page header */}
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, flexWrap: 'wrap', gap: 1 }}>
@@ -183,7 +279,28 @@ export default function Ferias() {
                         <IconButton variant="outlined" size="sm" onClick={() => setYear(y => y + 1)} disabled={year >= currentYear + 1}>
                             <MdChevronRight />
                         </IconButton>
-                        <Button startDecorator={<MdAdd />} size="sm" sx={{ ml: 1 }} onClick={() => setShowAddModal(true)}>
+                        {user?.role >= 1 && (
+                            <Button
+                                startDecorator={<MdPictureAsPdf />}
+                                size="sm"
+                                variant="outlined"
+                                color="neutral"
+                                onClick={() => generateVacationPDF(employees, vacations, year)}
+                                disabled={employees.length === 0}
+                            >
+                                Gerar PDF
+                            </Button>
+                        )}
+                        <Button
+                            startDecorator={<MdAdd />}
+                            size="sm"
+                            sx={{ ml: 1 }}
+                            onClick={() => {
+                                const preselect = user?.role < 1 ? (ownEmployee?.id || '') : '';
+                                setForm({ ...BLANK_FORM, employee_id: preselect });
+                                setShowAddModal(true);
+                            }}
+                        >
                             Novo Pedido
                         </Button>
                     </Box>
@@ -212,11 +329,12 @@ export default function Ferias() {
                         mb: 4,
                         overflow: 'auto',
                         maxHeight: '55vh',
+                        pb: 2,
                     }}
                 >
                     {/* Month header */}
                     <Box sx={{ display: 'flex', position: 'sticky', top: 0, zIndex: 3, bgcolor: '#f5f5f5' }}>
-                        <Box sx={{ minWidth: NAME_W, flexShrink: 0, borderRight: '2px solid #ddd', borderBottom: '1px solid #ddd' }} />
+                        <Box sx={{ width: NAME_W, flexShrink: 0, borderRight: '2px solid #ddd', borderBottom: '1px solid #ddd', position: 'sticky', left: 0, zIndex: 4, bgcolor: '#f5f5f5' }} />
                         {monthGroups.map(({ month, count }) => (
                             <Box
                                 key={month}
@@ -239,7 +357,7 @@ export default function Ferias() {
 
                     {/* Day numbers row */}
                     <Box sx={{ display: 'flex', position: 'sticky', top: 25, zIndex: 3, bgcolor: '#fafafa', borderBottom: '2px solid #ccc' }}>
-                        <Box sx={{ minWidth: NAME_W, flexShrink: 0, borderRight: '2px solid #ddd' }} />
+                        <Box sx={{ width: NAME_W, flexShrink: 0, borderRight: '2px solid #ddd', position: 'sticky', left: 0, zIndex: 4, bgcolor: '#fafafa' }} />
                         {days.map(d => (
                             <Box
                                 key={d.toISOString()}
@@ -279,30 +397,41 @@ export default function Ferias() {
                                 {/* Sticky name */}
                                 <Box
                                     sx={{
-                                        minWidth: NAME_W,
+                                        width: NAME_W,
+                                        maxWidth: NAME_W,
                                         flexShrink: 0,
                                         borderRight: '2px solid #ddd',
                                         px: 1,
                                         display: 'flex',
                                         alignItems: 'center',
+                                        gap: 0.5,
                                         position: 'sticky',
                                         left: 0,
-                                        bgcolor: 'inherit',
-                                        zIndex: 1,
+                                        bgcolor: i % 2 === 0 ? '#fff' : '#fafafa',
+                                        zIndex: 2,
+                                        overflow: 'hidden',
                                     }}
                                 >
                                     <Typography
                                         level="body-xs"
                                         noWrap
-                                        sx={{ color: '#333', fontWeight: 500, fontSize: '0.7rem' }}
+                                        sx={{ color: '#333', fontWeight: 500, fontSize: '0.7rem', flex: 1, minWidth: 0 }}
                                     >
                                         {emp.fullName}
                                     </Typography>
+                                    {approvedDaysMap[emp.id] > 0 && (
+                                        <Typography
+                                            level="body-xs"
+                                            sx={{ color: '#2e7d32', fontWeight: 'bold', fontSize: '0.65rem', flexShrink: 0 }}
+                                        >
+                                            {approvedDaysMap[emp.id]}d
+                                        </Typography>
+                                    )}
                                 </Box>
 
                                 {/* Day cells */}
                                 {days.map(d => {
-                                    const dateStr = d.toISOString().slice(0, 10);
+                                    const dateStr = localDateStr(d);
                                     const entry = vacationMap[`${emp.id}|${dateStr}`];
                                     let bg = isWeekend(d) ? COLOR_WEEKEND : 'transparent';
                                     if (entry) bg = entry.status === 'aprovado' ? COLOR_APPROVED : COLOR_PENDING;
@@ -338,7 +467,14 @@ export default function Ferias() {
                             const end = new Date(v.endDate).toLocaleDateString('pt-PT');
                             const nDays = Math.round((new Date(v.endDate) - new Date(v.startDate)) / 86400000) + 1;
                             const isOwn = v.createdBy?.id === user?.id;
-                            const canDelete = user?.role >= 1 || (isOwn && v.status === 'pendente');
+                            const canCancel = isOwn && v.status !== 'cancelado' && v.status !== 'rejeitado';
+                            const isCancelled = v.status === 'cancelado';
+                            const chipColor = {
+                                aprovado: COLOR_APPROVED,
+                                rejeitado: '#ffcdd2',
+                                cancelado: '#eeeeee',
+                                pendente: COLOR_PENDING,
+                            }[v.status] ?? COLOR_PENDING;
                             return (
                                 <Box
                                     key={v.id}
@@ -349,22 +485,12 @@ export default function Ferias() {
                                         p: 1.5,
                                         borderRadius: 'md',
                                         border: '1px solid #e0e0e0',
-                                        bgcolor: '#fff',
+                                        bgcolor: isCancelled ? '#fafafa' : '#fff',
                                         flexWrap: 'wrap',
+                                        opacity: isCancelled ? 0.6 : 1,
                                     }}
                                 >
-                                    <Chip
-                                        size="sm"
-                                        sx={{
-                                            bgcolor:
-                                                v.status === 'aprovado' ? COLOR_APPROVED :
-                                                v.status === 'rejeitado' ? '#ffcdd2' :
-                                                COLOR_PENDING,
-                                            color: '#333',
-                                            fontWeight: 'bold',
-                                            fontSize: '0.7rem',
-                                        }}
-                                    >
+                                    <Chip size="sm" sx={{ bgcolor: chipColor, color: '#333', fontWeight: 'bold', fontSize: '0.7rem' }}>
                                         {v.status}
                                     </Chip>
                                     <Typography level="body-sm" sx={{ fontWeight: 'bold', minWidth: 150 }}>
@@ -376,26 +502,33 @@ export default function Ferias() {
                                     <Typography level="body-xs" sx={{ color: '#888' }}>
                                         ({nDays} {nDays === 1 ? 'dia' : 'dias'})
                                     </Typography>
-                                    {v.notes && (
-                                        <Typography level="body-xs" sx={{ color: '#888', fontStyle: 'italic', flex: 1 }}>
-                                            {v.notes}
-                                        </Typography>
-                                    )}
+                                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                                        {v.notes && (
+                                            <Typography level="body-xs" sx={{ color: '#888', fontStyle: 'italic' }}>
+                                                {v.notes}
+                                            </Typography>
+                                        )}
+                                        {v.status === 'rejeitado' && v.rejectionReason && (
+                                            <Typography level="body-xs" sx={{ color: '#c62828', fontStyle: 'italic' }}>
+                                                Motivo: {v.rejectionReason}
+                                            </Typography>
+                                        )}
+                                    </Box>
                                     <Box sx={{ display: 'flex', gap: 0.5, ml: 'auto' }}>
                                         {user?.role >= 1 && v.status === 'pendente' && (
                                             <>
                                                 <IconButton size="sm" color="success" variant="soft" title="Aprovar" onClick={() => handleStatus(v.id, 'aprovado')}>
                                                     <MdCheck />
                                                 </IconButton>
-                                                <IconButton size="sm" color="danger" variant="soft" title="Rejeitar" onClick={() => handleStatus(v.id, 'rejeitado')}>
+                                                <IconButton size="sm" color="danger" variant="soft" title="Rejeitar" onClick={() => setRejectModal({ id: v.id, reason: '' })}>
                                                     <MdClose />
                                                 </IconButton>
                                             </>
                                         )}
-                                        {canDelete && (
-                                            <IconButton size="sm" color="danger" variant="plain" title="Eliminar" onClick={() => setDeleteConfirm(v.id)}>
-                                                <MdDelete />
-                                            </IconButton>
+                                        {canCancel && (
+                                            <Button size="sm" variant="outlined" color="neutral" onClick={() => setCancelConfirm(v.id)}>
+                                                Cancelar
+                                            </Button>
                                         )}
                                     </Box>
                                 </Box>
@@ -406,7 +539,7 @@ export default function Ferias() {
             </Box>
 
             {/* Add vacation modal */}
-            <Modal open={showAddModal} onClose={() => { setShowAddModal(false); setForm(BLANK_FORM); }}>
+            <Modal open={showAddModal} onClose={() => setShowAddModal(false)}>
                 <ModalDialog sx={{ minWidth: 420, maxWidth: 500 }}>
                     <ModalClose />
                     <Typography level="title-lg" sx={{ mb: 2 }}>Novo Pedido de Férias</Typography>
@@ -414,16 +547,22 @@ export default function Ferias() {
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                             <Box>
                                 <Typography level="body-xs" sx={{ mb: 0.5, fontWeight: 'bold' }}>Colaborador *</Typography>
-                                <Select
-                                    value={form.employee_id || null}
-                                    onChange={(_, v) => setForm(f => ({ ...f, employee_id: v }))}
-                                    placeholder="Selecionar colaborador..."
-                                    size="sm"
-                                >
-                                    {employees.map(e => (
-                                        <Option key={e.id} value={e.id}>{e.fullName}</Option>
-                                    ))}
-                                </Select>
+                                {user?.role < 1 ? (
+                                    <Typography level="body-sm" sx={{ py: 0.75, px: 1, border: '1px solid #ddd', borderRadius: 'sm', bgcolor: '#f9f9f9', color: ownEmployee ? '#333' : '#e53935' }}>
+                                        {ownEmployee ? ownEmployee.fullName : 'O seu utilizador não está associado a nenhum colaborador'}
+                                    </Typography>
+                                ) : (
+                                    <Select
+                                        value={form.employee_id || null}
+                                        onChange={(_, v) => setForm(f => ({ ...f, employee_id: v }))}
+                                        placeholder="Selecionar colaborador..."
+                                        size="sm"
+                                    >
+                                        {employees.map(e => (
+                                            <Option key={e.id} value={e.id}>{e.fullName}</Option>
+                                        ))}
+                                    </Select>
+                                )}
                             </Box>
                             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
                                 <Box>
@@ -459,7 +598,7 @@ export default function Ferias() {
                                 />
                             </Box>
                             <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', mt: 1 }}>
-                                <Button variant="plain" color="neutral" size="sm" onClick={() => { setShowAddModal(false); setForm(BLANK_FORM); }}>
+                                <Button variant="plain" color="neutral" size="sm" onClick={() => setShowAddModal(false)}>
                                     Cancelar
                                 </Button>
                                 <Button type="submit" size="sm" loading={submitting}>
@@ -471,18 +610,44 @@ export default function Ferias() {
                 </ModalDialog>
             </Modal>
 
-            {/* Delete confirm modal */}
-            <Modal open={!!deleteConfirm} onClose={() => setDeleteConfirm(null)}>
-                <ModalDialog variant="outlined" role="alertdialog" sx={{ maxWidth: 380 }}>
-                    <Typography level="title-lg">Eliminar Pedido</Typography>
+            {/* Reject modal with reason */}
+            <Modal open={!!rejectModal} onClose={() => setRejectModal(null)}>
+                <ModalDialog variant="outlined" role="alertdialog" sx={{ maxWidth: 420 }}>
+                    <Typography level="title-lg">Rejeitar Pedido</Typography>
                     <Divider sx={{ my: 1 }} />
-                    <Typography level="body-sm">Tem a certeza que deseja eliminar este pedido de férias?</Typography>
+                    <Typography level="body-sm" sx={{ mb: 1.5 }}>
+                        Pode indicar o motivo da rejeição. O colaborador será notificado por email.
+                    </Typography>
+                    <Textarea
+                        value={rejectModal?.reason ?? ''}
+                        onChange={e => setRejectModal(m => ({ ...m, reason: e.target.value }))}
+                        minRows={3}
+                        size="sm"
+                        placeholder="Motivo da rejeição (opcional)..."
+                    />
                     <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', mt: 2 }}>
-                        <Button variant="plain" color="neutral" size="sm" onClick={() => setDeleteConfirm(null)}>
+                        <Button variant="plain" color="neutral" size="sm" onClick={() => setRejectModal(null)}>
                             Cancelar
                         </Button>
-                        <Button color="danger" size="sm" onClick={() => handleDelete(deleteConfirm)}>
-                            Eliminar
+                        <Button color="danger" size="sm" onClick={() => handleStatus(rejectModal.id, 'rejeitado', rejectModal.reason)}>
+                            Rejeitar
+                        </Button>
+                    </Box>
+                </ModalDialog>
+            </Modal>
+
+            {/* Cancel confirm modal */}
+            <Modal open={!!cancelConfirm} onClose={() => setCancelConfirm(null)}>
+                <ModalDialog variant="outlined" role="alertdialog" sx={{ maxWidth: 380 }}>
+                    <Typography level="title-lg">Cancelar Pedido</Typography>
+                    <Divider sx={{ my: 1 }} />
+                    <Typography level="body-sm">Tem a certeza que deseja cancelar este pedido de férias?</Typography>
+                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', mt: 2 }}>
+                        <Button variant="plain" color="neutral" size="sm" onClick={() => setCancelConfirm(null)}>
+                            Voltar
+                        </Button>
+                        <Button color="danger" size="sm" onClick={() => handleStatus(cancelConfirm, 'cancelado')}>
+                            Cancelar Pedido
                         </Button>
                     </Box>
                 </ModalDialog>

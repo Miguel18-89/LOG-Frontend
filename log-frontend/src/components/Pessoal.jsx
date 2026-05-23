@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
     Box, Button, Table, Input, Modal, ModalDialog, ModalClose,
     Typography, Sheet, Tabs, TabList, Tab, TabPanel, FormLabel,
@@ -7,6 +7,7 @@ import {
 import { MdAdd, MdEdit, MdDelete, MdDownload, MdUploadFile, MdCheck, MdClose } from 'react-icons/md';
 import { toast } from 'react-toastify';
 import api from '../services/api';
+import { useAuth } from '../contexts/AuthContext.jsx';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -153,6 +154,7 @@ function ContractSection({ form, fSet, setForm }) {
 }
 
 export default function Pessoal() {
+    const { user } = useAuth();
     const [employees, setEmployees] = useState([]);
     const [search, setSearch] = useState('');
     const [selected, setSelected] = useState(null);
@@ -184,6 +186,11 @@ export default function Pessoal() {
     }, [search]);
 
     useEffect(() => { fetchEmployees(); }, [fetchEmployees]);
+
+    const visibleEmployees = useMemo(() => {
+        if (user?.role >= 1) return employees;
+        return employees.filter(e => e.workEmail === user?.email);
+    }, [employees, user]);
 
     const fetchEmployee = useCallback(async (id) => {
         try {
@@ -333,8 +340,8 @@ export default function Pessoal() {
             setTrainingForm(emptyTraining);
             if (fileInputRef.current) fileInputRef.current.value = '';
             toast.success('Formação adicionada.');
-        } catch {
-            toast.error('Erro ao adicionar formação.');
+        } catch (e) {
+            toast.error(e.response?.data?.error || 'Erro ao adicionar formação.');
         } finally {
             setSaving(false);
         }
@@ -360,8 +367,8 @@ export default function Pessoal() {
             setEditTrainingId(null);
             await fetchEmployee(selected.id);
             toast.success('Formação atualizada.');
-        } catch {
-            toast.error('Erro ao atualizar formação.');
+        } catch (e) {
+            toast.error(e.response?.data?.error || 'Erro ao atualizar formação.');
         } finally {
             setSaving(false);
         }
@@ -401,17 +408,21 @@ export default function Pessoal() {
     return (
         <>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography level="h3">Pessoal</Typography>
-                <Button startDecorator={<MdAdd />}
-                    onClick={() => { setForm(emptyEmployee); setAddTab(0); setAddOpen(true); }}>
-                    Novo Colaborador
-                </Button>
+                <Typography level="h3" sx={{ fontWeight: 'bold', color: '#444' }}>Pessoal</Typography>
+                {user?.role >= 1 && (
+                    <Button startDecorator={<MdAdd />}
+                        onClick={() => { setForm(emptyEmployee); setAddTab(0); setAddOpen(true); }}>
+                        Novo Colaborador
+                    </Button>
+                )}
             </Box>
 
-            <Box sx={{ mb: 2, maxWidth: 320 }}>
-                <Input placeholder="Pesquisar por nome…" value={search}
-                    onChange={e => setSearch(e.target.value)} />
-            </Box>
+            {user?.role >= 1 && (
+                <Box sx={{ mb: 2, maxWidth: 320 }}>
+                    <Input placeholder="Pesquisar por nome…" value={search}
+                        onChange={e => setSearch(e.target.value)} />
+                </Box>
+            )}
 
             <Sheet variant="outlined" sx={{ borderRadius: 'sm', overflow: 'auto' }}>
                 <Table stickyHeader hoverRow>
@@ -425,11 +436,11 @@ export default function Pessoal() {
                         </tr>
                     </thead>
                     <tbody>
-                        {employees.length === 0 ? (
+                        {visibleEmployees.length === 0 ? (
                             <tr><td colSpan={5} style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
                                 Nenhum colaborador registado.
                             </td></tr>
-                        ) : employees.map(emp => {
+                        ) : visibleEmployees.map(emp => {
                             const alert = medicalAlert(emp.medicalFitnessDate);
                             return (
                                 <tr key={emp.id} onClick={() => openDetail(emp)} style={{ cursor: 'pointer' }}>
@@ -484,20 +495,22 @@ export default function Pessoal() {
                                     <Typography level="body-sm" sx={{ color: 'text.secondary' }}>{selected.jobCategory}</Typography>
                                 )}
                             </Box>
-                            <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
-                                {!editMode ? (
-                                    <>
-                                        <Button size="sm" variant="outlined" startDecorator={<MdEdit />} onClick={startEdit}>Editar</Button>
-                                        <Button size="sm" variant="outlined" color="danger"
-                                            startDecorator={<MdDelete />} onClick={() => setDeleteConfirm(selected)}>Eliminar</Button>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Button size="sm" variant="plain" onClick={() => setEditMode(false)}>Cancelar</Button>
-                                        <Button size="sm" loading={saving} onClick={handleSave}>Guardar</Button>
-                                    </>
-                                )}
-                            </Box>
+                            {user?.role >= 1 && (
+                                <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
+                                    {!editMode ? (
+                                        <>
+                                            <Button size="sm" variant="outlined" startDecorator={<MdEdit />} onClick={startEdit}>Editar</Button>
+                                            <Button size="sm" variant="outlined" color="danger"
+                                                startDecorator={<MdDelete />} onClick={() => setDeleteConfirm(selected)}>Eliminar</Button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Button size="sm" variant="plain" onClick={() => setEditMode(false)}>Cancelar</Button>
+                                            <Button size="sm" loading={saving} onClick={handleSave}>Guardar</Button>
+                                        </>
+                                    )}
+                                </Box>
+                            )}
                         </Box>
 
                         <Tabs value={detailTab} onChange={(_, v) => setDetailTab(v)}>

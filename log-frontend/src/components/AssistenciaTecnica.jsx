@@ -53,7 +53,7 @@ function fmtDate(d) {
 const emptyForm = {
     brand: '', model: '', serialNumber: '', fault: '',
     client: '', location: '', requestedBy: '',
-    status: 'no_cliente', repairLocation: '', openDate: '',
+    status: 'no_cliente', repairLocation: '',
 };
 
 export default function AssistenciaTecnica() {
@@ -95,7 +95,7 @@ export default function AssistenciaTecnica() {
 
     function openCreate() {
         setIsEdit(false); setEditId(null);
-        setForm({ ...emptyForm, openDate: new Date().toISOString().split('T')[0] });
+        setForm({ ...emptyForm });
         setOpenForm(true);
     }
 
@@ -106,7 +106,6 @@ export default function AssistenciaTecnica() {
             fault: r.fault, client: r.client, location: r.location,
             requestedBy: r.requestedBy, status: r.status,
             repairLocation: r.repairLocation || '',
-            openDate: r.openDate ? r.openDate.split('T')[0] : '',
         });
         setOpenForm(true);
     }
@@ -166,6 +165,7 @@ export default function AssistenciaTecnica() {
 
     return (
         <Box sx={{ p: 2 }}>
+            <Typography level="h3" sx={{ fontWeight: 'bold', color: '#444', mb: 2 }}>Assistência Técnica</Typography>
             {/* Legenda de cores */}
             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 2, fontSize: '0.78rem' }}>
                 {[
@@ -289,16 +289,10 @@ export default function AssistenciaTecnica() {
                                 <Input value={form.model} onChange={e => setForm(p => ({ ...p, model: e.target.value }))} />
                             </FormControl>
                         </Box>
-                        <Box sx={{ display: 'flex', gap: 2 }}>
-                            <FormControl size="sm" required sx={{ flex: 1 }}>
-                                <FormLabel>Número de série</FormLabel>
-                                <Input value={form.serialNumber} onChange={e => setForm(p => ({ ...p, serialNumber: e.target.value }))} />
-                            </FormControl>
-                            <FormControl size="sm" required sx={{ flex: 1 }}>
-                                <FormLabel>Data de abertura</FormLabel>
-                                <Input type="date" value={form.openDate} onChange={e => setForm(p => ({ ...p, openDate: e.target.value }))} />
-                            </FormControl>
-                        </Box>
+                        <FormControl size="sm" required>
+                            <FormLabel>Número de série</FormLabel>
+                            <Input value={form.serialNumber} onChange={e => setForm(p => ({ ...p, serialNumber: e.target.value }))} />
+                        </FormControl>
                         <FormControl size="sm" required>
                             <FormLabel>Avaria</FormLabel>
                             <Textarea minRows={2} value={form.fault} onChange={e => setForm(p => ({ ...p, fault: e.target.value }))} />

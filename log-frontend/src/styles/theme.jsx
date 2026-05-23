@@ -11,6 +11,16 @@ const theme = extendTheme({
           solidActiveBg: '#ef6c00',
           plainColor: '#f57c00',
         },
+        warning: {
+          solidBg: '#f88500',
+          solidHoverBg: '#e07800',
+          solidActiveBg: '#c96e00',
+          softBg: '#fff3e0',
+          softColor: '#f88500',
+          plainColor: '#f88500',
+          outlinedBorder: '#f88500',
+          outlinedColor: '#f88500',
+        },
         neutral: {
           solidBg: '#212121',
           solidHoverBg: '#424242',

@@ -51,6 +51,20 @@ function rowBg(v) {
     return undefined;
 }
 
+function cellDate(dateStr) {
+    const d = daysUntil(dateStr);
+    if (!dateStr || d === Infinity) return <span style={{ color: '#bbb' }}>—</span>;
+    if (d >= 30) return <span>{fmtDate(dateStr)}</span>;
+    const bg    = d < 15 ? '#ffcdd2' : '#ffe0b2';
+    const color = d < 15 ? '#c62828' : '#e65100';
+    const label = d < 0 ? ' (expirado)' : ` (${d}d)`;
+    return (
+        <span style={{ display:'inline-block', padding:'1px 7px', borderRadius:4, background:bg, color, fontWeight:'bold', fontSize:'0.78rem' }}>
+            {fmtDate(dateStr)}{label}
+        </span>
+    );
+}
+
 function alertBadge(dateStr, label) {
     const d = daysUntil(dateStr);
     const color = d < 15 ? '#c62828' : d < 30 ? '#e65100' : '#2e7d32';
@@ -183,6 +197,7 @@ export default function Frota() {
 
     return (
         <Box sx={{ p: 2 }}>
+            <Typography level="h3" sx={{ fontWeight: 'bold', color: '#444', mb: 2 }}>Frota</Typography>
             {/* Legenda */}
             <Box sx={{ display:'flex', gap:2, mb:2, fontSize:'0.78rem', flexWrap:'wrap' }}>
                 {[{ color:'#ffcdd2', label:'< 15 dias' }, { color:'#ffe0b2', label:'< 1 mês' }].map(l => (
@@ -231,8 +246,8 @@ export default function Frota() {
                                 <td><strong>{v.plate}</strong></td>
                                 <td>{v.brand} {v.model}</td>
                                 <td>{MONTHS[v.registrationMonth - 1]} {v.registrationYear}</td>
-                                <td>{fmtDate(v.nextInspectionDate)}</td>
-                                <td>{fmtDate(v.insuranceExpiryDate)}</td>
+                                <td>{cellDate(v.nextInspectionDate)}</td>
+                                <td>{cellDate(v.insuranceExpiryDate)}</td>
                                 <td>{v.tireSize || '—'}</td>
                                 <td style={{ textAlign:'center' }}>
                                     <IconButton size="sm" variant="plain" onClick={() => openDetail(v)}><VisibilityIcon fontSize="small" /></IconButton>

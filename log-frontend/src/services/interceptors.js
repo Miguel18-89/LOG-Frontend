@@ -1,9 +1,15 @@
 
 import api from './api';
 
-let isHandlingAuthFailure = false;
+let navigateRef = null;
+let interceptorsRegistered = false;
 
 export const setupInterceptors = (navigate) => {
+  navigateRef = navigate;
+
+  if (interceptorsRegistered) return;
+  interceptorsRegistered = true;
+
   api.interceptors.request.use(
     (config) => {
       const token = localStorage.getItem('token');
@@ -15,36 +21,15 @@ export const setupInterceptors = (navigate) => {
 
   api.interceptors.response.use(
     (response) => response,
-    async (error) => {
+    (error) => {
       const res = error.response;
       if (!res) return Promise.reject(error);
 
-      if (res.status === 401 && !isHandlingAuthFailure) {
-        isHandlingAuthFailure = true;
-
-        try {
-          const reason = res.data?.reason;
-          const message = res.data?.message || 'Sessão inválida. Por favor faça login novamente.';
-
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-
-          try {
-            await api.post('/auth/logout', {}, { withCredentials: true });
-          } catch (e) {
-          }
-
-          if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
-            navigate(`/`, { replace: true });
-          } else {
-            navigate('/', { replace: true });
-          }
-
-
-        } finally {
-          setTimeout(() => {
-            isHandlingAuthFailure = false;
-          }, 1000);
+      if (res.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        if (window.location.pathname !== '/') {
+          navigateRef?.('/', { replace: true });
         }
       }
 
