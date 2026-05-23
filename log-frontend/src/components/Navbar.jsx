@@ -43,6 +43,7 @@ export default function Navbar() {
                 <Link className="navbar-link" to="/EMG/Assistencia" onClick={() => setOpenMenu(false)}>Assistência Técnica</Link>
                 <Link className="navbar-link" to="/EMG/Frota" onClick={() => setOpenMenu(false)}>Frota</Link>
                 <Link className="navbar-link" to="/EMG/Pessoal" onClick={() => setOpenMenu(false)}>Pessoal</Link>
+                <Link className="navbar-link" to="/EMG/Ferias" onClick={() => setOpenMenu(false)}>Férias</Link>
                 <Link className="navbar-link" to="/EMG/HorasExtra" onClick={() => setOpenMenu(false)}>Horas Extra</Link>
 
                 {user.role === 2 && (

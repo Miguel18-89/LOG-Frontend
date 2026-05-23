@@ -2,13 +2,14 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
 import Box from '@mui/joy/Box';
 import Typography from '@mui/joy/Typography';
-import { FaTools, FaTruck, FaUsers, FaClock } from 'react-icons/fa';
+import { FaTools, FaTruck, FaUsers, FaClock, FaCalendarAlt } from 'react-icons/fa';
 
 const SECTIONS = [
-    { label: 'Assistência Técnica', icon: FaTools,  to: '/EMG/Assistencia' },
-    { label: 'Frota',               icon: FaTruck,  to: '/EMG/Frota'       },
-    { label: 'Pessoal',             icon: FaUsers,  to: '/EMG/Pessoal'     },
-    { label: 'Horas Extra',         icon: FaClock,  to: '/EMG/HorasExtra'  },
+    { label: 'Assistência Técnica', icon: FaTools,        to: '/EMG/Assistencia' },
+    { label: 'Frota',               icon: FaTruck,        to: '/EMG/Frota'       },
+    { label: 'Pessoal',             icon: FaUsers,        to: '/EMG/Pessoal'     },
+    { label: 'Férias',              icon: FaCalendarAlt,  to: '/EMG/Ferias'      },
+    { label: 'Horas Extra',         icon: FaClock,        to: '/EMG/HorasExtra'  },
 ];
 
 export default function HomePage() {
@@ -31,9 +32,9 @@ export default function HomePage() {
                 <Box
                     sx={{
                         display: 'grid',
-                        gridTemplateColumns: { xs: '1fr 1fr', md: '1fr 1fr' },
+                        gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(3, 1fr)' },
                         gap: 3,
-                        maxWidth: 600,
+                        maxWidth: 900,
                         width: '100%',
                     }}
                 >

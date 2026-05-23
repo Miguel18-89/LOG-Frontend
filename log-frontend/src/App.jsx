@@ -18,6 +18,10 @@ import AllUsers from './components/AllUsers';
 import StoreDetails from './components/storeDetails';
 import EMG from './components/EMG';
 import EMGHorasExtra from './components/EMGHorasExtra';
+import AssistenciaTecnica from './components/AssistenciaTecnica';
+import Frota from './components/Frota';
+import Pessoal from './components/Pessoal';
+import Ferias from './components/Ferias';
 import QuickOvertimeEntry from './components/QuickOvertimeEntry';
 import { useNavigate } from 'react-router-dom';
 import { setupInterceptors } from './services/interceptors';
@@ -54,6 +58,10 @@ function App() {
         <Route path="/stores/:id" element={<PrivateRoute><StoreDetails /></PrivateRoute>} />
         <Route path="/EMG" element={<PrivateRoute><EMG /></PrivateRoute>}>
           <Route path="HorasExtra" element={<EMGHorasExtra />} />
+          <Route path="Assistencia" element={<AssistenciaTecnica />} />
+          <Route path="Frota" element={<Frota />} />
+          <Route path="Pessoal" element={<Pessoal />} />
+          <Route path="Ferias" element={<Ferias />} />
         </Route>
       </Routes>}
       <ToastContainer

@@ -23,7 +23,7 @@ import Input from '@mui/joy/Input';
 import '../styles/AllUsers.css';
 
 const roleLabels = {
-    0: 'Instalador',
+    0: 'Colaborador',
     1: 'Gestor de Projecto',
     2: 'Administrador',
 };
@@ -192,7 +192,7 @@ export default function UserList() {
                                                                 handleChange(user.id, 'role', val)
                                                             }
                                                         >
-                                                            <Option value={0}>Instalador</Option>
+                                                            <Option value={0}>Colaborador</Option>
                                                             <Option value={1}>Gestor de Projecto</Option>
                                                             <Option value={2}>Administrador</Option>
                                                         </Select>
