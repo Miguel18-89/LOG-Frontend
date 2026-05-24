@@ -424,15 +424,18 @@ export default function Pessoal() {
                 </Box>
             )}
 
-            <Sheet variant="outlined" sx={{ borderRadius: 'sm', overflow: 'auto' }}>
+            <Sheet variant="outlined" sx={{
+                borderRadius: 'sm', overflow: 'auto',
+                '& .col-hide': { display: { xs: 'none', sm: 'table-cell' } },
+            }}>
                 <Table stickyHeader hoverRow>
                     <thead>
                         <tr>
                             <th>Nome</th>
-                            <th>Função</th>
-                            <th>Admissão</th>
-                            <th>Contrato</th>
-                            <th>Apt. Médica</th>
+                            <th className="col-hide">Função</th>
+                            <th className="col-hide">Admissão</th>
+                            <th className="col-hide">Contrato</th>
+                            <th className="col-hide">Apt. Médica</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -445,10 +448,10 @@ export default function Pessoal() {
                             return (
                                 <tr key={emp.id} onClick={() => openDetail(emp)} style={{ cursor: 'pointer' }}>
                                     <td><strong>{emp.fullName}</strong></td>
-                                    <td>{emp.jobCategory || '—'}</td>
-                                    <td>{fmt(emp.admissionDate)}</td>
-                                    <td>{contractLabel(emp.contractType)}</td>
-                                    <td>
+                                    <td className="col-hide">{emp.jobCategory || '—'}</td>
+                                    <td className="col-hide">{fmt(emp.admissionDate)}</td>
+                                    <td className="col-hide">{contractLabel(emp.contractType)}</td>
+                                    <td className="col-hide">
                                         {emp.medicalFitnessDate ? (
                                             <span style={{ background: alert?.bg, padding: '2px 8px', borderRadius: 4, fontSize: '0.85rem' }}>
                                                 {fmt(emp.medicalFitnessDate)}{alert ? ` · ${alert.text}` : ''}
@@ -495,22 +498,22 @@ export default function Pessoal() {
                                     <Typography level="body-sm" sx={{ color: 'text.secondary' }}>{selected.jobCategory}</Typography>
                                 )}
                             </Box>
-                            {user?.role >= 1 && (
-                                <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
-                                    {!editMode ? (
-                                        <>
-                                            <Button size="sm" variant="outlined" startDecorator={<MdEdit />} onClick={startEdit}>Editar</Button>
+                            <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
+                                {!editMode ? (
+                                    <>
+                                        <Button size="sm" variant="outlined" startDecorator={<MdEdit />} onClick={startEdit}>Editar</Button>
+                                        {user?.role >= 1 && (
                                             <Button size="sm" variant="outlined" color="danger"
                                                 startDecorator={<MdDelete />} onClick={() => setDeleteConfirm(selected)}>Eliminar</Button>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Button size="sm" variant="plain" onClick={() => setEditMode(false)}>Cancelar</Button>
-                                            <Button size="sm" loading={saving} onClick={handleSave}>Guardar</Button>
-                                        </>
-                                    )}
-                                </Box>
-                            )}
+                                        )}
+                                    </>
+                                ) : (
+                                    <>
+                                        <Button size="sm" variant="plain" onClick={() => setEditMode(false)}>Cancelar</Button>
+                                        <Button size="sm" loading={saving} onClick={handleSave}>Guardar</Button>
+                                    </>
+                                )}
+                            </Box>
                         </Box>
 
                         <Tabs value={detailTab} onChange={(_, v) => setDetailTab(v)}>
@@ -596,7 +599,7 @@ export default function Pessoal() {
                             <TabPanel value={2} sx={{ pt: 2 }}>
                                 <Sheet variant="soft" sx={{ p: 2, borderRadius: 'sm', mb: 2 }}>
                                     <Typography level="title-sm" sx={{ mb: 1.5 }}>Adicionar Formação</Typography>
-                                    <Box sx={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 1.5, mb: 1.5 }}>
+                                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '2fr 1fr 1fr' }, gap: 1.5, mb: 1.5 }}>
                                         <Field label="Nome da Formação *">
                                             <Input value={trainingForm.name}
                                                 onChange={e => setTrainingForm(f => ({ ...f, name: e.target.value }))} />
@@ -649,7 +652,10 @@ export default function Pessoal() {
                                                 </Typography>
                                             </Box>
 
-                                            <Sheet variant="outlined" sx={{ borderRadius: 'sm', overflow: 'auto' }}>
+                                            <Sheet variant="outlined" sx={{
+                                                borderRadius: 'sm', overflow: 'auto',
+                                                '& .col-hide': { display: { xs: 'none', sm: 'table-cell' } },
+                                            }}>
                                                 <input ref={editFileInputRef} type="file"
                                                     accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" style={{ display: 'none' }}
                                                     onChange={e => setEditTrainingForm(f => ({ ...f, file: e.target.files[0] || null }))} />
@@ -657,10 +663,10 @@ export default function Pessoal() {
                                                     <thead>
                                                         <tr>
                                                             <th>Formação</th>
-                                                            <th style={{ width: 110 }}>Data</th>
+                                                            <th className="col-hide" style={{ width: 110 }}>Data</th>
                                                             <th style={{ width: 75 }}>Horas</th>
-                                                            <th>Certificado</th>
-                                                            <th style={{ width: 80 }}></th>
+                                                            <th className="col-hide">Certificado</th>
+                                                            <th style={{ width: 110 }}></th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
@@ -672,13 +678,13 @@ export default function Pessoal() {
                                                             <tr key={t.id} style={{ background: '#f0f4ff' }}>
                                                                 <td><Input size="sm" value={editTrainingForm.name}
                                                                     onChange={e => setEditTrainingForm(f => ({ ...f, name: e.target.value }))} /></td>
-                                                                <td><Input size="sm" type="date" value={editTrainingForm.date}
+                                                                <td className="col-hide"><Input size="sm" type="date" value={editTrainingForm.date}
                                                                     slotProps={{ input: { min: minTrainingDate, max: today } }}
                                                                     onChange={e => setEditTrainingForm(f => ({ ...f, date: e.target.value }))} /></td>
                                                                 <td><Input size="sm" type="number" min="0.5" step="0.5"
                                                                     value={editTrainingForm.hours}
                                                                     onChange={e => setEditTrainingForm(f => ({ ...f, hours: e.target.value }))} /></td>
-                                                                <td>
+                                                                <td className="col-hide">
                                                                     <Button size="sm" variant="outlined" startDecorator={<MdUploadFile />}
                                                                         onClick={() => editFileInputRef.current?.click()}>
                                                                         {editTrainingForm.file
@@ -700,9 +706,9 @@ export default function Pessoal() {
                                                         ) : (
                                                             <tr key={t.id}>
                                                                 <td>{t.name}</td>
-                                                                <td>{fmt(t.date)}</td>
+                                                                <td className="col-hide">{fmt(t.date)}</td>
                                                                 <td>{t.hours}h</td>
-                                                                <td>
+                                                                <td className="col-hide">
                                                                     {t.filename ? (
                                                                         <Button size="sm" variant="plain" startDecorator={<MdDownload />}
                                                                             onClick={() => handleDownload(t.id, t.originalName)}>
@@ -712,6 +718,14 @@ export default function Pessoal() {
                                                                 </td>
                                                                 <td>
                                                                     <Box sx={{ display: 'flex', gap: 0.5 }}>
+                                                                        {t.filename && (
+                                                                            <Box sx={{ display: { xs: 'inline-flex', sm: 'none' } }}>
+                                                                                <IconButton size="sm" variant="plain"
+                                                                                    onClick={() => handleDownload(t.id, t.originalName)}>
+                                                                                    <MdDownload />
+                                                                                </IconButton>
+                                                                            </Box>
+                                                                        )}
                                                                         <IconButton size="sm" onClick={() => startEditTraining(t)}><MdEdit /></IconButton>
                                                                         <IconButton size="sm" color="danger"
                                                                             onClick={() => setDeleteTrainingConfirm(t)}><MdDelete /></IconButton>

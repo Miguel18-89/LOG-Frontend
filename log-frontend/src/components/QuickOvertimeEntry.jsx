@@ -15,6 +15,11 @@ import { toast } from 'react-toastify';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://213.199.58.233:3000';
 
+async function sha256Hex(str) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
     const h = Math.floor(i / 2);
     const m = i % 2 === 0 ? '00' : '30';
@@ -97,13 +102,15 @@ export default function QuickOvertimeEntry() {
 
     async function handleSubmit() {
         if (!pin.trim()) { toast.error('Introduza o seu PIN.'); return; }
+        if (!/^\d{4,8}$/.test(pin.trim())) { toast.error('O PIN deve ser numérico e ter entre 4 a 8 dígitos.'); return; }
         if (!form.exitTime) { toast.error('Indique a hora de saída.'); return; }
         if (form.date > todayStr()) { toast.error('Não é possível registar datas futuras.'); return; }
 
         setLoading(true);
         try {
+            const pinHash = await sha256Hex(pin.trim());
             await axios.post(`${API_URL}/emg/horas-extra/public`, {
-                pin: pin.trim(),
+                pin: pinHash,
                 ...form,
                 nightType,
             });
@@ -124,7 +131,7 @@ export default function QuickOvertimeEntry() {
 
     if (success) {
         return (
-            <Box sx={{ position: 'fixed', inset: 0, overflow: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2, bgcolor: '#fff8e1' }}>
+            <Box sx={{ position: 'fixed', inset: 0, overflow: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2, bgcolor: '#ffffff' }}>
                 <Sheet variant="outlined" sx={{ p: 4, borderRadius: 'lg', boxShadow: 'lg', textAlign: 'center', maxWidth: 360, width: '100%' }}>
                     <Typography sx={{ fontSize: '3.5rem', lineHeight: 1, mb: 1 }}>✓</Typography>
                     <Typography level="h4" sx={{ color: '#2e7d32', mb: 1 }}>Registo gravado!</Typography>
@@ -140,7 +147,7 @@ export default function QuickOvertimeEntry() {
     }
 
     return (
-        <Box sx={{ position: 'fixed', inset: 0, overflow: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2, bgcolor: '#fff8e1' }}>
+        <Box sx={{ position: 'fixed', inset: 0, overflow: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2, bgcolor: '#ffffff' }}>
             <Sheet variant="outlined" sx={{ p: 3, borderRadius: 'lg', boxShadow: 'lg', maxWidth: 420, width: '100%' }}>
                 <Typography level="h4" sx={{ mb: 0.5, fontWeight: 'bold', color: '#f57c00', textAlign: 'center' }}>
                     Horas Extra

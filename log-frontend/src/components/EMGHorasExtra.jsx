@@ -330,7 +330,10 @@ export default function EMGHorasExtra() {
         <>
             <Sheet
                 variant="outlined"
-                sx={{ mx: 'auto', p: 3, borderRadius: 'sm', boxShadow: 'lg', backgroundColor: '#fff', maxWidth: 1100 }}
+                sx={{
+                    mx: 'auto', p: 3, borderRadius: 'sm', boxShadow: 'lg', backgroundColor: '#fff', maxWidth: 1100,
+                    '& .col-hide': { display: { xs: 'none', md: 'table-cell' } },
+                }}
             >
                 <Typography level="h4" sx={{ mb: 2, fontWeight: 'bold', color: '#f57c00', textAlign: 'center' }}>
                     Horas Extra
@@ -359,18 +362,54 @@ export default function EMGHorasExtra() {
                     </Box>
                 </Box>
 
+                {/* Totais — visível apenas em mobile */}
+                {records.length > 0 && (
+                    <Box sx={{ display: { xs: 'block', md: 'none' }, bgcolor: '#fff8e1', borderRadius: 'sm', p: 1.5, mb: 2 }}>
+                        <Typography level="body-sm" sx={{ fontWeight: 'bold', color: '#e65100', mb: 1 }}>
+                            Totais — {MONTHS[month - 1]} {year}
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <Typography level="body-sm" sx={{ color: '#555' }}>Horas 50%</Typography>
+                                <Typography level="body-sm"><strong>{formatHours(totals.h50)}</strong></Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <Typography level="body-sm" sx={{ color: '#555' }}>Horas 75%</Typography>
+                                <Typography level="body-sm"><strong>{formatHours(totals.h75)}</strong></Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <Typography level="body-sm" sx={{ color: '#555' }}>Horas 100%</Typography>
+                                <Typography level="body-sm"><strong>{formatHours(totals.h100)}</strong></Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <Typography level="body-sm" sx={{ color: '#555' }}>Noites trabalhadas</Typography>
+                                <Typography level="body-sm"><strong>{totals.nightsWorked}</strong></Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <Typography level="body-sm" sx={{ color: '#555' }}>Noites fora de casa</Typography>
+                                <Typography level="body-sm"><strong>{totals.nightsAway}</strong></Typography>
+                            </Box>
+                            <Divider sx={{ my: 0.5 }} />
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <Typography level="body-sm" sx={{ fontWeight: 'bold', color: '#e65100' }}>Total geral</Typography>
+                                <Typography level="body-sm" sx={{ fontWeight: 'bold', color: '#bf360c' }}>{formatHours(totalHours)}</Typography>
+                            </Box>
+                        </Box>
+                    </Box>
+                )}
+
                 <div style={{ overflowX: 'auto' }}>
-                    <Table borderAxis="xBetween" size="sm" stripe="odd" sx={{ minWidth: 800 }}>
+                    <Table borderAxis="xBetween" size="sm" stripe="odd" sx={{ minWidth: { xs: 0, md: 800 } }}>
                         <thead>
                             <tr>
                                 <th>Data</th>
-                                <th style={{ textAlign: 'center' }}>Entrada</th>
-                                <th style={{ textAlign: 'center' }}>Saída</th>
-                                <th style={{ textAlign: 'center' }}>Jantar</th>
-                                <th style={{ textAlign: 'center' }}>Horas 50%</th>
-                                <th style={{ textAlign: 'center' }}>Horas 75%</th>
-                                <th style={{ textAlign: 'center' }}>Horas 100%</th>
-                                <th style={{ textAlign: 'center' }}>Tipo de Noite</th>
+                                <th className="col-hide" style={{ textAlign: 'center' }}>Entrada</th>
+                                <th className="col-hide" style={{ textAlign: 'center' }}>Saída</th>
+                                <th className="col-hide" style={{ textAlign: 'center' }}>Jantar</th>
+                                <th className="col-hide" style={{ textAlign: 'center' }}>Horas 50%</th>
+                                <th className="col-hide" style={{ textAlign: 'center' }}>Horas 75%</th>
+                                <th className="col-hide" style={{ textAlign: 'center' }}>Horas 100%</th>
+                                <th className="col-hide" style={{ textAlign: 'center' }}>Tipo de Noite</th>
                                 <th style={{ textAlign: 'center', width: 80 }}></th>
                             </tr>
                         </thead>
@@ -384,13 +423,13 @@ export default function EMGHorasExtra() {
                             ) : records.map(r => (
                                 <tr key={r.id}>
                                     <td>{r.date ? new Date(r.date).toLocaleDateString('pt-PT') : '---'}</td>
-                                    <td style={{ textAlign: 'center' }}>{r.entryTime || '---'}</td>
-                                    <td style={{ textAlign: 'center' }}>{r.exitTime || '---'}</td>
-                                    <td style={{ textAlign: 'center' }}>{r.dinner ? '✓' : '✗'}</td>
-                                    <td style={{ textAlign: 'center' }}>{formatHours(r.hours50)}</td>
-                                    <td style={{ textAlign: 'center' }}>{formatHours(r.hours75)}</td>
-                                    <td style={{ textAlign: 'center' }}>{formatHours(r.hours100)}</td>
-                                    <td style={{ textAlign: 'center' }}>
+                                    <td className="col-hide" style={{ textAlign: 'center' }}>{r.entryTime || '---'}</td>
+                                    <td className="col-hide" style={{ textAlign: 'center' }}>{r.exitTime || '---'}</td>
+                                    <td className="col-hide" style={{ textAlign: 'center' }}>{r.dinner ? '✓' : '✗'}</td>
+                                    <td className="col-hide" style={{ textAlign: 'center' }}>{formatHours(r.hours50)}</td>
+                                    <td className="col-hide" style={{ textAlign: 'center' }}>{formatHours(r.hours75)}</td>
+                                    <td className="col-hide" style={{ textAlign: 'center' }}>{formatHours(r.hours100)}</td>
+                                    <td className="col-hide" style={{ textAlign: 'center' }}>
                                         {r.nightType === 'trabalhada' ? 'Trabalhada'
                                             : r.nightType === 'fora_de_casa' ? 'Fora de casa'
                                             : '---'}
@@ -407,7 +446,7 @@ export default function EMGHorasExtra() {
                             ))}
                         </tbody>
                         {records.length > 0 && (
-                            <tfoot>
+                            <Box component="tfoot" sx={{ display: { xs: 'none', md: 'table-footer-group' } }}>
                                 <tr style={{ fontWeight: 'bold', backgroundColor: '#fff8e1' }}>
                                     <td colSpan={4} style={{ textAlign: 'right', paddingRight: '1rem', color: '#e65100' }}>Totais:</td>
                                     <td style={{ textAlign: 'center' }}>{formatHours(totals.h50)}</td>
@@ -422,7 +461,7 @@ export default function EMGHorasExtra() {
                                     <td colSpan={4} style={{ textAlign: 'right', paddingRight: '1rem', color: '#e65100' }}>Total geral:</td>
                                     <td colSpan={5} style={{ color: '#bf360c', fontSize: '1rem' }}>{formatHours(totalHours)}</td>
                                 </tr>
-                            </tfoot>
+                            </Box>
                         )}
                     </Table>
                 </div>

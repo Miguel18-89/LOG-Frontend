@@ -32,7 +32,7 @@ export default function HomePage() {
                 <Box
                     sx={{
                         display: 'grid',
-                        gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(3, 1fr)' },
+                        gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(3, 1fr)' },
                         gap: 3,
                         maxWidth: 900,
                         width: '100%',
@@ -48,7 +48,7 @@ export default function HomePage() {
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 gap: 2,
-                                p: 6,
+                                p: { xs: 3, md: 6 },
                                 borderRadius: 'xl',
                                 bgcolor: '#fff',
                                 boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
