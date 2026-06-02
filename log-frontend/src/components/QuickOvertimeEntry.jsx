@@ -15,10 +15,6 @@ import { toast } from 'react-toastify';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://213.199.58.233:3000';
 
-async function sha256Hex(str) {
-    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-}
 
 const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
     const h = Math.floor(i / 2);
@@ -108,9 +104,8 @@ export default function QuickOvertimeEntry() {
 
         setLoading(true);
         try {
-            const pinHash = await sha256Hex(pin.trim());
             await axios.post(`${API_URL}/emg/horas-extra/public`, {
-                pin: pinHash,
+                pin: pin.trim(),
                 ...form,
                 nightType,
             });

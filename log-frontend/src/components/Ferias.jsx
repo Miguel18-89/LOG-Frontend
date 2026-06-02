@@ -51,7 +51,7 @@ function getDaysInYear(year) {
 function buildVacationMap(vacations) {
     const map = {};
     for (const v of vacations) {
-        if (v.status === 'cancelado') continue;
+        if (v.status === 'cancelado' || v.status === 'rejeitado') continue;
         const start = new Date(v.startDate);
         const end = new Date(v.endDate);
         const d = new Date(start);

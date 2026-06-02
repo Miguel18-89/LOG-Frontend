@@ -27,11 +27,6 @@ export default function EditUser() {
     const [pinLoading, setPinLoading] = useState(false);
     const [pinExists, setPinExists] = useState(false);
 
-    async function sha256Hex(str) {
-        const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-
     useEffect(() => {
         if (user?.name) setName(user.name);
         if (user?.id) {
@@ -72,8 +67,7 @@ export default function EditUser() {
         }
         setPinLoading(true);
         try {
-            const pinHash = await sha256Hex(pin);
-            await api.put(`/users/${user.id}`, { pin: pinHash });
+            await api.put(`/users/${user.id}`, { pin });
             setPin('');
             setPinConfirm('');
             setPinExists(true);
