@@ -32,6 +32,21 @@ function isWeekendDate(dateStr) {
     return d.getDay() === 0 || d.getDay() === 6;
 }
 
+function isOvernightShift(entryTime, exitTime) {
+    if (!entryTime || !exitTime) return false;
+    const [eH, eM] = entryTime.split(':').map(Number);
+    const [xH, xM] = exitTime.split(':').map(Number);
+    return (xH * 60 + xM) < (eH * 60 + eM);
+}
+
+function isExitOnWeekend(dateStr, entryTime, exitTime) {
+    if (!isOvernightShift(entryTime, exitTime)) return false;
+    const d = new Date(dateStr + 'T12:00:00');
+    const exitDate = new Date(d);
+    exitDate.setDate(exitDate.getDate() + 1);
+    return exitDate.getDay() === 0 || exitDate.getDay() === 6;
+}
+
 function detectNightType(exitTime) {
     if (!exitTime) return null;
     const [h, m] = exitTime.split(':').map(Number);
@@ -40,7 +55,7 @@ function detectNightType(exitTime) {
     return null;
 }
 
-function calcHours(date, entryTime, exitTime, isHoliday, dinner, weekendLunch) {
+function calcHours(date, entryTime, exitTime, isHoliday, dinner, weekendLunch, exitIsHoliday = false) {
     if (!date || !entryTime || !exitTime) return { h50: 0, h75: 0, h100: 0 };
     const d = new Date(date + 'T12:00:00');
     const dayOfWeek = d.getDay();
@@ -48,7 +63,8 @@ function calcHours(date, entryTime, exitTime, isHoliday, dinner, weekendLunch) {
     const [eH, eM] = entryTime.split(':').map(Number);
     const [xH, xM] = exitTime.split(':').map(Number);
     let totalMin = (xH * 60 + xM) - (eH * 60 + eM);
-    if (totalMin <= 0) totalMin += 24 * 60;
+    const isOvernight = totalMin <= 0;
+    if (isOvernight) totalMin += 24 * 60;
 
     if (isWeekend || isHoliday) {
         let workMin = totalMin;
@@ -56,6 +72,27 @@ function calcHours(date, entryTime, exitTime, isHoliday, dinner, weekendLunch) {
         if (dinner) workMin -= 60;
         if (workMin <= 0) return { h50: 0, h75: 0, h100: 0 };
         return { h50: 0, h75: 0, h100: workMin / 60 };
+    }
+
+    const exitWeekend = isExitOnWeekend(date, entryTime, exitTime);
+
+    if (isOvernight && (exitWeekend || exitIsHoliday)) {
+        const minBefore = 24 * 60 - (eH * 60 + eM);
+        const minAfter = xH * 60 + xM;
+
+        let overtimeBefore = minBefore - 10 * 60;
+        if (dinner) overtimeBefore -= 60;
+
+        let h50 = 0, h75 = 0;
+        if (overtimeBefore > 0) {
+            const ot = overtimeBefore / 60;
+            h50 = Math.min(ot, 1);
+            h75 = Math.max(0, ot - 1);
+        }
+
+        let afterMin = minAfter;
+        if (weekendLunch) afterMin -= 60;
+        return { h50, h75, h100: Math.max(0, afterMin / 60) };
     }
 
     let overtimeMin = totalMin - 10 * 60;
@@ -79,7 +116,9 @@ const emptyForm = {
     exitTime: '',
     dinner: false,
     isHoliday: false,
+    exitIsHoliday: false,
     weekendLunch: false,
+    nightType: '',
 };
 
 export default function QuickOvertimeEntry() {
@@ -88,12 +127,21 @@ export default function QuickOvertimeEntry() {
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
 
-    const showWeekendFields = isWeekendDate(form.date) || form.isHoliday;
-    const hours = calcHours(form.date, form.entryTime, form.exitTime, form.isHoliday, form.dinner, form.weekendLunch);
-    const nightType = detectNightType(form.exitTime);
+    const overnight = isOvernightShift(form.entryTime, form.exitTime);
+    const exitWeekend = isExitOnWeekend(form.date, form.entryTime, form.exitTime);
+    // show "Saída em feriado" only when overnight and exit day is not already a weekend
+    const showExitHoliday = overnight && !exitWeekend && !isWeekendDate(form.date) && !form.isHoliday;
+    const showWeekendFields = isWeekendDate(form.date) || form.isHoliday || exitWeekend || form.exitIsHoliday;
+    const hours = calcHours(form.date, form.entryTime, form.exitTime, form.isHoliday, form.dinner, form.weekendLunch, form.exitIsHoliday);
 
     function handleFormChange(field, value) {
-        setForm(prev => ({ ...prev, [field]: value }));
+        setForm(prev => {
+            const updated = { ...prev, [field]: value };
+            if (field === 'exitTime') {
+                updated.nightType = detectNightType(value) || '';
+            }
+            return updated;
+        });
     }
 
     async function handleSubmit() {
@@ -106,8 +154,13 @@ export default function QuickOvertimeEntry() {
         try {
             await axios.post(`${API_URL}/emg/horas-extra/public`, {
                 pin: pin.trim(),
-                ...form,
-                nightType,
+                date: form.date,
+                entryTime: form.entryTime,
+                exitTime: form.exitTime,
+                dinner: form.dinner,
+                isHoliday: effectiveIsHoliday,
+                weekendLunch: form.weekendLunch,
+                nightType: form.nightType || null,
             });
             setSuccess(true);
         } catch (err) {
@@ -205,6 +258,13 @@ export default function QuickOvertimeEntry() {
                             checked={form.isHoliday}
                             onChange={e => handleFormChange('isHoliday', e.target.checked)}
                         />
+                        {showExitHoliday && (
+                            <Checkbox
+                                label="Saída em feriado"
+                                checked={form.exitIsHoliday}
+                                onChange={e => handleFormChange('exitIsHoliday', e.target.checked)}
+                            />
+                        )}
                         {showWeekendFields && (
                             <Checkbox
                                 label="Almoço fim de semana"
@@ -213,6 +273,20 @@ export default function QuickOvertimeEntry() {
                             />
                         )}
                     </Box>
+
+                    {form.exitTime && (
+                        <FormControl>
+                            <FormLabel>Tipo de noite</FormLabel>
+                            <Select
+                                value={form.nightType}
+                                onChange={(_, v) => handleFormChange('nightType', v ?? '')}
+                            >
+                                <Option value="">Nenhuma</Option>
+                                <Option value="trabalhada">Noite trabalhada</Option>
+                                <Option value="fora">Noite fora de casa</Option>
+                            </Select>
+                        </FormControl>
+                    )}
 
                     {form.exitTime && (
                         <Box sx={{ bgcolor: '#fff3e0', borderRadius: 'sm', p: 1.5 }}>
@@ -225,11 +299,6 @@ export default function QuickOvertimeEntry() {
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#555' }}>
                                 <span>Horas 100%</span><strong>{formatHours(hours.h100)}</strong>
                             </Box>
-                            {nightType === 'trabalhada' && (
-                                <Box sx={{ mt: 0.5, fontSize: '0.82rem', color: '#e65100', fontWeight: 'bold' }}>
-                                    Noite trabalhada detectada
-                                </Box>
-                            )}
                         </Box>
                     )}
 
