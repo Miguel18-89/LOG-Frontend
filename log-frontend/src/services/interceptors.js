@@ -2,44 +2,43 @@
 import api from './api';
 
 let navigateRef = null;
-let interceptorsRegistered = false;
 
+// Registered at module-load time so the token is attached
+// even before App's useEffect fires on page refresh.
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const res = error.response;
+    if (!res) return Promise.reject(error);
+
+    if (res.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      if (window.location.pathname !== '/') {
+        navigateRef?.('/', { replace: true });
+      }
+    }
+
+    if (res.status === 500) {
+      console.error('Erro interno do servidor', res.data);
+    }
+
+    return Promise.reject(error);
+  }
+);
+
+// Called from App.jsx to wire up the navigate function after React Router mounts.
 export const setupInterceptors = (navigate) => {
   navigateRef = navigate;
-
-  if (interceptorsRegistered) return;
-  interceptorsRegistered = true;
-
-  api.interceptors.request.use(
-    (config) => {
-      const token = localStorage.getItem('token');
-      if (token) config.headers.Authorization = `Bearer ${token}`;
-      return config;
-    },
-    (error) => Promise.reject(error)
-  );
-
-  api.interceptors.response.use(
-    (response) => response,
-    (error) => {
-      const res = error.response;
-      if (!res) return Promise.reject(error);
-
-      if (res.status === 401) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        if (window.location.pathname !== '/') {
-          navigateRef?.('/', { replace: true });
-        }
-      }
-
-      if (res.status === 500) {
-        console.error('Erro interno do servidor', res.data);
-      }
-
-      return Promise.reject(error);
-    }
-  );
 };
 
 
