@@ -158,7 +158,8 @@ export default function QuickOvertimeEntry() {
                 entryTime: form.entryTime,
                 exitTime: form.exitTime,
                 dinner: form.dinner,
-                isHoliday: effectiveIsHoliday,
+                isHoliday: form.isHoliday,
+                exitIsHoliday: form.exitIsHoliday,
                 weekendLunch: form.weekendLunch,
                 nightType: form.nightType || null,
             });
