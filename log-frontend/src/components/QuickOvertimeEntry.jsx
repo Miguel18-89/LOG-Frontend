@@ -26,6 +26,15 @@ function todayStr() {
     return new Date().toISOString().split('T')[0];
 }
 
+function currentTimeRoundedUp() {
+    const now = new Date();
+    const h = now.getHours();
+    const m = now.getMinutes();
+    if (m === 0) return `${String(h).padStart(2, '0')}:00`;
+    if (m <= 30) return `${String(h).padStart(2, '0')}:30`;
+    return `${String((h + 1) % 24).padStart(2, '0')}:00`;
+}
+
 function isWeekendDate(dateStr) {
     if (!dateStr) return false;
     const d = new Date(dateStr + 'T12:00:00');
@@ -110,20 +119,23 @@ function formatHours(h) {
     return `${hours}h ${String(minutes).padStart(2, '0')}m`;
 }
 
-const emptyForm = {
-    date: todayStr(),
-    entryTime: '09:00',
-    exitTime: '',
-    dinner: false,
-    isHoliday: false,
-    exitIsHoliday: false,
-    weekendLunch: false,
-    nightType: '',
-};
+function makeEmptyForm() {
+    const exitTime = currentTimeRoundedUp();
+    return {
+        date: todayStr(),
+        entryTime: '09:00',
+        exitTime,
+        dinner: false,
+        isHoliday: false,
+        exitIsHoliday: false,
+        weekendLunch: false,
+        nightType: detectNightType(exitTime) || '',
+    };
+}
 
 export default function QuickOvertimeEntry() {
     const [pin, setPin] = useState('');
-    const [form, setForm] = useState(emptyForm);
+    const [form, setForm] = useState(makeEmptyForm);
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
 
@@ -131,7 +143,7 @@ export default function QuickOvertimeEntry() {
     const exitWeekend = isExitOnWeekend(form.date, form.entryTime, form.exitTime);
     // show "Saída em feriado" only when overnight and exit day is not already a weekend
     const showExitHoliday = overnight && !exitWeekend && !isWeekendDate(form.date) && !form.isHoliday;
-    const showWeekendFields = isWeekendDate(form.date) || form.isHoliday || exitWeekend || form.exitIsHoliday;
+    const showWeekendFields = isWeekendDate(form.date) || form.isHoliday;
     const hours = calcHours(form.date, form.entryTime, form.exitTime, form.isHoliday, form.dinner, form.weekendLunch, form.exitIsHoliday);
 
     function handleFormChange(field, value) {
@@ -175,7 +187,7 @@ export default function QuickOvertimeEntry() {
     function handleReset() {
         setSuccess(false);
         setPin('');
-        setForm(emptyForm);
+        setForm(makeEmptyForm());
     }
 
     if (success) {

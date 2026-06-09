@@ -47,6 +47,15 @@ function todayStr() {
     return new Date().toISOString().split('T')[0];
 }
 
+function currentTimeRoundedUp() {
+    const now = new Date();
+    const h = now.getHours();
+    const m = now.getMinutes();
+    if (m === 0) return `${String(h).padStart(2, '0')}:00`;
+    if (m <= 30) return `${String(h).padStart(2, '0')}:30`;
+    return `${String((h + 1) % 24).padStart(2, '0')}:00`;
+}
+
 function getUserName() {
     try {
         const user = JSON.parse(localStorage.getItem('user') || 'null');
@@ -68,6 +77,21 @@ function isWeekendDate(dateStr) {
     return d.getDay() === 0 || d.getDay() === 6;
 }
 
+function isOvernightShift(entryTime, exitTime) {
+    if (!entryTime || !exitTime) return false;
+    const [eH, eM] = entryTime.split(':').map(Number);
+    const [xH, xM] = exitTime.split(':').map(Number);
+    return (xH * 60 + xM) < (eH * 60 + eM);
+}
+
+function isExitOnWeekend(dateStr, entryTime, exitTime) {
+    if (!isOvernightShift(entryTime, exitTime)) return false;
+    const d = new Date(dateStr + 'T12:00:00');
+    const exitDate = new Date(d);
+    exitDate.setDate(exitDate.getDate() + 1);
+    return exitDate.getDay() === 0 || exitDate.getDay() === 6;
+}
+
 function detectNightType(exitTime) {
     if (!exitTime) return null;
     const [h, m] = exitTime.split(':').map(Number);
@@ -76,7 +100,7 @@ function detectNightType(exitTime) {
     return null;
 }
 
-function calcHours(date, entryTime, exitTime, isHoliday, dinner, weekendLunch) {
+function calcHours(date, entryTime, exitTime, isHoliday, dinner, weekendLunch, exitIsHoliday = false) {
     if (!date || !entryTime || !exitTime) return { h50: 0, h75: 0, h100: 0 };
     const d = new Date(date + 'T12:00:00');
     const dayOfWeek = d.getDay();
@@ -84,7 +108,8 @@ function calcHours(date, entryTime, exitTime, isHoliday, dinner, weekendLunch) {
     const [eH, eM] = entryTime.split(':').map(Number);
     const [xH, xM] = exitTime.split(':').map(Number);
     let totalMin = (xH * 60 + xM) - (eH * 60 + eM);
-    if (totalMin <= 0) totalMin += 24 * 60;
+    const overnight = totalMin <= 0;
+    if (overnight) totalMin += 24 * 60;
 
     if (isWeekend || isHoliday) {
         let workMin = totalMin;
@@ -92,6 +117,24 @@ function calcHours(date, entryTime, exitTime, isHoliday, dinner, weekendLunch) {
         if (dinner) workMin -= 60;
         if (workMin <= 0) return { h50: 0, h75: 0, h100: 0 };
         return { h50: 0, h75: 0, h100: workMin / 60 };
+    }
+
+    const exitWeekend = isExitOnWeekend(date, entryTime, exitTime);
+
+    if (overnight && (exitWeekend || exitIsHoliday)) {
+        const minBefore = 24 * 60 - (eH * 60 + eM);
+        const minAfter = xH * 60 + xM;
+        let overtimeBefore = minBefore - 10 * 60;
+        if (dinner) overtimeBefore -= 60;
+        let h50 = 0, h75 = 0;
+        if (overtimeBefore > 0) {
+            const ot = overtimeBefore / 60;
+            h50 = Math.min(ot, 1);
+            h75 = Math.max(0, ot - 1);
+        }
+        let afterMin = minAfter;
+        if (weekendLunch) afterMin -= 60;
+        return { h50, h75, h100: Math.max(0, afterMin / 60) };
     }
 
     let overtimeMin = totalMin - 10 * 60;
@@ -108,6 +151,7 @@ const emptyForm = {
     exitTime: '',
     dinner: false,
     isHoliday: false,
+    exitIsHoliday: false,
     weekendLunch: false,
     hours50: 0,
     hours75: 0,
@@ -147,10 +191,10 @@ export default function EMGHorasExtra() {
     function handleFormChange(field, value) {
         setForm(prev => {
             const updated = { ...prev, [field]: value };
-            if (['date', 'entryTime', 'exitTime', 'isHoliday', 'dinner', 'weekendLunch'].includes(field)) {
+            if (['date', 'entryTime', 'exitTime', 'isHoliday', 'exitIsHoliday', 'dinner', 'weekendLunch'].includes(field)) {
                 const { h50, h75, h100 } = calcHours(
                     updated.date, updated.entryTime, updated.exitTime,
-                    updated.isHoliday, updated.dinner, updated.weekendLunch
+                    updated.isHoliday, updated.dinner, updated.weekendLunch, updated.exitIsHoliday
                 );
                 updated.hours50 = h50;
                 updated.hours75 = h75;
@@ -171,7 +215,7 @@ export default function EMGHorasExtra() {
     function handleOpenModal() {
         setIsEdit(false);
         setEditId(null);
-        setForm({ ...emptyForm, date: todayStr(), entryTime: '09:00' });
+        setForm({ ...emptyForm, date: todayStr(), entryTime: '09:00', exitTime: currentTimeRoundedUp() });
         setOpenModal(true);
     }
 
@@ -312,6 +356,9 @@ export default function EMGHorasExtra() {
         }
     }
 
+    const overnight = isOvernightShift(form.entryTime, form.exitTime);
+    const exitWeekend = isExitOnWeekend(form.date, form.entryTime, form.exitTime);
+    const showExitHoliday = overnight && !exitWeekend && !isWeekendDate(form.date) && !form.isHoliday;
     const showWeekendFields = isWeekendDate(form.date) || form.isHoliday;
 
     const totals = records.reduce(
@@ -508,6 +555,13 @@ export default function EMGHorasExtra() {
                                 checked={form.isHoliday}
                                 onChange={e => handleFormChange('isHoliday', e.target.checked)}
                             />
+                            {showExitHoliday && (
+                                <Checkbox
+                                    label="Saída em feriado"
+                                    checked={form.exitIsHoliday}
+                                    onChange={e => handleFormChange('exitIsHoliday', e.target.checked)}
+                                />
+                            )}
                             {showWeekendFields && (
                                 <Checkbox
                                     label="Almoço de fim de semana"
