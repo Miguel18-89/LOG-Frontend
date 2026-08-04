@@ -17,6 +17,7 @@ import Select from '@mui/joy/Select';
 import Option from '@mui/joy/Option';
 import Checkbox from '@mui/joy/Checkbox';
 import IconButton from '@mui/joy/IconButton';
+import Chip from '@mui/joy/Chip';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import Divider from '@mui/joy/Divider';
@@ -30,6 +31,15 @@ const MONTHS = [
     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
 ];
 
+// Feriados nacionais portugueses de data fixa (MM-DD) — não inclui feriados móveis
+// (Carnaval, Sexta-feira Santa, Corpo de Deus), que devem ser marcados manualmente
+// pelo colaborador através do tipo de registo "Feriado".
+const FIXED_HOLIDAYS_MMDD = [
+    '01-01', '04-25', '05-01', '06-10', '08-15', '10-05', '11-01', '12-01', '12-08', '12-25',
+];
+
+const MAX_VACATION_BUSINESS_DAYS = 15;
+
 function formatHours(h) {
     const total = Math.round((h || 0) * 60);
     const hours = Math.floor(total / 60);
@@ -42,6 +52,10 @@ const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
     const m = i % 2 === 0 ? '00' : '30';
     return `${String(h).padStart(2, '0')}:${m}`;
 });
+
+function pad2(n) {
+    return String(n).padStart(2, '0');
+}
 
 function todayStr() {
     return new Date().toISOString().split('T')[0];
@@ -145,8 +159,56 @@ function calcHours(date, entryTime, exitTime, isHoliday, dinner, weekendLunch, e
     return { h50: Math.min(overtime, 1), h75: Math.max(0, overtime - 1), h100: 0 };
 }
 
+function formatSituacao(r) {
+    if (r.recordType === 'ferias') return 'Férias';
+    if (r.recordType === 'falta') return 'Falta';
+    if (r.recordType === 'feriado') return 'Feriado';
+    if (r.nightType === 'trabalhada') return 'Trabalhada';
+    if (r.nightType === 'fora_de_casa') return 'Fora de casa';
+    return '---';
+}
+
+function isWorkRecord(r) {
+    return !r.recordType || r.recordType === 'trabalho';
+}
+
+function countBusinessDays(startDate, endDate) {
+    if (!startDate || !endDate) return 0;
+    let count = 0;
+    const cur = new Date(startDate + 'T12:00:00');
+    const end = new Date(endDate + 'T12:00:00');
+    while (cur <= end) {
+        const day = cur.getDay();
+        if (day !== 0 && day !== 6) count++;
+        cur.setDate(cur.getDate() + 1);
+    }
+    return count;
+}
+
+function getMissingBusinessDays(records, year, month) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const isCurrentMonth = year === today.getFullYear() && month === today.getMonth() + 1;
+    const isFutureMonth = year > today.getFullYear() || (year === today.getFullYear() && month > today.getMonth() + 1);
+    if (isFutureMonth) return [];
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const lastDay = isCurrentMonth ? today.getDate() : daysInMonth;
+
+    const presentDates = new Set(records.map(r => r.date ? r.date.split('T')[0] : null).filter(Boolean));
+    const missing = [];
+    for (let day = 1; day <= lastDay; day++) {
+        const dateStr = `${year}-${pad2(month)}-${pad2(day)}`;
+        if (isWeekendDate(dateStr)) continue;
+        const mmdd = `${pad2(month)}-${pad2(day)}`;
+        if (FIXED_HOLIDAYS_MMDD.includes(mmdd)) continue;
+        if (!presentDates.has(dateStr)) missing.push(dateStr);
+    }
+    return missing;
+}
+
 const emptyForm = {
     date: '',
+    recordType: 'trabalho',
     entryTime: '',
     exitTime: '',
     dinner: false,
@@ -157,6 +219,8 @@ const emptyForm = {
     hours75: 0,
     hours100: 0,
     nightType: '',
+    client: '',
+    obra: '',
 };
 
 export default function EMGHorasExtra() {
@@ -172,6 +236,9 @@ export default function EMGHorasExtra() {
     const [sending, setSending] = useState(false);
     const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: null });
     const [sendConfirm, setSendConfirm] = useState({ open: false, comment: '' });
+    const [missingDaysModal, setMissingDaysModal] = useState({ open: false, missing: [] });
+    const [vacationModal, setVacationModal] = useState({ open: false, startDate: '', endDate: '' });
+    const [vacationLoading, setVacationLoading] = useState(false);
 
     const years = Array.from({ length: 5 }, (_, i) => now.getFullYear() - 2 + i);
 
@@ -224,23 +291,37 @@ export default function EMGHorasExtra() {
         setEditId(record.id);
         setForm({
             date: record.date ? record.date.split('T')[0] : '',
+            recordType: record.recordType || 'trabalho',
             entryTime: record.entryTime || '',
             exitTime: record.exitTime || '',
             dinner: record.dinner || false,
             isHoliday: false,
+            exitIsHoliday: false,
             weekendLunch: record.weekendLunch || false,
             hours50: record.hours50 || 0,
             hours75: record.hours75 || 0,
             hours100: record.hours100 || 0,
             nightType: record.nightType || '',
+            client: record.client || '',
+            obra: record.obra || '',
         });
         setOpenModal(true);
     }
 
     async function handleSubmit() {
-        if (!form.date || !form.entryTime || !form.exitTime) {
-            toast.error('Preencha a data, hora de entrada e hora de saída.');
+        if (!form.date) {
+            toast.error('Indique a data.');
             return;
+        }
+        if (form.recordType === 'trabalho') {
+            if (!form.entryTime || !form.exitTime) {
+                toast.error('Preencha a hora de entrada e hora de saída.');
+                return;
+            }
+            if ((form.nightType === 'trabalhada' || form.nightType === 'fora_de_casa') && (!form.client.trim() || !form.obra.trim())) {
+                toast.error('Indique o cliente e a obra/local para noites trabalhadas ou fora de casa.');
+                return;
+            }
         }
         if (form.date > todayStr()) {
             toast.error('Não é possível registar horas para uma data futura.');
@@ -263,8 +344,9 @@ export default function EMGHorasExtra() {
             setOpenModal(false);
             setForm({ ...emptyForm, date: todayStr() });
             fetchRecords();
-        } catch {
-            toast.error(isEdit ? 'Erro ao actualizar o registo.' : 'Erro ao guardar o registo.');
+        } catch (err) {
+            const msg = err.response?.data?.error;
+            toast.error(msg || (isEdit ? 'Erro ao actualizar o registo.' : 'Erro ao guardar o registo.'));
         } finally {
             setLoading(false);
         }
@@ -291,9 +373,57 @@ export default function EMGHorasExtra() {
         setForm({ ...emptyForm, date: todayStr() });
     }
 
+    function handleOpenVacationModal() {
+        setVacationModal({ open: true, startDate: todayStr(), endDate: todayStr() });
+    }
+
+    function closeVacationModal() {
+        setVacationModal({ open: false, startDate: '', endDate: '' });
+    }
+
+    async function handleVacationSubmit() {
+        const { startDate, endDate } = vacationModal;
+        if (!startDate || !endDate) {
+            toast.error('Indique a data de início e de fim.');
+            return;
+        }
+        if (endDate < startDate) {
+            toast.error('A data de fim deve ser posterior ou igual à data de início.');
+            return;
+        }
+        const businessDays = countBusinessDays(startDate, endDate);
+        if (businessDays === 0) {
+            toast.error('O período não contém dias úteis.');
+            return;
+        }
+        if (businessDays > MAX_VACATION_BUSINESS_DAYS) {
+            toast.error(`O período não pode exceder ${MAX_VACATION_BUSINESS_DAYS} dias úteis. Submeta vários períodos separados.`);
+            return;
+        }
+        setVacationLoading(true);
+        try {
+            const res = await api.post('/emg/horas-extra/ferias', { startDate, endDate });
+            const { created, skipped } = res.data;
+            let msg = `${created} dia(s) de férias adicionados.`;
+            if (skipped && skipped.length > 0) msg += ` ${skipped.length} dia(s) já tinham registo e foram ignorados.`;
+            toast.success(msg);
+            closeVacationModal();
+            fetchRecords();
+        } catch (err) {
+            toast.error(err.response?.data?.error || 'Erro ao adicionar período de férias.');
+        } finally {
+            setVacationLoading(false);
+        }
+    }
+
     function handleSendEmail() {
         if (records.length === 0) {
             toast.warning('Sem registos para enviar.');
+            return;
+        }
+        const missing = getMissingBusinessDays(records, year, month);
+        if (missing.length > 0) {
+            setMissingDaysModal({ open: true, missing });
             return;
         }
         setSendConfirm({ open: true, comment: '' });
@@ -304,9 +434,9 @@ export default function EMGHorasExtra() {
         setSendConfirm(prev => ({ ...prev, open: false }));
         try {
             const monthName = MONTHS[month - 1];
+            const userName = getUserName();
             const doc = new jsPDF();
 
-            const userName = getUserName();
             doc.setFontSize(14);
             doc.setTextColor(245, 124, 0);
             doc.text(`Horas Extra — ${userName ? userName + ' — ' : ''}${monthName} ${year}`, 14, 18);
@@ -316,32 +446,63 @@ export default function EMGHorasExtra() {
                 styles: { fontSize: 8 },
                 headStyles: { fillColor: [245, 124, 0], textColor: 255, fontStyle: 'bold' },
                 footStyles: { fillColor: [255, 243, 224], textColor: [191, 54, 12], fontStyle: 'bold' },
-                head: [['Data', 'Entrada', 'Saída', 'Jantar', 'Horas 50%', 'Horas 75%', 'Horas 100%', 'Tipo de Noite']],
+                head: [['Data', 'Entrada', 'Saída', 'Jantar', 'Horas 50%', 'Horas 75%', 'Horas 100%', 'Situação']],
                 body: records.map(r => [
                     r.date ? new Date(r.date).toLocaleDateString('pt-PT') : '---',
-                    r.entryTime || '---',
-                    r.exitTime || '---',
-                    r.dinner ? 'Sim' : 'Não',
-                    formatHours(r.hours50),
-                    formatHours(r.hours75),
-                    formatHours(r.hours100),
-                    r.nightType === 'trabalhada' ? 'Trabalhada'
-                        : r.nightType === 'fora_de_casa' ? 'Fora de casa'
-                        : '---',
+                    isWorkRecord(r) ? (r.entryTime || '---') : '---',
+                    isWorkRecord(r) ? (r.exitTime || '---') : '---',
+                    isWorkRecord(r) ? (r.dinner ? 'Sim' : 'Não') : '---',
+                    isWorkRecord(r) ? formatHours(r.hours50) : '---',
+                    isWorkRecord(r) ? formatHours(r.hours75) : '---',
+                    isWorkRecord(r) ? formatHours(r.hours100) : '---',
+                    formatSituacao(r),
                 ]),
                 foot: [[
                     { content: 'Totais:', colSpan: 4, styles: { halign: 'right' } },
                     formatHours(totals.h50),
                     formatHours(totals.h75),
                     formatHours(totals.h100),
-                    `${totals.nightsWorked} trabalhada(s) / ${totals.nightsAway} fora de casa`,
+                    `${totals.nightsWorked} trabalhada(s) (50€) / ${totals.nightsAway} fora de casa (25€)`,
                 ]],
             });
 
+            const finalY = (doc.lastAutoTable?.finalY ?? 26) + 8;
+            doc.setFontSize(9);
+            doc.setTextColor(80);
+            doc.text(
+                `Férias: ${totals.feriasDays} dia(s)  ·  Faltas: ${totals.faltaDays} dia(s)  ·  Feriados: ${totals.feriadoDays} dia(s)`,
+                14, finalY
+            );
+
             const pdfBase64 = doc.output('datauristring').split(',')[1];
+
+            const ajudasRows = records.filter(r => isWorkRecord(r) && (r.nightType === 'trabalhada' || r.nightType === 'fora_de_casa'));
+            let pdfAjudasBase64 = null;
+            if (ajudasRows.length > 0) {
+                const docAjudas = new jsPDF();
+                docAjudas.setFontSize(14);
+                docAjudas.setTextColor(245, 124, 0);
+                docAjudas.text(`Mapa de Ajudas de Custo — ${userName ? userName + ' — ' : ''}${monthName} ${year}`, 14, 18);
+
+                autoTable(docAjudas, {
+                    startY: 26,
+                    styles: { fontSize: 8 },
+                    headStyles: { fillColor: [245, 124, 0], textColor: 255, fontStyle: 'bold' },
+                    head: [['Dia', 'Entrada', 'Saída', 'Cliente', 'Obra/Local']],
+                    body: ajudasRows.map(r => [
+                        r.date ? new Date(r.date).toLocaleDateString('pt-PT') : '---',
+                        r.entryTime || '---',
+                        r.exitTime || '---',
+                        r.client || '---',
+                        r.obra || '---',
+                    ]),
+                });
+                pdfAjudasBase64 = docAjudas.output('datauristring').split(',')[1];
+            }
 
             await api.post('/emg/horas-extra/enviar', {
                 pdf: pdfBase64,
+                pdfAjudas: pdfAjudasBase64,
                 month,
                 year,
                 monthName,
@@ -350,7 +511,12 @@ export default function EMGHorasExtra() {
             toast.success('Email enviado com sucesso.');
         } catch (err) {
             console.error('Erro ao enviar email:', err);
-            toast.error('Erro ao enviar email. Verifique a consola para mais detalhes.');
+            const serverMissing = err.response?.data?.missing;
+            if (Array.isArray(serverMissing) && serverMissing.length > 0) {
+                setMissingDaysModal({ open: true, missing: serverMissing });
+            } else {
+                toast.error(err.response?.data?.error || 'Erro ao enviar email. Verifique a consola para mais detalhes.');
+            }
         } finally {
             setSending(false);
         }
@@ -360,6 +526,7 @@ export default function EMGHorasExtra() {
     const exitWeekend = isExitOnWeekend(form.date, form.entryTime, form.exitTime);
     const showExitHoliday = overnight && !exitWeekend && !isWeekendDate(form.date) && !form.isHoliday;
     const showWeekendFields = isWeekendDate(form.date) || form.isHoliday;
+    const showClientObra = form.recordType === 'trabalho' && (form.nightType === 'trabalhada' || form.nightType === 'fora_de_casa');
 
     const totals = records.reduce(
         (acc, r) => ({
@@ -368,8 +535,11 @@ export default function EMGHorasExtra() {
             h100: acc.h100 + (r.hours100 || 0),
             nightsAway: acc.nightsAway + (r.nightType === 'fora_de_casa' ? 1 : 0),
             nightsWorked: acc.nightsWorked + (r.nightType === 'trabalhada' ? 1 : 0),
+            feriasDays: acc.feriasDays + (r.recordType === 'ferias' ? 1 : 0),
+            faltaDays: acc.faltaDays + (r.recordType === 'falta' ? 1 : 0),
+            feriadoDays: acc.feriadoDays + (r.recordType === 'feriado' ? 1 : 0),
         }),
-        { h50: 0, h75: 0, h100: 0, nightsAway: 0, nightsWorked: 0 }
+        { h50: 0, h75: 0, h100: 0, nightsAway: 0, nightsWorked: 0, feriasDays: 0, faltaDays: 0, feriadoDays: 0 }
     );
     const totalHours = totals.h50 + totals.h75 + totals.h100;
 
@@ -399,9 +569,12 @@ export default function EMGHorasExtra() {
                             {MONTHS.map((m, i) => <Option key={i + 1} value={i + 1}>{m}</Option>)}
                         </Select>
                     </FormControl>
-                    <Box sx={{ ml: 'auto', display: 'flex', gap: 1 }}>
+                    <Box sx={{ ml: 'auto', display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                         <Button size="sm" color="success" loading={sending} onClick={handleSendEmail}>
                             Enviar Horas
+                        </Button>
+                        <Button size="sm" color="neutral" variant="outlined" onClick={handleOpenVacationModal}>
+                            + Período de Férias
                         </Button>
                         <Button size="sm" color="warning" onClick={handleOpenModal}>
                             + Adicionar Registo
@@ -429,12 +602,16 @@ export default function EMGHorasExtra() {
                                 <Typography level="body-sm"><strong>{formatHours(totals.h100)}</strong></Typography>
                             </Box>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <Typography level="body-sm" sx={{ color: '#555' }}>Noites trabalhadas</Typography>
+                                <Typography level="body-sm" sx={{ color: '#555' }}>Noites trabalhadas (50€)</Typography>
                                 <Typography level="body-sm"><strong>{totals.nightsWorked}</strong></Typography>
                             </Box>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <Typography level="body-sm" sx={{ color: '#555' }}>Noites fora de casa</Typography>
+                                <Typography level="body-sm" sx={{ color: '#555' }}>Noites fora de casa (25€)</Typography>
                                 <Typography level="body-sm"><strong>{totals.nightsAway}</strong></Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <Typography level="body-sm" sx={{ color: '#555' }}>Férias / Faltas / Feriados</Typography>
+                                <Typography level="body-sm"><strong>{totals.feriasDays} / {totals.faltaDays} / {totals.feriadoDays}</strong></Typography>
                             </Box>
                             <Divider sx={{ my: 0.5 }} />
                             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -456,7 +633,7 @@ export default function EMGHorasExtra() {
                                 <th className="col-hide" style={{ textAlign: 'center' }}>Horas 50%</th>
                                 <th className="col-hide" style={{ textAlign: 'center' }}>Horas 75%</th>
                                 <th className="col-hide" style={{ textAlign: 'center' }}>Horas 100%</th>
-                                <th className="col-hide" style={{ textAlign: 'center' }}>Tipo de Noite</th>
+                                <th className="col-hide" style={{ textAlign: 'center' }}>Situação</th>
                                 <th style={{ textAlign: 'center', width: 80 }}></th>
                             </tr>
                         </thead>
@@ -470,17 +647,13 @@ export default function EMGHorasExtra() {
                             ) : records.map(r => (
                                 <tr key={r.id}>
                                     <td>{r.date ? new Date(r.date).toLocaleDateString('pt-PT') : '---'}</td>
-                                    <td className="col-hide" style={{ textAlign: 'center' }}>{r.entryTime || '---'}</td>
-                                    <td className="col-hide" style={{ textAlign: 'center' }}>{r.exitTime || '---'}</td>
-                                    <td className="col-hide" style={{ textAlign: 'center' }}>{r.dinner ? '✓' : '✗'}</td>
-                                    <td className="col-hide" style={{ textAlign: 'center' }}>{formatHours(r.hours50)}</td>
-                                    <td className="col-hide" style={{ textAlign: 'center' }}>{formatHours(r.hours75)}</td>
-                                    <td className="col-hide" style={{ textAlign: 'center' }}>{formatHours(r.hours100)}</td>
-                                    <td className="col-hide" style={{ textAlign: 'center' }}>
-                                        {r.nightType === 'trabalhada' ? 'Trabalhada'
-                                            : r.nightType === 'fora_de_casa' ? 'Fora de casa'
-                                            : '---'}
-                                    </td>
+                                    <td className="col-hide" style={{ textAlign: 'center' }}>{isWorkRecord(r) ? (r.entryTime || '---') : '---'}</td>
+                                    <td className="col-hide" style={{ textAlign: 'center' }}>{isWorkRecord(r) ? (r.exitTime || '---') : '---'}</td>
+                                    <td className="col-hide" style={{ textAlign: 'center' }}>{isWorkRecord(r) ? (r.dinner ? '✓' : '✗') : '---'}</td>
+                                    <td className="col-hide" style={{ textAlign: 'center' }}>{isWorkRecord(r) ? formatHours(r.hours50) : '---'}</td>
+                                    <td className="col-hide" style={{ textAlign: 'center' }}>{isWorkRecord(r) ? formatHours(r.hours75) : '---'}</td>
+                                    <td className="col-hide" style={{ textAlign: 'center' }}>{isWorkRecord(r) ? formatHours(r.hours100) : '---'}</td>
+                                    <td className="col-hide" style={{ textAlign: 'center' }}>{formatSituacao(r)}</td>
                                     <td style={{ textAlign: 'center' }}>
                                         <IconButton size="sm" color="neutral" variant="plain" onClick={() => handleOpenEditModal(r)}>
                                             <EditIcon fontSize="small" />
@@ -500,8 +673,9 @@ export default function EMGHorasExtra() {
                                     <td style={{ textAlign: 'center' }}>{formatHours(totals.h75)}</td>
                                     <td style={{ textAlign: 'center' }}>{formatHours(totals.h100)}</td>
                                     <td colSpan={2} style={{ textAlign: 'center', fontSize: '0.82rem', color: '#555' }}>
-                                        {totals.nightsWorked} noite(s) trabalhada(s)<br />
-                                        {totals.nightsAway} noite(s) fora de casa
+                                        {totals.nightsWorked} noite(s) trabalhada(s) (50€)<br />
+                                        {totals.nightsAway} noite(s) fora de casa (25€)<br />
+                                        Férias: {totals.feriasDays} · Faltas: {totals.faltaDays} · Feriados: {totals.feriadoDays}
                                     </td>
                                 </tr>
                                 <tr style={{ backgroundColor: '#fff3e0', fontWeight: 'bold' }}>
@@ -525,92 +699,167 @@ export default function EMGHorasExtra() {
 
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                         <FormControl size="sm" required>
+                            <FormLabel>Tipo de registo</FormLabel>
+                            <Select value={form.recordType} onChange={(_, v) => handleFormChange('recordType', v ?? 'trabalho')}>
+                                <Option value="trabalho">Trabalho</Option>
+                                <Option value="falta">Falta</Option>
+                                <Option value="feriado">Feriado (não trabalhado)</Option>
+                            </Select>
+                        </FormControl>
+
+                        <FormControl size="sm" required>
                             <FormLabel>Data</FormLabel>
                             <Input type="date" value={form.date} slotProps={{ input: { max: todayStr() } }} onChange={e => handleFormChange('date', e.target.value)} />
                         </FormControl>
 
-                        <Box sx={{ display: 'flex', gap: 2 }}>
-                            <FormControl size="sm" required sx={{ flex: 1 }}>
-                                <FormLabel>Hora de entrada</FormLabel>
-                                <Select value={form.entryTime} onChange={(_, v) => handleFormChange('entryTime', v ?? '')} placeholder="--:--">
-                                    {TIME_OPTIONS.map(t => <Option key={t} value={t}>{t}</Option>)}
-                                </Select>
-                            </FormControl>
-                            <FormControl size="sm" required sx={{ flex: 1 }}>
-                                <FormLabel>Hora de saída</FormLabel>
-                                <Select value={form.exitTime} onChange={(_, v) => handleFormChange('exitTime', v ?? '')} placeholder="--:--">
-                                    {TIME_OPTIONS.map(t => <Option key={t} value={t}>{t}</Option>)}
-                                </Select>
-                            </FormControl>
-                        </Box>
+                        {form.recordType === 'trabalho' && (
+                            <>
+                                <Box sx={{ display: 'flex', gap: 2 }}>
+                                    <FormControl size="sm" required sx={{ flex: 1 }}>
+                                        <FormLabel>Hora de entrada</FormLabel>
+                                        <Select value={form.entryTime} onChange={(_, v) => handleFormChange('entryTime', v ?? '')} placeholder="--:--">
+                                            {TIME_OPTIONS.map(t => <Option key={t} value={t}>{t}</Option>)}
+                                        </Select>
+                                    </FormControl>
+                                    <FormControl size="sm" required sx={{ flex: 1 }}>
+                                        <FormLabel>Hora de saída</FormLabel>
+                                        <Select value={form.exitTime} onChange={(_, v) => handleFormChange('exitTime', v ?? '')} placeholder="--:--">
+                                            {TIME_OPTIONS.map(t => <Option key={t} value={t}>{t}</Option>)}
+                                        </Select>
+                                    </FormControl>
+                                </Box>
 
-                        <Box sx={{ display: 'flex', gap: 4, flexWrap: 'wrap', mt: 0.5 }}>
-                            <Checkbox
-                                label="Jantar"
-                                checked={form.dinner}
-                                onChange={e => handleFormChange('dinner', e.target.checked)}
-                            />
-                            <Checkbox
-                                label="Feriado (força 100%)"
-                                checked={form.isHoliday}
-                                onChange={e => handleFormChange('isHoliday', e.target.checked)}
-                            />
-                            {showExitHoliday && (
-                                <Checkbox
-                                    label="Saída em feriado"
-                                    checked={form.exitIsHoliday}
-                                    onChange={e => handleFormChange('exitIsHoliday', e.target.checked)}
-                                />
-                            )}
-                            {showWeekendFields && (
-                                <Checkbox
-                                    label="Almoço de fim de semana"
-                                    checked={form.weekendLunch}
-                                    onChange={e => handleFormChange('weekendLunch', e.target.checked)}
-                                />
-                            )}
-                        </Box>
+                                <Box sx={{ display: 'flex', gap: 4, flexWrap: 'wrap', mt: 0.5 }}>
+                                    <Checkbox
+                                        label="Jantar"
+                                        checked={form.dinner}
+                                        onChange={e => handleFormChange('dinner', e.target.checked)}
+                                    />
+                                    <Checkbox
+                                        label="Feriado (força 100%)"
+                                        checked={form.isHoliday}
+                                        onChange={e => handleFormChange('isHoliday', e.target.checked)}
+                                    />
+                                    {showExitHoliday && (
+                                        <Checkbox
+                                            label="Saída em feriado"
+                                            checked={form.exitIsHoliday}
+                                            onChange={e => handleFormChange('exitIsHoliday', e.target.checked)}
+                                        />
+                                    )}
+                                    {showWeekendFields && (
+                                        <Checkbox
+                                            label="Almoço de fim de semana"
+                                            checked={form.weekendLunch}
+                                            onChange={e => handleFormChange('weekendLunch', e.target.checked)}
+                                        />
+                                    )}
+                                </Box>
 
-                        <Divider />
+                                <Divider />
 
-                        <Box sx={{ display: 'flex', gap: 1.5 }}>
-                            <FormControl size="sm" sx={{ flex: 1 }}>
-                                <FormLabel>Horas 50%</FormLabel>
-                                <Input type="number" value={form.hours50}
-                                    slotProps={{ input: { min: 0, step: 0.25 } }}
-                                    onChange={e => handleFormChange('hours50', parseFloat(e.target.value) || 0)} />
-                            </FormControl>
-                            <FormControl size="sm" sx={{ flex: 1 }}>
-                                <FormLabel>Horas 75%</FormLabel>
-                                <Input type="number" value={form.hours75}
-                                    slotProps={{ input: { min: 0, step: 0.25 } }}
-                                    onChange={e => handleFormChange('hours75', parseFloat(e.target.value) || 0)} />
-                            </FormControl>
-                            <FormControl size="sm" sx={{ flex: 1 }}>
-                                <FormLabel>Horas 100%</FormLabel>
-                                <Input type="number" value={form.hours100}
-                                    slotProps={{ input: { min: 0, step: 0.25 } }}
-                                    onChange={e => handleFormChange('hours100', parseFloat(e.target.value) || 0)} />
-                            </FormControl>
-                        </Box>
+                                <Box sx={{ display: 'flex', gap: 1.5 }}>
+                                    <FormControl size="sm" sx={{ flex: 1 }}>
+                                        <FormLabel>Horas 50%</FormLabel>
+                                        <Input type="number" value={form.hours50}
+                                            slotProps={{ input: { min: 0, step: 0.25 } }}
+                                            onChange={e => handleFormChange('hours50', parseFloat(e.target.value) || 0)} />
+                                    </FormControl>
+                                    <FormControl size="sm" sx={{ flex: 1 }}>
+                                        <FormLabel>Horas 75%</FormLabel>
+                                        <Input type="number" value={form.hours75}
+                                            slotProps={{ input: { min: 0, step: 0.25 } }}
+                                            onChange={e => handleFormChange('hours75', parseFloat(e.target.value) || 0)} />
+                                    </FormControl>
+                                    <FormControl size="sm" sx={{ flex: 1 }}>
+                                        <FormLabel>Horas 100%</FormLabel>
+                                        <Input type="number" value={form.hours100}
+                                            slotProps={{ input: { min: 0, step: 0.25 } }}
+                                            onChange={e => handleFormChange('hours100', parseFloat(e.target.value) || 0)} />
+                                    </FormControl>
+                                </Box>
 
-                        <Typography level="body-xs" sx={{ color: '#888', mt: -1 }}>
-                            Valores calculados automaticamente. Pode ajustar manualmente se necessário.
-                        </Typography>
+                                <Typography level="body-xs" sx={{ color: '#888', mt: -1 }}>
+                                    Valores calculados automaticamente. Pode ajustar manualmente se necessário.
+                                </Typography>
 
-                        <FormControl size="sm">
-                            <FormLabel>Tipo de noite</FormLabel>
-                            <Select value={form.nightType} onChange={(_, v) => handleFormChange('nightType', v ?? '')}>
-                                <Option value="">Nenhuma</Option>
-                                <Option value="trabalhada">Noite trabalhada</Option>
-                                <Option value="fora_de_casa">Fora de casa</Option>
-                            </Select>
-                        </FormControl>
+                                <FormControl size="sm">
+                                    <FormLabel>Tipo de noite</FormLabel>
+                                    <Select value={form.nightType} onChange={(_, v) => handleFormChange('nightType', v ?? '')}>
+                                        <Option value="">Nenhuma</Option>
+                                        <Option value="trabalhada">Noite trabalhada</Option>
+                                        <Option value="fora_de_casa">Fora de casa</Option>
+                                    </Select>
+                                </FormControl>
+
+                                {showClientObra && (
+                                    <Box sx={{ display: 'flex', gap: 1.5 }}>
+                                        <FormControl size="sm" required sx={{ flex: 1 }}>
+                                            <FormLabel>Cliente</FormLabel>
+                                            <Input value={form.client} onChange={e => handleFormChange('client', e.target.value)} placeholder="Nome do cliente" />
+                                        </FormControl>
+                                        <FormControl size="sm" required sx={{ flex: 1 }}>
+                                            <FormLabel>Obra / Local</FormLabel>
+                                            <Input value={form.obra} onChange={e => handleFormChange('obra', e.target.value)} placeholder="Local da obra" />
+                                        </FormControl>
+                                    </Box>
+                                )}
+                            </>
+                        )}
+
+                        {form.recordType !== 'trabalho' && (
+                            <Typography level="body-sm" sx={{ color: '#666' }}>
+                                {form.recordType === 'falta'
+                                    ? 'Este dia será marcado como "Falta" no PDF de horas extra.'
+                                    : 'Este dia será marcado como "Feriado" no PDF de horas extra.'}
+                            </Typography>
+                        )}
 
                         <Box sx={{ display: 'flex', gap: 2, mt: 1, justifyContent: 'flex-end' }}>
                             <Button variant="plain" color="neutral" onClick={closeModal}>Cancelar</Button>
                             <Button color="warning" loading={loading} onClick={handleSubmit}>
                                 {isEdit ? 'Actualizar' : 'Guardar'}
+                            </Button>
+                        </Box>
+                    </Box>
+                </ModalDialog>
+            </Modal>
+
+            {/* Modal período de férias */}
+            <Modal open={vacationModal.open} onClose={closeVacationModal}>
+                <ModalDialog sx={{ maxWidth: 420, width: '95%' }}>
+                    <ModalClose />
+                    <Typography level="h4" sx={{ mb: 1, color: '#f57c00' }}>
+                        Período de Férias
+                    </Typography>
+                    <Divider sx={{ mb: 2 }} />
+                    <Typography level="body-sm" sx={{ color: '#666', mb: 1.5 }}>
+                        Cria automaticamente um registo "Férias" para cada dia útil do período (máximo {MAX_VACATION_BUSINESS_DAYS} dias úteis).
+                        Fins de semana ficam de fora. Pode repetir para outros períodos.
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                        <Box sx={{ display: 'flex', gap: 2 }}>
+                            <FormControl size="sm" required sx={{ flex: 1 }}>
+                                <FormLabel>Data início</FormLabel>
+                                <Input
+                                    type="date"
+                                    value={vacationModal.startDate}
+                                    onChange={e => setVacationModal(prev => ({ ...prev, startDate: e.target.value }))}
+                                />
+                            </FormControl>
+                            <FormControl size="sm" required sx={{ flex: 1 }}>
+                                <FormLabel>Data fim</FormLabel>
+                                <Input
+                                    type="date"
+                                    value={vacationModal.endDate}
+                                    onChange={e => setVacationModal(prev => ({ ...prev, endDate: e.target.value }))}
+                                />
+                            </FormControl>
+                        </Box>
+                        <Box sx={{ display: 'flex', gap: 2, mt: 1, justifyContent: 'flex-end' }}>
+                            <Button variant="plain" color="neutral" onClick={closeVacationModal}>Cancelar</Button>
+                            <Button color="warning" loading={vacationLoading} onClick={handleVacationSubmit}>
+                                Adicionar
                             </Button>
                         </Box>
                     </Box>
@@ -636,6 +885,32 @@ export default function EMGHorasExtra() {
                 </ModalDialog>
             </Modal>
 
+            {/* Modal dias úteis em falta */}
+            <Modal open={missingDaysModal.open} onClose={() => setMissingDaysModal({ open: false, missing: [] })}>
+                <ModalDialog variant="outlined" role="alertdialog" sx={{ maxWidth: 480, width: '95%' }}>
+                    <DialogTitle>Dias úteis por preencher</DialogTitle>
+                    <Divider />
+                    <DialogContent>
+                        <Typography level="body-sm" sx={{ mb: 1.5 }}>
+                            Não é possível enviar as horas extra: faltam registos em <strong>{missingDaysModal.missing.length}</strong> dia(s)
+                            útil(eis) de {MONTHS[month - 1]} {year}. Preencha-os (trabalho, férias, falta ou feriado) antes de enviar.
+                        </Typography>
+                        <Box sx={{ maxHeight: 220, overflowY: 'auto', display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
+                            {missingDaysModal.missing.map(d => (
+                                <Chip key={d} size="sm" color="danger" variant="soft">
+                                    {new Date(d + 'T12:00:00').toLocaleDateString('pt-PT')}
+                                </Chip>
+                            ))}
+                        </Box>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button variant="solid" color="neutral" onClick={() => setMissingDaysModal({ open: false, missing: [] })}>
+                            Fechar
+                        </Button>
+                    </DialogActions>
+                </ModalDialog>
+            </Modal>
+
             {/* Modal confirmação de envio de email */}
             <Modal open={sendConfirm.open} onClose={() => setSendConfirm({ open: false, comment: '' })}>
                 <ModalDialog sx={{ maxWidth: 460, width: '95%' }}>
@@ -644,6 +919,9 @@ export default function EMGHorasExtra() {
                     <DialogContent>
                         <Typography level="body-sm" sx={{ mb: 1.5 }}>
                             Será enviado um email com as horas extra de <strong>{MONTHS[month - 1]} {year}</strong> para <strong>geral@emg.com.pt</strong> e para o seu email.
+                            {records.some(r => isWorkRecord(r) && (r.nightType === 'trabalhada' || r.nightType === 'fora_de_casa')) && (
+                                ' Será também enviado o mapa de ajudas de custo do mesmo período.'
+                            )}
                         </Typography>
                         <FormControl size="sm">
                             <FormLabel>Comentário (opcional)</FormLabel>

@@ -123,6 +123,7 @@ function makeEmptyForm() {
     const exitTime = currentTimeRoundedUp();
     return {
         date: todayStr(),
+        recordType: 'trabalho',
         entryTime: '09:00',
         exitTime,
         dinner: false,
@@ -130,6 +131,8 @@ function makeEmptyForm() {
         exitIsHoliday: false,
         weekendLunch: false,
         nightType: detectNightType(exitTime) || '',
+        client: '',
+        obra: '',
     };
 }
 
@@ -159,21 +162,30 @@ export default function QuickOvertimeEntry() {
     async function handleSubmit() {
         if (!pin.trim()) { toast.error('Introduza o seu PIN.'); return; }
         if (!/^\d{4,8}$/.test(pin.trim())) { toast.error('O PIN deve ser numérico e ter entre 4 a 8 dígitos.'); return; }
-        if (!form.exitTime) { toast.error('Indique a hora de saída.'); return; }
         if (form.date > todayStr()) { toast.error('Não é possível registar datas futuras.'); return; }
+        if (form.recordType === 'trabalho') {
+            if (!form.entryTime || !form.exitTime) { toast.error('Indique a hora de entrada e de saída.'); return; }
+            if ((form.nightType === 'trabalhada' || form.nightType === 'fora_de_casa') && (!form.client.trim() || !form.obra.trim())) {
+                toast.error('Indique o cliente e a obra/local para noites trabalhadas ou fora de casa.');
+                return;
+            }
+        }
 
         setLoading(true);
         try {
             await axios.post(`${API_URL}/emg/horas-extra/public`, {
                 pin: pin.trim(),
                 date: form.date,
-                entryTime: form.entryTime,
-                exitTime: form.exitTime,
+                recordType: form.recordType,
+                entryTime: form.recordType === 'trabalho' ? form.entryTime : null,
+                exitTime: form.recordType === 'trabalho' ? form.exitTime : null,
                 dinner: form.dinner,
                 isHoliday: form.isHoliday,
                 exitIsHoliday: form.exitIsHoliday,
                 weekendLunch: form.weekendLunch,
-                nightType: form.nightType || null,
+                nightType: form.recordType === 'trabalho' ? (form.nightType || null) : null,
+                client: form.recordType === 'trabalho' ? (form.client.trim() || null) : null,
+                obra: form.recordType === 'trabalho' ? (form.obra.trim() || null) : null,
             });
             setSuccess(true);
         } catch (err) {
@@ -236,6 +248,16 @@ export default function QuickOvertimeEntry() {
                     </FormControl>
 
                     <FormControl required>
+                        <FormLabel>Tipo de registo</FormLabel>
+                        <Select value={form.recordType} onChange={(_, v) => handleFormChange('recordType', v ?? 'trabalho')}>
+                            <Option value="trabalho">Trabalho</Option>
+                            <Option value="falta">Falta</Option>
+                            <Option value="feriado">Feriado (não trabalhado)</Option>
+                            <Option value="ferias">Férias</Option>
+                        </Select>
+                    </FormControl>
+
+                    <FormControl required>
                         <FormLabel>Data</FormLabel>
                         <Input
                             type="date"
@@ -245,74 +267,107 @@ export default function QuickOvertimeEntry() {
                         />
                     </FormControl>
 
-                    <Box sx={{ display: 'flex', gap: 2 }}>
-                        <FormControl required sx={{ flex: 1 }}>
-                            <FormLabel>Entrada</FormLabel>
-                            <Select value={form.entryTime} onChange={(_, v) => handleFormChange('entryTime', v ?? '')} placeholder="--:--">
-                                {TIME_OPTIONS.map(t => <Option key={t} value={t}>{t}</Option>)}
-                            </Select>
-                        </FormControl>
-                        <FormControl required sx={{ flex: 1 }}>
-                            <FormLabel>Saída</FormLabel>
-                            <Select value={form.exitTime} onChange={(_, v) => handleFormChange('exitTime', v ?? '')} placeholder="--:--">
-                                {TIME_OPTIONS.map(t => <Option key={t} value={t}>{t}</Option>)}
-                            </Select>
-                        </FormControl>
-                    </Box>
+                    {form.recordType === 'trabalho' && (
+                        <>
+                            <Box sx={{ display: 'flex', gap: 2 }}>
+                                <FormControl required sx={{ flex: 1 }}>
+                                    <FormLabel>Entrada</FormLabel>
+                                    <Select value={form.entryTime} onChange={(_, v) => handleFormChange('entryTime', v ?? '')} placeholder="--:--">
+                                        {TIME_OPTIONS.map(t => <Option key={t} value={t}>{t}</Option>)}
+                                    </Select>
+                                </FormControl>
+                                <FormControl required sx={{ flex: 1 }}>
+                                    <FormLabel>Saída</FormLabel>
+                                    <Select value={form.exitTime} onChange={(_, v) => handleFormChange('exitTime', v ?? '')} placeholder="--:--">
+                                        {TIME_OPTIONS.map(t => <Option key={t} value={t}>{t}</Option>)}
+                                    </Select>
+                                </FormControl>
+                            </Box>
 
-                    <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
-                        <Checkbox
-                            label="Jantar"
-                            checked={form.dinner}
-                            onChange={e => handleFormChange('dinner', e.target.checked)}
-                        />
-                        <Checkbox
-                            label="Feriado"
-                            checked={form.isHoliday}
-                            onChange={e => handleFormChange('isHoliday', e.target.checked)}
-                        />
-                        {showExitHoliday && (
-                            <Checkbox
-                                label="Saída em feriado"
-                                checked={form.exitIsHoliday}
-                                onChange={e => handleFormChange('exitIsHoliday', e.target.checked)}
-                            />
-                        )}
-                        {showWeekendFields && (
-                            <Checkbox
-                                label="Almoço fim de semana"
-                                checked={form.weekendLunch}
-                                onChange={e => handleFormChange('weekendLunch', e.target.checked)}
-                            />
-                        )}
-                    </Box>
+                            <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+                                <Checkbox
+                                    label="Jantar"
+                                    checked={form.dinner}
+                                    onChange={e => handleFormChange('dinner', e.target.checked)}
+                                />
+                                <Checkbox
+                                    label="Feriado"
+                                    checked={form.isHoliday}
+                                    onChange={e => handleFormChange('isHoliday', e.target.checked)}
+                                />
+                                {showExitHoliday && (
+                                    <Checkbox
+                                        label="Saída em feriado"
+                                        checked={form.exitIsHoliday}
+                                        onChange={e => handleFormChange('exitIsHoliday', e.target.checked)}
+                                    />
+                                )}
+                                {showWeekendFields && (
+                                    <Checkbox
+                                        label="Almoço fim de semana"
+                                        checked={form.weekendLunch}
+                                        onChange={e => handleFormChange('weekendLunch', e.target.checked)}
+                                    />
+                                )}
+                            </Box>
 
-                    {form.exitTime && (
-                        <FormControl>
-                            <FormLabel>Tipo de noite</FormLabel>
-                            <Select
-                                value={form.nightType}
-                                onChange={(_, v) => handleFormChange('nightType', v ?? '')}
-                            >
-                                <Option value="">Nenhuma</Option>
-                                <Option value="trabalhada">Noite trabalhada</Option>
-                                <Option value="fora">Noite fora de casa</Option>
-                            </Select>
-                        </FormControl>
+                            {form.exitTime && (
+                                <FormControl>
+                                    <FormLabel>Tipo de noite</FormLabel>
+                                    <Select
+                                        value={form.nightType}
+                                        onChange={(_, v) => handleFormChange('nightType', v ?? '')}
+                                    >
+                                        <Option value="">Nenhuma</Option>
+                                        <Option value="trabalhada">Noite trabalhada</Option>
+                                        <Option value="fora_de_casa">Noite fora de casa</Option>
+                                    </Select>
+                                </FormControl>
+                            )}
+
+                            {(form.nightType === 'trabalhada' || form.nightType === 'fora_de_casa') && (
+                                <Box sx={{ display: 'flex', gap: 2 }}>
+                                    <FormControl required sx={{ flex: 1 }}>
+                                        <FormLabel>Cliente</FormLabel>
+                                        <Input
+                                            value={form.client}
+                                            onChange={e => handleFormChange('client', e.target.value)}
+                                            placeholder="Nome do cliente"
+                                        />
+                                    </FormControl>
+                                    <FormControl required sx={{ flex: 1 }}>
+                                        <FormLabel>Obra / Local</FormLabel>
+                                        <Input
+                                            value={form.obra}
+                                            onChange={e => handleFormChange('obra', e.target.value)}
+                                            placeholder="Local da obra"
+                                        />
+                                    </FormControl>
+                                </Box>
+                            )}
+
+                            {form.exitTime && (
+                                <Box sx={{ bgcolor: '#fff3e0', borderRadius: 'sm', p: 1.5 }}>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#555' }}>
+                                        <span>Horas 50%</span><strong>{formatHours(hours.h50)}</strong>
+                                    </Box>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#555' }}>
+                                        <span>Horas 75%</span><strong>{formatHours(hours.h75)}</strong>
+                                    </Box>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#555' }}>
+                                        <span>Horas 100%</span><strong>{formatHours(hours.h100)}</strong>
+                                    </Box>
+                                </Box>
+                            )}
+                        </>
                     )}
 
-                    {form.exitTime && (
-                        <Box sx={{ bgcolor: '#fff3e0', borderRadius: 'sm', p: 1.5 }}>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#555' }}>
-                                <span>Horas 50%</span><strong>{formatHours(hours.h50)}</strong>
-                            </Box>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#555' }}>
-                                <span>Horas 75%</span><strong>{formatHours(hours.h75)}</strong>
-                            </Box>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#555' }}>
-                                <span>Horas 100%</span><strong>{formatHours(hours.h100)}</strong>
-                            </Box>
-                        </Box>
+                    {form.recordType !== 'trabalho' && (
+                        <Typography level="body-sm" sx={{ color: '#666' }}>
+                            {form.recordType === 'falta' && 'Este dia será marcado como "Falta" no PDF de horas extra.'}
+                            {form.recordType === 'feriado' && 'Este dia será marcado como "Feriado" no PDF de horas extra.'}
+                            {form.recordType === 'ferias' && 'Este dia será marcado como "Férias" no PDF de horas extra.'}
+                        </Typography>
                     )}
 
                     <Button
