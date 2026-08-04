@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import api from '../services/api';
@@ -39,6 +40,20 @@ const FIXED_HOLIDAYS_MMDD = [
 ];
 
 const MAX_VACATION_BUSINESS_DAYS = 15;
+
+// A taxa horária configurada no Banco de Horas é a taxa BASE; cada escalão acresce a respetiva
+// percentagem (hora a 100% = taxa base + 100%, etc.) — tem de espelhar
+// LOG-backend/api/controllers/hourBankController.js::TIER_MULTIPLIERS.
+const BANK_TIER_MULTIPLIERS = { hours100: 2.00, hours75: 1.75, hours50: 1.50 };
+
+function computeBankValue(hours100, hours75, hours50, baseRate) {
+    if (!baseRate) return 0;
+    return (
+        hours100 * baseRate * BANK_TIER_MULTIPLIERS.hours100 +
+        hours75 * baseRate * BANK_TIER_MULTIPLIERS.hours75 +
+        hours50 * baseRate * BANK_TIER_MULTIPLIERS.hours50
+    );
+}
 
 function formatHours(h) {
     const total = Math.round((h || 0) * 60);
@@ -172,6 +187,24 @@ function isWorkRecord(r) {
     return !r.recordType || r.recordType === 'trabalho';
 }
 
+function computeTotals(records) {
+    const totals = records.reduce(
+        (acc, r) => ({
+            h50: acc.h50 + (r.hours50 || 0),
+            h75: acc.h75 + (r.hours75 || 0),
+            h100: acc.h100 + (r.hours100 || 0),
+            nightsAway: acc.nightsAway + (r.nightType === 'fora_de_casa' ? 1 : 0),
+            nightsWorked: acc.nightsWorked + (r.nightType === 'trabalhada' ? 1 : 0),
+            feriasDays: acc.feriasDays + (r.recordType === 'ferias' ? 1 : 0),
+            faltaDays: acc.faltaDays + (r.recordType === 'falta' ? 1 : 0),
+            feriadoDays: acc.feriadoDays + (r.recordType === 'feriado' ? 1 : 0),
+        }),
+        { h50: 0, h75: 0, h100: 0, nightsAway: 0, nightsWorked: 0, feriasDays: 0, faltaDays: 0, feriadoDays: 0 }
+    );
+    totals.totalHours = totals.h50 + totals.h75 + totals.h100;
+    return totals;
+}
+
 function countBusinessDays(startDate, endDate) {
     if (!startDate || !endDate) return 0;
     let count = 0;
@@ -223,8 +256,12 @@ const emptyForm = {
     obra: '',
 };
 
+const emptyBankHours = { hours100: 0, hours75: 0, hours50: 0 };
+const emptyBankedThisMonth = { hours100: 0, hours75: 0, hours50: 0, value: 0 };
+
 export default function EMGHorasExtra() {
     const now = new Date();
+    const navigate = useNavigate();
     const [year, setYear] = useState(now.getFullYear());
     const [month, setMonth] = useState(now.getMonth() + 1);
     const [records, setRecords] = useState([]);
@@ -239,12 +276,20 @@ export default function EMGHorasExtra() {
     const [missingDaysModal, setMissingDaysModal] = useState({ open: false, missing: [] });
     const [vacationModal, setVacationModal] = useState({ open: false, startDate: '', endDate: '' });
     const [vacationLoading, setVacationLoading] = useState(false);
+    const [hourlyRate, setHourlyRate] = useState(null);
+    const [bankHours, setBankHours] = useState(emptyBankHours);
+    const [bankedThisMonth, setBankedThisMonth] = useState(emptyBankedThisMonth);
 
     const years = Array.from({ length: 5 }, (_, i) => now.getFullYear() - 2 + i);
 
     useEffect(() => {
         fetchRecords();
+        fetchBankedThisMonth();
     }, [year, month]);
+
+    useEffect(() => {
+        api.get('/emg/banco-horas').then(res => setHourlyRate(res.data.hourlyRate)).catch(() => {});
+    }, []);
 
     async function fetchRecords() {
         try {
@@ -252,6 +297,20 @@ export default function EMGHorasExtra() {
             setRecords(Array.isArray(res.data) ? res.data : []);
         } catch {
             setRecords([]);
+        }
+    }
+
+    async function fetchBankedThisMonth() {
+        try {
+            const res = await api.get('/emg/banco-horas/mes', { params: { year, month } });
+            setBankedThisMonth({
+                hours100: res.data.hours100 || 0,
+                hours75: res.data.hours75 || 0,
+                hours50: res.data.hours50 || 0,
+                value: res.data.value || 0,
+            });
+        } catch {
+            setBankedThisMonth(emptyBankedThisMonth);
         }
     }
 
@@ -426,12 +485,40 @@ export default function EMGHorasExtra() {
             setMissingDaysModal({ open: true, missing });
             return;
         }
+        setBankHours(emptyBankHours);
         setSendConfirm({ open: true, comment: '' });
     }
 
     async function handleSendEmailConfirm() {
         setSending(true);
         setSendConfirm(prev => ({ ...prev, open: false }));
+
+        const bankTotal = (bankHours.hours100 || 0) + (bankHours.hours75 || 0) + (bankHours.hours50 || 0);
+        let bankedSummary = bankedThisMonth;
+
+        if (bankTotal > 0) {
+            try {
+                await api.post('/emg/banco-horas/creditar', {
+                    year, month,
+                    hours100: bankHours.hours100 || 0,
+                    hours75: bankHours.hours75 || 0,
+                    hours50: bankHours.hours50 || 0,
+                });
+                const refreshed = await api.get('/emg/banco-horas/mes', { params: { year, month } });
+                bankedSummary = {
+                    hours100: refreshed.data.hours100 || 0,
+                    hours75: refreshed.data.hours75 || 0,
+                    hours50: refreshed.data.hours50 || 0,
+                    value: refreshed.data.value || 0,
+                };
+                setBankedThisMonth(bankedSummary);
+            } catch (err) {
+                toast.error(err.response?.data?.error || 'Erro ao passar horas para o banco de horas.');
+                setSending(false);
+                return;
+            }
+        }
+
         try {
             const monthName = MONTHS[month - 1];
             const userName = getUserName();
@@ -466,13 +553,33 @@ export default function EMGHorasExtra() {
                 ]],
             });
 
-            const finalY = (doc.lastAutoTable?.finalY ?? 26) + 8;
+            let finalY = (doc.lastAutoTable?.finalY ?? 26) + 8;
             doc.setFontSize(9);
             doc.setTextColor(80);
             doc.text(
                 `Férias: ${totals.feriasDays} dia(s)  ·  Faltas: ${totals.faltaDays} dia(s)  ·  Feriados: ${totals.feriadoDays} dia(s)`,
                 14, finalY
             );
+
+            const bankedSummaryTotal = bankedSummary.hours100 + bankedSummary.hours75 + bankedSummary.hours50;
+            if (bankedSummaryTotal > 0) {
+                const receber50 = Math.max(0, totals.h50 - bankedSummary.hours50);
+                const receber75 = Math.max(0, totals.h75 - bankedSummary.hours75);
+                const receber100 = Math.max(0, totals.h100 - bankedSummary.hours100);
+                doc.setTextColor(191, 54, 12);
+                const bankLines = [
+                    'Horas a receber:',
+                    `50% = ${formatHours(receber50)}`,
+                    `75% = ${formatHours(receber75)}`,
+                    `100% = ${formatHours(receber100)}`,
+                    `Horas para banco de horas: ${formatHours(bankedSummaryTotal)}`,
+                ];
+                for (const line of bankLines) {
+                    finalY += 6;
+                    doc.text(line, 14, finalY);
+                }
+                doc.setTextColor(80);
+            }
 
             const pdfBase64 = doc.output('datauristring').split(',')[1];
 
@@ -528,20 +635,36 @@ export default function EMGHorasExtra() {
     const showWeekendFields = isWeekendDate(form.date) || form.isHoliday;
     const showClientObra = form.recordType === 'trabalho' && (form.nightType === 'trabalhada' || form.nightType === 'fora_de_casa');
 
-    const totals = records.reduce(
-        (acc, r) => ({
-            h50: acc.h50 + (r.hours50 || 0),
-            h75: acc.h75 + (r.hours75 || 0),
-            h100: acc.h100 + (r.hours100 || 0),
-            nightsAway: acc.nightsAway + (r.nightType === 'fora_de_casa' ? 1 : 0),
-            nightsWorked: acc.nightsWorked + (r.nightType === 'trabalhada' ? 1 : 0),
-            feriasDays: acc.feriasDays + (r.recordType === 'ferias' ? 1 : 0),
-            faltaDays: acc.faltaDays + (r.recordType === 'falta' ? 1 : 0),
-            feriadoDays: acc.feriadoDays + (r.recordType === 'feriado' ? 1 : 0),
-        }),
-        { h50: 0, h75: 0, h100: 0, nightsAway: 0, nightsWorked: 0, feriasDays: 0, faltaDays: 0, feriadoDays: 0 }
-    );
-    const totalHours = totals.h50 + totals.h75 + totals.h100;
+    const totals = computeTotals(records);
+    const totalHours = totals.totalHours;
+
+    // Disponível para banco = total do mês menos o que já foi passado para o banco em envios
+    // anteriores desse mesmo mês. Os registos diários nunca são alterados, por isso este cálculo
+    // é sempre feito "ao vivo" a partir dos totais intactos e do ledger do banco de horas.
+    const availableToBank = {
+        hours100: Math.max(0, totals.h100 - bankedThisMonth.hours100),
+        hours75: Math.max(0, totals.h75 - bankedThisMonth.hours75),
+        hours50: Math.max(0, totals.h50 - bankedThisMonth.hours50),
+    };
+    const bankedThisMonthTotal = bankedThisMonth.hours100 + bankedThisMonth.hours75 + bankedThisMonth.hours50;
+    const toReceiveHours = Math.max(0, totalHours - bankedThisMonthTotal);
+
+    const canBank50 = bankHours.hours75 >= availableToBank.hours75 && bankHours.hours100 >= availableToBank.hours100;
+    const bankTotalHours = (bankHours.hours100 || 0) + (bankHours.hours75 || 0) + (bankHours.hours50 || 0);
+    const bankValuePreview = computeBankValue(bankHours.hours100 || 0, bankHours.hours75 || 0, bankHours.hours50 || 0, hourlyRate);
+
+    function handleBankHoursChange(field, rawValue) {
+        setBankHours(prev => {
+            const max = field === 'hours100' ? availableToBank.hours100 : field === 'hours75' ? availableToBank.hours75 : availableToBank.hours50;
+            const num = Math.min(Math.max(0, parseFloat(rawValue) || 0), max);
+            const updated = { ...prev, [field]: num };
+            if (field !== 'hours50') {
+                const fullyMaxed = updated.hours75 >= availableToBank.hours75 && updated.hours100 >= availableToBank.hours100;
+                if (!fullyMaxed) updated.hours50 = 0;
+            }
+            return updated;
+        });
+    }
 
     return (
         <>
@@ -618,6 +741,34 @@ export default function EMGHorasExtra() {
                                 <Typography level="body-sm" sx={{ fontWeight: 'bold', color: '#e65100' }}>Total geral</Typography>
                                 <Typography level="body-sm" sx={{ fontWeight: 'bold', color: '#bf360c' }}>{formatHours(totalHours)}</Typography>
                             </Box>
+                            {bankedThisMonthTotal > 0 && (
+                                <>
+                                    <Divider sx={{ my: 0.5 }} />
+                                    <Typography level="body-xs" sx={{ fontWeight: 'bold', color: '#bf360c' }}>Banco de Horas</Typography>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                        <Typography level="body-sm" sx={{ color: '#555' }}>Horas 50%</Typography>
+                                        <Typography level="body-sm" sx={{ color: '#bf360c' }}><strong>{formatHours(bankedThisMonth.hours50)}</strong></Typography>
+                                    </Box>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                        <Typography level="body-sm" sx={{ color: '#555' }}>Horas 75%</Typography>
+                                        <Typography level="body-sm" sx={{ color: '#bf360c' }}><strong>{formatHours(bankedThisMonth.hours75)}</strong></Typography>
+                                    </Box>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                        <Typography level="body-sm" sx={{ color: '#555' }}>Horas 100%</Typography>
+                                        <Typography level="body-sm" sx={{ color: '#bf360c' }}><strong>{formatHours(bankedThisMonth.hours100)}</strong></Typography>
+                                    </Box>
+                                    <Divider sx={{ my: 0.5 }} />
+                                    <Typography level="body-xs" sx={{ fontWeight: 'bold', color: '#e65100' }}>Horas já comunicadas</Typography>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                        <Typography level="body-sm" sx={{ color: '#555' }}>A receber</Typography>
+                                        <Typography level="body-sm"><strong>{formatHours(toReceiveHours)}</strong></Typography>
+                                    </Box>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                        <Typography level="body-sm" sx={{ color: '#555' }}>Banco de Horas (total)</Typography>
+                                        <Typography level="body-sm"><strong>{formatHours(bankedThisMonthTotal)}</strong></Typography>
+                                    </Box>
+                                </>
+                            )}
                         </Box>
                     </Box>
                 )}
@@ -678,10 +829,27 @@ export default function EMGHorasExtra() {
                                         Férias: {totals.feriasDays} · Faltas: {totals.faltaDays} · Feriados: {totals.feriadoDays}
                                     </td>
                                 </tr>
+                                {bankedThisMonthTotal > 0 && (
+                                    <tr style={{ fontWeight: 'bold', backgroundColor: '#fff3e0' }}>
+                                        <td colSpan={4} style={{ textAlign: 'right', paddingRight: '1rem', color: '#bf360c' }}>Banco de Horas:</td>
+                                        <td style={{ textAlign: 'center', color: '#bf360c' }}>{formatHours(bankedThisMonth.hours50)}</td>
+                                        <td style={{ textAlign: 'center', color: '#bf360c' }}>{formatHours(bankedThisMonth.hours75)}</td>
+                                        <td style={{ textAlign: 'center', color: '#bf360c' }}>{formatHours(bankedThisMonth.hours100)}</td>
+                                        <td colSpan={2}></td>
+                                    </tr>
+                                )}
                                 <tr style={{ backgroundColor: '#fff3e0', fontWeight: 'bold' }}>
                                     <td colSpan={4} style={{ textAlign: 'right', paddingRight: '1rem', color: '#e65100' }}>Total geral:</td>
                                     <td colSpan={5} style={{ color: '#bf360c', fontSize: '1rem' }}>{formatHours(totalHours)}</td>
                                 </tr>
+                                {bankedThisMonthTotal > 0 && (
+                                    <tr style={{ backgroundColor: '#fff8e1' }}>
+                                        <td colSpan={4} style={{ textAlign: 'right', paddingRight: '1rem', color: '#e65100' }}>Horas já comunicadas:</td>
+                                        <td colSpan={5} style={{ fontSize: '0.82rem', color: '#555' }}>
+                                            A receber: {formatHours(toReceiveHours)} &nbsp;·&nbsp; Banco de Horas: {formatHours(bankedThisMonthTotal)}
+                                        </td>
+                                    </tr>
+                                )}
                             </Box>
                         )}
                     </Table>
@@ -923,6 +1091,55 @@ export default function EMGHorasExtra() {
                                 ' Será também enviado o mapa de ajudas de custo do mesmo período.'
                             )}
                         </Typography>
+                        <Divider sx={{ my: 1.5 }} />
+                        <Typography level="title-sm" sx={{ color: '#e65100', mb: 0.5 }}>
+                            Passar para o Banco de Horas (opcional)
+                        </Typography>
+                        {hourlyRate == null ? (
+                            <Typography level="body-sm" sx={{ color: '#666', mb: 1.5 }}>
+                                Ainda não definiu a sua taxa horária —{' '}
+                                <a href="/EMG/BancoHoras" onClick={e => { e.preventDefault(); navigate('/EMG/BancoHoras'); }}>
+                                    configure-a no Banco de Horas
+                                </a>{' '}
+                                para poder passar horas para lá.
+                            </Typography>
+                        ) : (
+                            <>
+                                {bankedThisMonthTotal > 0 && (
+                                    <Typography level="body-xs" sx={{ color: '#888', mb: 1 }}>
+                                        Já passou {formatHours(bankedThisMonthTotal)} para o banco este mês — os valores abaixo são o que ainda resta disponível.
+                                    </Typography>
+                                )}
+                                <Box sx={{ display: 'flex', gap: 1.5, mb: 1 }}>
+                                    <FormControl size="sm" sx={{ flex: 1 }}>
+                                        <FormLabel>Horas 100% (máx. {formatHours(availableToBank.hours100)})</FormLabel>
+                                        <Input type="number" value={bankHours.hours100}
+                                            slotProps={{ input: { min: 0, max: availableToBank.hours100, step: 0.25 } }}
+                                            onChange={e => handleBankHoursChange('hours100', e.target.value)} />
+                                    </FormControl>
+                                    <FormControl size="sm" sx={{ flex: 1 }}>
+                                        <FormLabel>Horas 75% (máx. {formatHours(availableToBank.hours75)})</FormLabel>
+                                        <Input type="number" value={bankHours.hours75}
+                                            slotProps={{ input: { min: 0, max: availableToBank.hours75, step: 0.25 } }}
+                                            onChange={e => handleBankHoursChange('hours75', e.target.value)} />
+                                    </FormControl>
+                                    <FormControl size="sm" sx={{ flex: 1 }}>
+                                        <FormLabel>Horas 50% (máx. {formatHours(availableToBank.hours50)})</FormLabel>
+                                        <Input type="number" value={bankHours.hours50} disabled={!canBank50}
+                                            slotProps={{ input: { min: 0, max: availableToBank.hours50, step: 0.25 } }}
+                                            onChange={e => handleBankHoursChange('hours50', e.target.value)} />
+                                    </FormControl>
+                                </Box>
+                                <Typography level="body-xs" sx={{ color: '#888', mb: 1.5 }}>
+                                    As horas 50% só podem ir para o banco se passar também todas as horas 75% e 100% ainda disponíveis.
+                                    Taxa base: {hourlyRate.toFixed(2)}€/h (100% = +100%, 75% = +75%, 50% = +50%).
+                                    {bankTotalHours > 0 && (
+                                        <> — {bankTotalHours.toFixed(2)}h no total → valor a creditar: <strong>{bankValuePreview.toFixed(2)}€</strong></>
+                                    )}
+                                </Typography>
+                            </>
+                        )}
+
                         <FormControl size="sm">
                             <FormLabel>Comentário (opcional)</FormLabel>
                             <textarea

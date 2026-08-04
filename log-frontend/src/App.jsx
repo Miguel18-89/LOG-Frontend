@@ -18,6 +18,7 @@ import AllUsers from './components/AllUsers';
 import StoreDetails from './components/storeDetails';
 import EMG from './components/EMG';
 import EMGHorasExtra from './components/EMGHorasExtra';
+import EMGBancoHoras from './components/EMGBancoHoras';
 import AssistenciaTecnica from './components/AssistenciaTecnica';
 import Frota from './components/Frota';
 import Pessoal from './components/Pessoal';
@@ -58,6 +59,7 @@ function App() {
         <Route path="/stores/:id" element={<PrivateRoute><StoreDetails /></PrivateRoute>} />
         <Route path="/EMG" element={<PrivateRoute><EMG /></PrivateRoute>}>
           <Route path="HorasExtra" element={<EMGHorasExtra />} />
+          <Route path="BancoHoras" element={<EMGBancoHoras />} />
           <Route path="Assistencia" element={<AssistenciaTecnica />} />
           <Route path="Frota" element={<Frota />} />
           <Route path="Pessoal" element={<Pessoal />} />

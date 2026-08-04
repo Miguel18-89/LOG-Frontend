@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
 import Box from '@mui/joy/Box';
 import Typography from '@mui/joy/Typography';
-import { FaTools, FaTruck, FaUsers, FaClock, FaCalendarAlt } from 'react-icons/fa';
+import { FaTools, FaTruck, FaUsers, FaClock, FaCalendarAlt, FaPiggyBank } from 'react-icons/fa';
 
 const SECTIONS = [
     { label: 'Assistência Técnica', icon: FaTools,        to: '/EMG/Assistencia' },
@@ -10,6 +10,7 @@ const SECTIONS = [
     { label: 'Pessoal',             icon: FaUsers,        to: '/EMG/Pessoal'     },
     { label: 'Férias',              icon: FaCalendarAlt,  to: '/EMG/Ferias'      },
     { label: 'Horas Extra',         icon: FaClock,        to: '/EMG/HorasExtra'  },
+    { label: 'Banco de Horas',      icon: FaPiggyBank,    to: '/EMG/BancoHoras'  },
 ];
 
 export default function HomePage() {
