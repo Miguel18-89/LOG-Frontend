@@ -36,6 +36,14 @@ export function fmtDate(d) {
     return d ? new Date(d).toLocaleDateString('pt-PT') : '—';
 }
 
+/** Técnicos do Pessoal e ocasionais numa só lista, para mostrar e imprimir. */
+export function allTechnicianNames(obra) {
+    return [
+        ...(obra?.technicians ?? []).map(t => t.fullName),
+        ...(obra?.externalTechnicians ?? []),
+    ];
+}
+
 /**
  * Reduz uma foto antes de a meter no PDF. Sem isto, meia dúzia de fotos de
  * telemóvel geram um PDF de dezenas de MB que não passa por email.
@@ -104,7 +112,7 @@ export function buildObraPDF(obra, photos = []) {
             ['Estado', obraStatusLabel(obra.status)],
             ['Data', fmtDate(obra.date)],
             ['Horário', formatTimeRange(obra.startTime, obra.endTime) || '—'],
-            ['Técnicos', (obra.technicians ?? []).map(t => t.fullName).join(', ') || '—'],
+            ['Técnicos', allTechnicianNames(obra).join(', ') || '—'],
         ],
     });
 

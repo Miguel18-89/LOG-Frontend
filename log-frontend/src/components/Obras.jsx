@@ -22,15 +22,14 @@ import DialogContent from '@mui/joy/DialogContent';
 import DialogActions from '@mui/joy/DialogActions';
 import {
     MdEdit, MdDelete, MdVisibility, MdPictureAsPdf, MdEmail, MdDraw, MdUploadFile, MdDownload,
-    MdAddAPhoto, MdCheckCircle, MdRadioButtonUnchecked,
+    MdAddAPhoto, MdCheckCircle, MdRadioButtonUnchecked, MdClose,
 } from 'react-icons/md';
 import { toast } from 'react-toastify';
 import api from '../services/api';
-import { useAuth } from '../contexts/AuthContext.jsx';
 import SignaturePad from './SignaturePad';
 import {
     OBRA_TYPES, OBRA_STATUS, obraTypeLabel, obraStatusLabel, formatTimeRange,
-    fmtDate, downloadObraPDF, obraPDFBase64, shrinkImage,
+    fmtDate, downloadObraPDF, obraPDFBase64, shrinkImage, allTechnicianNames,
 } from '../utils/obraReport';
 
 const TYPE_COLORS = {
@@ -42,7 +41,7 @@ const TYPE_COLORS = {
 const emptyForm = {
     client: '', obra: '', type: 'instalacao', status: 'em_curso',
     date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '',
-    tasks: '', materials: '', notes: '', technicianIds: [],
+    tasks: '', materials: '', notes: '', technicianIds: [], externalTechnicians: [],
 };
 
 // Tolerantes a null: são chamados no corpo dos modais, que o MUI avalia mesmo fechados.
@@ -86,9 +85,8 @@ function PhotoThumb({ obraId, photo }) {
 }
 
 export default function Obras() {
-    const { user } = useAuth();
-    const isManager = user?.role >= 1;
-
+    // As permissões vêm do servidor em canEdit/canDelete por obra, em vez de serem
+    // recalculadas aqui — a regra depende dos técnicos associados a cada obra.
     const [records, setRecords] = useState([]);
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(1);
@@ -106,6 +104,7 @@ export default function Obras() {
     const [editId, setEditId] = useState(null);
     const [form, setForm] = useState(emptyForm);
     const [formLoading, setFormLoading] = useState(false);
+    const [externalInput, setExternalInput] = useState('');
 
     const [detail, setDetail] = useState(null);
     const [signing, setSigning] = useState(false);
@@ -161,22 +160,40 @@ export default function Obras() {
         setPage(1);
     }
 
+    function addExternal() {
+        const name = externalInput.trim();
+        if (!name) return;
+        if (form.externalTechnicians.includes(name)) {
+            toast.info('Esse técnico já está na lista.');
+            return;
+        }
+        setForm(p => ({ ...p, externalTechnicians: [...p.externalTechnicians, name] }));
+        setExternalInput('');
+    }
+
+    function removeExternal(name) {
+        setForm(p => ({ ...p, externalTechnicians: p.externalTechnicians.filter(n => n !== name) }));
+    }
+
     function openCreate() {
         setIsEdit(false);
         setEditId(null);
         setForm({ ...emptyForm });
+        setExternalInput('');
         setOpenForm(true);
     }
 
     function openEdit(r) {
         setIsEdit(true);
         setEditId(r.id);
+        setExternalInput('');
         setForm({
             client: r.client, obra: r.obra, type: r.type, status: r.status || 'em_curso',
             date: r.date ? r.date.slice(0, 10) : '',
             startTime: r.startTime || '', endTime: r.endTime || '',
             tasks: r.tasks, materials: r.materials, notes: r.notes || '',
             technicianIds: (r.technicians ?? []).map(t => t.id),
+            externalTechnicians: r.externalTechnicians ?? [],
         });
         setOpenForm(true);
     }
@@ -500,7 +517,7 @@ export default function Obras() {
                                     </Chip>
                                 </td>
                                 <td style={{ fontSize: '0.8rem' }}>
-                                    {(r.technicians ?? []).map(t => t.fullName).join(', ') || '—'}
+                                    {allTechnicianNames(r).join(', ') || '—'}
                                 </td>
                                 <td style={{ textAlign: 'center' }}>
                                     {r.signedAt
@@ -509,9 +526,11 @@ export default function Obras() {
                                 </td>
                                 <td style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
                                     <IconButton size="sm" variant="plain" title="Ver" onClick={() => openDetail(r)}><MdVisibility /></IconButton>
-                                    <IconButton size="sm" variant="plain" title="Editar" onClick={() => openEdit(r)}><MdEdit /></IconButton>
+                                    {r.canEdit && (
+                                        <IconButton size="sm" variant="plain" title="Editar" onClick={() => openEdit(r)}><MdEdit /></IconButton>
+                                    )}
                                     <IconButton size="sm" variant="plain" title="Relatório PDF" onClick={() => handleDownloadPDF(r)}><MdPictureAsPdf /></IconButton>
-                                    {isManager && (
+                                    {r.canDelete && (
                                         <IconButton size="sm" variant="plain" color="danger" title="Eliminar"
                                             onClick={() => setDeleteConfirm({ open: true, id: r.id })}><MdDelete /></IconButton>
                                     )}
@@ -627,6 +646,45 @@ export default function Obras() {
                                 </Box>
                             )}
                         </FormControl>
+
+                        <FormControl size="sm">
+                            <FormLabel>Outro técnico (não registado em Pessoal)</FormLabel>
+                            <Box sx={{ display: 'flex', gap: 1 }}>
+                                <Input
+                                    sx={{ flex: 1 }}
+                                    placeholder="Nome do técnico ocasional..."
+                                    value={externalInput}
+                                    onChange={e => setExternalInput(e.target.value)}
+                                    onKeyDown={e => {
+                                        if (e.key === 'Enter') { e.preventDefault(); addExternal(); }
+                                    }}
+                                />
+                                <Button variant="outlined" color="neutral" onClick={addExternal}>
+                                    Adicionar
+                                </Button>
+                            </Box>
+                            {form.externalTechnicians.length > 0 && (
+                                <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 1 }}>
+                                    {form.externalTechnicians.map(n => (
+                                        <Chip
+                                            key={n}
+                                            size="sm"
+                                            variant="soft"
+                                            color="warning"
+                                            endDecorator={
+                                                <MdClose
+                                                    style={{ cursor: 'pointer' }}
+                                                    onClick={() => removeExternal(n)}
+                                                />
+                                            }
+                                        >
+                                            {n}
+                                        </Chip>
+                                    ))}
+                                </Box>
+                            )}
+                        </FormControl>
+
                         <Box sx={{ display: 'flex', gap: 2, mt: 1, justifyContent: 'flex-end' }}>
                             <Button variant="plain" color="neutral" onClick={() => setOpenForm(false)}>Cancelar</Button>
                             <Button color="warning" loading={formLoading} onClick={handleSubmit}>
@@ -666,11 +724,11 @@ export default function Obras() {
                                 </Chip>
                             </Box>
                             <Box sx={{ gridColumn: '1/-1' }}>
-                                <strong>Técnicos:</strong> {(detail.technicians ?? []).map(t => t.fullName).join(', ') || '—'}
+                                <strong>Técnicos:</strong> {allTechnicianNames(detail).join(', ') || '—'}
                             </Box>
                         </Box>
 
-                        <Button
+                        {detail.canEdit && <Button
                             size="sm"
                             variant={detail.status === 'concluida' ? 'outlined' : 'solid'}
                             color="success"
@@ -678,7 +736,7 @@ export default function Obras() {
                             onClick={handleToggleStatus}
                         >
                             {detail.status === 'concluida' ? 'Reabrir obra' : 'Marcar como concluída'}
-                        </Button>
+                        </Button>}
 
                         <Typography level="title-sm" sx={{ color: '#f57c00' }}>Tarefas efetuadas</Typography>
                         <Typography level="body-sm" sx={{ color: '#444', mb: 1.5, whiteSpace: 'pre-wrap' }}>{detail.tasks}</Typography>
@@ -711,14 +769,16 @@ export default function Obras() {
                                         <IconButton size="sm" variant="plain" title="Descarregar" onClick={() => handleDownloadDoc(d)}>
                                             <MdDownload />
                                         </IconButton>
-                                        <IconButton size="sm" variant="plain" color="danger" title="Eliminar" onClick={() => handleDeleteDoc(d.id)}>
-                                            <MdDelete />
-                                        </IconButton>
+                                        {detail.canEdit && (
+                                            <IconButton size="sm" variant="plain" color="danger" title="Eliminar" onClick={() => handleDeleteDoc(d.id)}>
+                                                <MdDelete />
+                                            </IconButton>
+                                        )}
                                     </Box>
                                 ))
                             }
                         </Box>
-                        <Button
+                        {detail.canEdit && <Button
                             component="label" size="sm" variant="outlined" color="neutral"
                             startDecorator={<MdUploadFile />} loading={uploading}
                         >
@@ -727,7 +787,7 @@ export default function Obras() {
                                 type="file" hidden multiple
                                 onChange={e => { handleUpload(e.target.files, 'documento'); e.target.value = ''; }}
                             />
-                        </Button>
+                        </Button>}
 
                         <Divider sx={{ my: 1.5 }} />
 
@@ -745,18 +805,20 @@ export default function Obras() {
                                 {photosOf(detail).map(p => (
                                     <Box key={p.id} sx={{ position: 'relative' }}>
                                         <PhotoThumb obraId={detail.id} photo={p} />
-                                        <IconButton
-                                            size="sm" variant="solid" color="danger" title="Eliminar foto"
-                                            onClick={() => handleDeleteDoc(p.id)}
-                                            sx={{ position: 'absolute', top: 4, right: 4, minHeight: 24, minWidth: 24 }}
-                                        >
-                                            <MdDelete />
-                                        </IconButton>
+                                        {detail.canEdit && (
+                                            <IconButton
+                                                size="sm" variant="solid" color="danger" title="Eliminar foto"
+                                                onClick={() => handleDeleteDoc(p.id)}
+                                                sx={{ position: 'absolute', top: 4, right: 4, minHeight: 24, minWidth: 24 }}
+                                            >
+                                                <MdDelete />
+                                            </IconButton>
+                                        )}
                                     </Box>
                                 ))}
                             </Box>
                         )}
-                        <Button
+                        {detail.canEdit && <Button
                             component="label" size="sm" variant="outlined" color="neutral"
                             startDecorator={<MdAddAPhoto />} loading={uploading}
                         >
@@ -765,7 +827,7 @@ export default function Obras() {
                                 type="file" hidden multiple accept="image/*"
                                 onChange={e => { handleUpload(e.target.files, 'foto'); e.target.value = ''; }}
                             />
-                        </Button>
+                        </Button>}
 
                         <Divider sx={{ my: 1.5 }} />
 
@@ -783,13 +845,18 @@ export default function Obras() {
                                     {detail.signedByName} — {new Date(detail.signedAt).toLocaleString('pt-PT')}
                                 </Typography>
                                 <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-                                    <Button size="sm" variant="outlined" color="neutral" startDecorator={<MdDraw />}
-                                        onClick={() => { setSignerName(detail.signedByName || ''); setSigning(true); }}>
-                                        Assinar de novo
-                                    </Button>
-                                    <Button size="sm" variant="outlined" color="danger" onClick={handleRemoveSignature}>
-                                        Remover
-                                    </Button>
+                                    {detail.canEdit && (
+                                        <Button size="sm" variant="outlined" color="neutral" startDecorator={<MdDraw />}
+                                            onClick={() => { setSignerName(detail.signedByName || ''); setSigning(true); }}>
+                                            Assinar de novo
+                                        </Button>
+                                    )}
+                                    {/* Remover a assinatura destrói a prova de aceitação: só administradores. */}
+                                    {detail.canDelete && (
+                                        <Button size="sm" variant="outlined" color="danger" onClick={handleRemoveSignature}>
+                                            Remover
+                                        </Button>
+                                    )}
                                 </Box>
                             </Box>
                         ) : signing ? (
@@ -810,9 +877,11 @@ export default function Obras() {
                         ) : (
                             <Box>
                                 <Typography level="body-sm" sx={{ color: '#999', mb: 1 }}>Ainda por assinar.</Typography>
-                                <Button size="sm" color="warning" startDecorator={<MdDraw />} onClick={() => setSigning(true)}>
-                                    Recolher assinatura
-                                </Button>
+                                {detail.canEdit && (
+                                    <Button size="sm" color="warning" startDecorator={<MdDraw />} onClick={() => setSigning(true)}>
+                                        Recolher assinatura
+                                    </Button>
+                                )}
                             </Box>
                         )}
 
@@ -823,10 +892,12 @@ export default function Obras() {
                                 loading={pdfLoading} onClick={() => handleDownloadPDF(detail)}>
                                 Descarregar PDF
                             </Button>
-                            <Button size="sm" color="warning" startDecorator={<MdEmail />}
-                                onClick={() => openEmailModal(detail)}>
-                                Enviar por email
-                            </Button>
+                            {detail.canEdit && (
+                                <Button size="sm" color="warning" startDecorator={<MdEmail />}
+                                    onClick={() => openEmailModal(detail)}>
+                                    Enviar por email
+                                </Button>
+                            )}
                         </Box>
                     </>}
                 </ModalDialog>
