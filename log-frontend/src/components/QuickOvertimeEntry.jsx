@@ -13,7 +13,7 @@ import FormLabel from '@mui/joy/FormLabel';
 import Divider from '@mui/joy/Divider';
 import { toast } from 'react-toastify';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://213.199.58.233:3000';
+import { API_URL } from '../services/api';
 
 
 const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {

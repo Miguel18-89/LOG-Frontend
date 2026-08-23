@@ -6,10 +6,9 @@ import {
 } from '@mui/joy';
 import { MdAdd, MdEdit, MdDelete, MdDownload, MdUploadFile, MdCheck, MdClose } from 'react-icons/md';
 import { toast } from 'react-toastify';
-import api from '../services/api';
+import api, { API_URL } from '../services/api';
 import { useAuth } from '../contexts/AuthContext.jsx';
 
-const API_URL = import.meta.env.VITE_API_URL;
 
 const CONTRACT_TYPES = [
     { value: 'termo_certo', label: 'Termo Certo' },
