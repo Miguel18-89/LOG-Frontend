@@ -844,20 +844,16 @@ export default function Obras() {
                                 <Typography level="body-xs" sx={{ color: '#666', mt: 0.5 }}>
                                     {detail.signedByName} — {new Date(detail.signedAt).toLocaleString('pt-PT')}
                                 </Typography>
-                                <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-                                    {detail.canEdit && (
-                                        <Button size="sm" variant="outlined" color="neutral" startDecorator={<MdDraw />}
-                                            onClick={() => { setSignerName(detail.signedByName || ''); setSigning(true); }}>
-                                            Assinar de novo
-                                        </Button>
-                                    )}
-                                    {/* Remover a assinatura destrói a prova de aceitação: só administradores. */}
-                                    {detail.canDelete && (
+                                {/* A assinatura não se refaz: uma vez recolhida é definitiva.
+                                    Se estiver errada, só um administrador a pode remover — e
+                                    depois disso pode ser recolhida de novo. */}
+                                {detail.canDelete && (
+                                    <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
                                         <Button size="sm" variant="outlined" color="danger" onClick={handleRemoveSignature}>
-                                            Remover
+                                            Remover assinatura
                                         </Button>
-                                    )}
-                                </Box>
+                                    </Box>
+                                )}
                             </Box>
                         ) : signing ? (
                             <Box>
