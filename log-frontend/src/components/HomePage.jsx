@@ -2,10 +2,11 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
 import Box from '@mui/joy/Box';
 import Typography from '@mui/joy/Typography';
-import { FaTools, FaTruck, FaUsers, FaClock, FaCalendarAlt, FaPiggyBank } from 'react-icons/fa';
+import { FaTools, FaTruck, FaUsers, FaClock, FaCalendarAlt, FaPiggyBank, FaHardHat } from 'react-icons/fa';
 
 const SECTIONS = [
     { label: 'Assistência Técnica', icon: FaTools,        to: '/EMG/Assistencia' },
+    { label: 'Obras',               icon: FaHardHat,      to: '/EMG/Obras'       },
     { label: 'Frota',               icon: FaTruck,        to: '/EMG/Frota'       },
     { label: 'Pessoal',             icon: FaUsers,        to: '/EMG/Pessoal'     },
     { label: 'Férias',              icon: FaCalendarAlt,  to: '/EMG/Ferias'      },

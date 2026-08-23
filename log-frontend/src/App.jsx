@@ -23,6 +23,7 @@ import AssistenciaTecnica from './components/AssistenciaTecnica';
 import Frota from './components/Frota';
 import Pessoal from './components/Pessoal';
 import Ferias from './components/Ferias';
+import Obras from './components/Obras';
 import QuickOvertimeEntry from './components/QuickOvertimeEntry';
 import { useNavigate } from 'react-router-dom';
 import { setupInterceptors } from './services/interceptors';
@@ -64,6 +65,7 @@ function App() {
           <Route path="Frota" element={<Frota />} />
           <Route path="Pessoal" element={<Pessoal />} />
           <Route path="Ferias" element={<Ferias />} />
+          <Route path="Obras" element={<Obras />} />
         </Route>
       </Routes>}
       <ToastContainer
