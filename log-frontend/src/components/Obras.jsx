@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Box from '@mui/joy/Box';
 import Button from '@mui/joy/Button';
 import Input from '@mui/joy/Input';
@@ -27,6 +27,7 @@ import {
 import { toast } from 'react-toastify';
 import api from '../services/api';
 import SignaturePad from './SignaturePad';
+import PhotoLightbox from './PhotoLightbox';
 import {
     OBRA_TYPES, OBRA_STATUS, obraTypeLabel, obraStatusLabel, formatTimeRange,
     fmtDate, downloadObraPDF, obraPDFBase64, shrinkImage, allTechnicianNames,
@@ -48,9 +49,18 @@ const emptyForm = {
 const docsOf = o => (o?.documents ?? []).filter(d => d.kind !== 'foto');
 const photosOf = o => (o?.documents ?? []).filter(d => d.kind === 'foto');
 
-/** Miniatura de uma foto — o ficheiro precisa de token, por isso vai por axios. */
-function PhotoThumb({ obraId, photo }) {
+/**
+ * Miniatura de uma foto — o ficheiro precisa de token, por isso vai por axios.
+ *
+ * O que se descarrega é a foto inteira (não há miniaturas no servidor), pelo que
+ * o URL é entregue a quem chama via `onReady`: o visualizador reaproveita-o e
+ * abre de imediato, sem descarregar a mesma imagem uma segunda vez.
+ */
+function PhotoThumb({ obraId, photo, onReady, onOpen }) {
     const [url, setUrl] = useState(null);
+    // Em ref para o descarregamento não recomeçar sempre que o pai redesenha.
+    const readyRef = useRef(onReady);
+    readyRef.current = onReady;
 
     useEffect(() => {
         let objectUrl;
@@ -60,6 +70,7 @@ function PhotoThumb({ obraId, photo }) {
                 if (cancelled) return;
                 objectUrl = URL.createObjectURL(res.data);
                 setUrl(objectUrl);
+                readyRef.current?.(photo.id, objectUrl);
             })
             .catch(() => {});
         return () => {
@@ -70,15 +81,22 @@ function PhotoThumb({ obraId, photo }) {
 
     return (
         <Box
+            onClick={onOpen}
+            title={onOpen ? 'Ver foto' : undefined}
             sx={{
                 width: '100%', aspectRatio: '1', borderRadius: 'sm', overflow: 'hidden',
                 border: '1px solid #e0e0e0', bgcolor: '#fafafa',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: onOpen ? 'zoom-in' : 'default',
+                '&:hover img': { transform: onOpen ? 'scale(1.05)' : 'none' },
             }}
         >
             {url
                 ? <Box component="img" src={url} alt={photo.originalName}
-                    sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    sx={{
+                        width: '100%', height: '100%', objectFit: 'cover',
+                        transition: 'transform 150ms ease-out',
+                    }} />
                 : <Typography level="body-xs" sx={{ color: '#bbb' }}>...</Typography>}
         </Box>
     );
@@ -111,6 +129,21 @@ export default function Obras() {
     const [externalInput, setExternalInput] = useState('');
 
     const [detail, setDetail] = useState(null);
+    // URLs das fotos já descarregadas para as miniaturas, reaproveitados pelo
+    // visualizador; e o índice da foto aberta (null = visualizador fechado).
+    const [photoUrls, setPhotoUrls] = useState({});
+    const [viewerIndex, setViewerIndex] = useState(null);
+
+    const registerPhotoUrl = useCallback((photoId, url) => {
+        setPhotoUrls(prev => ({ ...prev, [photoId]: url }));
+    }, []);
+
+    // Sair da ficha desmonta as miniaturas, e estas revogam os object URLs que
+    // criaram. Guardar os antigos daria imagens em branco ao reabrir a obra.
+    useEffect(() => {
+        setPhotoUrls({});
+        setViewerIndex(null);
+    }, [detail?.id]);
     const [signing, setSigning] = useState(false);
     const [signerName, setSignerName] = useState('');
     const [uploading, setUploading] = useState(false);
@@ -729,7 +762,7 @@ export default function Obras() {
             </Modal>
 
             {/* Modal detalhe */}
-            <Modal open={!!detail} onClose={() => setDetail(null)}>
+            <Modal open={!!detail} onClose={() => { setViewerIndex(null); setDetail(null); }}>
                 <ModalDialog sx={{ maxWidth: 720, width: '95%', overflow: 'auto', maxHeight: '92vh' }}>
                     <ModalClose />
                     {detail && <>
@@ -835,9 +868,14 @@ export default function Obras() {
                                 display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
                                 gap: 1, mb: 1,
                             }}>
-                                {photosOf(detail).map(p => (
+                                {photosOf(detail).map((p, i) => (
                                     <Box key={p.id} sx={{ position: 'relative' }}>
-                                        <PhotoThumb obraId={detail.id} photo={p} />
+                                        <PhotoThumb
+                                            obraId={detail.id}
+                                            photo={p}
+                                            onReady={registerPhotoUrl}
+                                            onOpen={() => setViewerIndex(i)}
+                                        />
                                         {detail.canEdit && (
                                             <IconButton
                                                 size="sm" variant="solid" color="danger" title="Eliminar foto"
@@ -981,6 +1019,17 @@ export default function Obras() {
                     </Box>
                 </ModalDialog>
             </Modal>
+
+            {/* Visualizador de fotos em ecrã inteiro */}
+            {viewerIndex !== null && photosOf(detail).length > 0 && (
+                <PhotoLightbox
+                    photos={photosOf(detail)}
+                    urls={photoUrls}
+                    index={Math.min(viewerIndex, photosOf(detail).length - 1)}
+                    onIndex={setViewerIndex}
+                    onClose={() => setViewerIndex(null)}
+                />
+            )}
 
             {/* Incluir fotos no relatório? */}
             <Modal open={!!photoPrompt} onClose={() => setPhotoPrompt(null)}>
