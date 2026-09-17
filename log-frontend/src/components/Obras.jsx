@@ -98,6 +98,10 @@ export default function Obras() {
     const [filterType, setFilterType] = useState('');
     const [filterStatus, setFilterStatus] = useState('');
     const [appliedClient, setAppliedClient] = useState('');
+    const [filterTechnician, setFilterTechnician] = useState('');
+    const [appliedTechnician, setAppliedTechnician] = useState('');
+    const [dateFrom, setDateFrom] = useState('');
+    const [dateTo, setDateTo] = useState('');
 
     const [openForm, setOpenForm] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
@@ -128,6 +132,9 @@ export default function Obras() {
                     client: appliedClient || undefined,
                     type: filterType || undefined,
                     status: filterStatus || undefined,
+                    technician: appliedTechnician || undefined,
+                    from: dateFrom || undefined,
+                    to: dateTo || undefined,
                 },
             });
             setRecords(res.data.data);
@@ -137,18 +144,21 @@ export default function Obras() {
         } finally {
             setLoading(false);
         }
-    }, [page, pageSize, appliedClient, filterType, filterStatus]);
+    }, [page, pageSize, appliedClient, appliedTechnician, filterType, filterStatus, dateFrom, dateTo]);
 
     useEffect(() => { fetchRecords(); }, [fetchRecords]);
 
     useEffect(() => {
-        api.get('/emg/pessoal')
+        // Endpoint reduzido (so id e nome): o /emg/pessoal devolve dados pessoais e
+        // esta limitado a gestores, pelo que um tecnico so se via a si proprio.
+        api.get('/emg/pessoal/tecnicos')
             .then(res => setEmployees(Array.isArray(res.data) ? res.data : []))
             .catch(() => setEmployees([]));
     }, []);
 
     function handleFilter() {
         setAppliedClient(filterClient.trim());
+        setAppliedTechnician(filterTechnician.trim());
         setPage(1);
     }
 
@@ -157,6 +167,10 @@ export default function Obras() {
         setAppliedClient('');
         setFilterType('');
         setFilterStatus('');
+        setFilterTechnician('');
+        setAppliedTechnician('');
+        setDateFrom('');
+        setDateTo('');
         setPage(1);
     }
 
@@ -449,6 +463,25 @@ export default function Obras() {
                         <Option value="">Todos</Option>
                         {OBRA_STATUS.map(s => <Option key={s.value} value={s.value}>{s.label}</Option>)}
                     </Select>
+                </FormControl>
+                <FormControl size="sm">
+                    <FormLabel>Técnico</FormLabel>
+                    <Input
+                        placeholder="Nome do técnico..."
+                        value={filterTechnician}
+                        onChange={e => setFilterTechnician(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && handleFilter()}
+                    />
+                </FormControl>
+                <FormControl size="sm">
+                    <FormLabel>De</FormLabel>
+                    <Input type="date" value={dateFrom}
+                        onChange={e => { setDateFrom(e.target.value); setPage(1); }} />
+                </FormControl>
+                <FormControl size="sm">
+                    <FormLabel>Até</FormLabel>
+                    <Input type="date" value={dateTo}
+                        onChange={e => { setDateTo(e.target.value); setPage(1); }} />
                 </FormControl>
                 <Button size="sm" onClick={handleFilter}>Filtrar</Button>
                 <Button
