@@ -351,6 +351,9 @@ export default function AssistenciaTecnica() {
                                 ['Local', detailRMA.location],
                                 ['Pedido por', detailRMA.requestedBy],
                                 ...(detailRMA.repairLocation ? [['Local reparação', detailRMA.repairLocation]] : []),
+                                ...(detailRMA.ticket
+                                    ? [['Origem', `Ticket #${detailRMA.ticket.ticketNumber} — ${detailRMA.ticket.title}`]]
+                                    : []),
                             ].map(([k, v]) => (
                                 <Box key={k}><strong>{k}:</strong> {v}</Box>
                             ))}

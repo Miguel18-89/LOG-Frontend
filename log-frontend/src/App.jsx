@@ -24,6 +24,7 @@ import Frota from './components/Frota';
 import Pessoal from './components/Pessoal';
 import Ferias from './components/Ferias';
 import Obras from './components/Obras';
+import Tickets from './components/Tickets';
 import QuickOvertimeEntry from './components/QuickOvertimeEntry';
 import { useNavigate } from 'react-router-dom';
 import { setupInterceptors } from './services/interceptors';
@@ -66,6 +67,7 @@ function App() {
           <Route path="Pessoal" element={<Pessoal />} />
           <Route path="Ferias" element={<Ferias />} />
           <Route path="Obras" element={<Obras />} />
+          <Route path="Tickets" element={<Tickets />} />
         </Route>
       </Routes>}
       <ToastContainer

@@ -804,6 +804,16 @@ export default function Obras() {
                             {detail.status === 'concluida' ? 'Reabrir obra' : 'Marcar como concluída'}
                         </Button>}
 
+                        {detail.ticket && (
+                            <Typography level="body-sm" sx={{ mb: 1.5 }}>
+                                <strong>Origem:</strong>{' '}
+                                <Chip size="sm" sx={{ bgcolor: '#ede7f6', color: '#4527a0' }}>
+                                    Ticket #{detail.ticket.ticketNumber}
+                                </Chip>{' '}
+                                {detail.ticket.title}
+                            </Typography>
+                        )}
+
                         <Typography level="title-sm" sx={{ color: '#f57c00' }}>Tarefas efetuadas</Typography>
                         <Typography level="body-sm" sx={{ color: '#444', mb: 1.5, whiteSpace: 'pre-wrap' }}>{detail.tasks}</Typography>
 
