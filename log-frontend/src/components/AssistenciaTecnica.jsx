@@ -182,7 +182,7 @@ export default function AssistenciaTecnica() {
             </Box>
 
             {/* Filtros */}
-            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 2, alignItems: 'flex-end' }}>
+            <Box className="filtros" sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 2, alignItems: 'flex-end' }}>
                 <FormControl size="sm">
                     <FormLabel>Estado</FormLabel>
                     <Select value={filterStatus} onChange={(_, v) => setFilterStatus(v ?? '')} sx={{ minWidth: 200 }} placeholder="Todos">

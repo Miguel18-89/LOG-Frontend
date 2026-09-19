@@ -2,9 +2,11 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
 import Box from '@mui/joy/Box';
 import Typography from '@mui/joy/Typography';
-import { FaTools, FaTruck, FaUsers, FaClock, FaCalendarAlt, FaPiggyBank, FaHardHat } from 'react-icons/fa';
+import { FaTools, FaTruck, FaUsers, FaClock, FaCalendarAlt, FaPiggyBank, FaHardHat, FaTicketAlt } from 'react-icons/fa';
 
 const SECTIONS = [
+    // Os tickets vêm primeiro: é por aí que o trabalho entra.
+    { label: 'Tickets',             icon: FaTicketAlt,    to: '/EMG/Tickets'     },
     { label: 'Assistência Técnica', icon: FaTools,        to: '/EMG/Assistencia' },
     { label: 'Obras',               icon: FaHardHat,      to: '/EMG/Obras'       },
     { label: 'Frota',               icon: FaTruck,        to: '/EMG/Frota'       },

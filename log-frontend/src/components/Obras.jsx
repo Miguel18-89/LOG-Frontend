@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Box from '@mui/joy/Box';
 import Button from '@mui/joy/Button';
 import Input from '@mui/joy/Input';
@@ -103,6 +104,8 @@ function PhotoThumb({ obraId, photo, onReady, onOpen }) {
 }
 
 export default function Obras() {
+    const routerLocation = useLocation();
+    const navigate = useNavigate();
     // As permissões vêm do servidor em canEdit/canDelete por obra, em vez de serem
     // recalculadas aqui — a regra depende dos técnicos associados a cada obra.
     const [records, setRecords] = useState([]);
@@ -127,6 +130,9 @@ export default function Obras() {
     const [form, setForm] = useState(emptyForm);
     const [formLoading, setFormLoading] = useState(false);
     const [externalInput, setExternalInput] = useState('');
+    // Pedido que deu origem a esta obra, quando se chega aqui a partir de um
+    // ticket. Fica guardado enquanto o formulário está aberto.
+    const [fromTicket, setFromTicket] = useState(null);
 
     const [detail, setDetail] = useState(null);
     // URLs das fotos já descarregadas para as miniaturas, reaproveitados pelo
@@ -227,13 +233,30 @@ export default function Obras() {
         setEditId(null);
         setForm({ ...emptyForm });
         setExternalInput('');
+        setFromTicket(null);
         setOpenForm(true);
     }
+
+    // Chegada a partir de um ticket: abre o formulário já preenchido com o que o
+    // pedido sabe. O estado do router é limpo a seguir, senão voltar atrás no
+    // browser reabriria o formulário sem se ter pedido nada.
+    useEffect(() => {
+        const nova = routerLocation.state?.novaObra;
+        if (!nova) return;
+        setIsEdit(false);
+        setEditId(null);
+        setForm({ ...emptyForm, client: nova.client || '', obra: nova.obra || '' });
+        setExternalInput('');
+        setFromTicket(nova);
+        setOpenForm(true);
+        navigate(routerLocation.pathname, { replace: true, state: null });
+    }, [routerLocation.state, routerLocation.pathname, navigate]);
 
     function openEdit(r) {
         setIsEdit(true);
         setEditId(r.id);
         setExternalInput('');
+        setFromTicket(null);
         setForm({
             client: r.client, obra: r.obra, type: r.type, status: r.status || 'em_curso',
             date: r.date ? r.date.slice(0, 10) : '',
@@ -274,8 +297,14 @@ export default function Obras() {
                 toast.success('Obra atualizada.');
                 if (detail?.id === editId) await refreshDetail(editId);
             } else {
-                await api.post('/emg/obras', form);
-                toast.success('Obra criada.');
+                await api.post('/emg/obras', {
+                    ...form,
+                    ...(fromTicket ? { ticket_id: fromTicket.ticket_id } : {}),
+                });
+                toast.success(fromTicket
+                    ? `Obra criada e ligada ao ticket #${fromTicket.ticketNumber}.`
+                    : 'Obra criada.');
+                setFromTicket(null);
             }
             setOpenForm(false);
             fetchRecords();
@@ -465,7 +494,7 @@ export default function Obras() {
             <Typography level="h3" sx={{ fontWeight: 'bold', color: '#444', mb: 2 }}>Obras</Typography>
 
             {/* Filtros */}
-            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 2, alignItems: 'flex-end' }}>
+            <Box className="filtros" sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 2, alignItems: 'flex-end' }}>
                 <FormControl size="sm">
                     <FormLabel>Cliente</FormLabel>
                     <Input
@@ -631,6 +660,11 @@ export default function Obras() {
                     <Typography level="h4" sx={{ color: '#f57c00', mb: 1 }}>
                         {isEdit ? 'Editar Obra' : 'Nova Obra'}
                     </Typography>
+                    {!isEdit && fromTicket && (
+                        <Typography level="body-sm" sx={{ color: '#666' }}>
+                            A partir do <strong>Ticket #{fromTicket.ticketNumber}</strong> — fica ligada a ele ao guardar.
+                        </Typography>
+                    )}
                     <Divider sx={{ mb: 2 }} />
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                         <Box sx={{ display: 'flex', gap: 2 }}>

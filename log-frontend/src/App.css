@@ -1,0 +1,20 @@
+/*
+ * Estilos globais da plataforma. Importado em App.jsx, por isso vale em todas as
+ * páginas — ao contrário do index.css, que está vazio e não é importado.
+ */
+
+/*
+ * Barras de filtros: o Select do Joy não herda o tamanho do FormControl da mesma
+ * maneira que o Input, e ficava mais baixo que as caixas de texto e de data ao
+ * lado. Fixa-se a altura mínima para as três ficarem alinhadas.
+ *
+ * O seletor tem duas classes de propósito. O Emotion injeta os estilos do Joy no
+ * <head> em tempo de execução, normalmente depois do CSS do pacote; com a mesma
+ * especificidade ganhava o dele e esta regra não teria efeito.
+ *
+ * Só apanha as barras marcadas com .filtros — os Select dentro dos formulários e
+ * das fichas ficam como estão.
+ */
+.filtros .MuiSelect-root {
+    min-height: 3rem;
+}

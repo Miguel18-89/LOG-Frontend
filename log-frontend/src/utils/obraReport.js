@@ -113,6 +113,11 @@ export function buildObraPDF(obra, photos = []) {
             ['Data', fmtDate(obra.date)],
             ['Horário', formatTimeRange(obra.startTime, obra.endTime) || '—'],
             ['Técnicos', allTechnicianNames(obra).join(', ') || '—'],
+            // A origem só aparece quando a obra nasceu de um pedido: numa obra
+            // avulsa uma linha "Origem: —" só ocuparia espaço.
+            ...(obra.ticket
+                ? [['Origem', `Ticket #${obra.ticket.ticketNumber} — ${obra.ticket.title}`]]
+                : []),
         ],
     });
 

@@ -303,7 +303,7 @@ export default function EMGBancoHoras() {
                     </Typography>
                 )}
 
-                <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
+                <Box className="filtros" sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
                     <FormControl size="sm">
                         <FormLabel>Tipo</FormLabel>
                         <Select

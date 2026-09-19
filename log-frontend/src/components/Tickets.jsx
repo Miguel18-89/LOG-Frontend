@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Box from '@mui/joy/Box';
 import Button from '@mui/joy/Button';
 import Input from '@mui/joy/Input';
@@ -21,7 +22,7 @@ import DialogContent from '@mui/joy/DialogContent';
 import DialogActions from '@mui/joy/DialogActions';
 import {
     MdEdit, MdDelete, MdVisibility, MdUploadFile, MdDownload, MdSend,
-    MdLink, MdLinkOff, MdWarningAmber,
+    MdLink, MdLinkOff, MdWarningAmber, MdAddCircleOutline,
 } from 'react-icons/md';
 import { toast } from 'react-toastify';
 import api from '../services/api';
@@ -47,6 +48,7 @@ function Tag({ colors, children }) {
 }
 
 export default function Tickets() {
+    const navigate = useNavigate();
     const [records, setRecords] = useState([]);
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(1);
@@ -296,6 +298,24 @@ export default function Tickets() {
         }
     }
 
+    /**
+     * Abre o formulário de nova obra já preenchido com o que o pedido tem, e com
+     * a ligação ao ticket. Reaproveita o formulário das Obras em vez de repetir
+     * aqui um mais pobre: a obra precisa de técnicos, documentos e assinatura.
+     */
+    function handleCreateWorkOrder() {
+        navigate('/EMG/Obras', {
+            state: {
+                novaObra: {
+                    client: detail.client ?? '',
+                    obra: detail.location ?? '',
+                    ticket_id: detail.id,
+                    ticketNumber: detail.ticketNumber,
+                },
+            },
+        });
+    }
+
     async function handleLink() {
         if (!linkChoice) return;
         try {
@@ -321,11 +341,11 @@ export default function Tickets() {
     }
 
     return (
-        <Box>
-            <Typography level="h2" sx={{ color: '#f57c00', mb: 2 }}>Tickets</Typography>
+        <Box sx={{ p: 2 }}>
+            <Typography level="h3" sx={{ fontWeight: 'bold', color: '#444', mb: 2 }}>Tickets</Typography>
 
             {/* Filtros */}
-            <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'flex-end', mb: 2 }}>
+            <Box className="filtros" sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'flex-end', mb: 2 }}>
                 <FormControl size="sm">
                     <FormLabel>Pesquisar</FormLabel>
                     <Input
@@ -642,12 +662,18 @@ export default function Tickets() {
                                         onClick={() => handleUnlink('rma', r.id)}><MdLinkOff /></IconButton>
                                 </Box>
                             ))}
-                            <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-                                <Button size="sm" variant="outlined" startDecorator={<MdLink />} onClick={() => openLink('obra')}>
-                                    Ligar obra
+                            <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
+                                <Button size="sm" color="warning" startDecorator={<MdAddCircleOutline />}
+                                    onClick={handleCreateWorkOrder}>
+                                    Criar obra
                                 </Button>
                                 <Button size="sm" variant="outlined" startDecorator={<MdLink />} onClick={() => openLink('rma')}>
                                     Ligar RMA
+                                </Button>
+                                {/* Para o caso de a obra já existir, feita antes de alguém
+                                    se lembrar de a ligar ao pedido. */}
+                                <Button size="sm" variant="plain" startDecorator={<MdLink />} onClick={() => openLink('obra')}>
+                                    Ligar obra existente
                                 </Button>
                             </Box>
                             {linkOpen && (
@@ -691,7 +717,7 @@ export default function Tickets() {
 
                             {/* Linha de tempo */}
                             <Typography level="title-sm" sx={{ color: '#f57c00', mb: 1 }}>Histórico</Typography>
-                            <Box sx={{ maxHeight: 280, overflowY: 'auto', pr: 1 }}>
+                            <Box sx={{ pr: 1 }}>
                                 <Box sx={{ mb: 1 }}>
                                     <Typography level="body-xs" sx={{ color: '#888' }}>
                                         {fmtDateTime(detail.created_at)} · {detail.createdBy?.name ?? '—'}
