@@ -215,9 +215,16 @@ export default function PhotoLightbox({ photos, urls, index, onIndex, onClose })
                     )}
                 </Box>
 
-                <Typography level="body-xs" sx={{ color: '#888', textAlign: 'center', pb: 1.5, flexShrink: 0 }}>
-                    Roda do rato ou duplo clique para ampliar · arraste para percorrer a foto · setas para mudar de foto
-                </Typography>
+                <Box sx={{ flexShrink: 0, pb: 1.5, px: 2 }}>
+                    {photo?.caption && (
+                        <Typography level="body-sm" sx={{ color: '#eee', textAlign: 'center', mb: 0.5 }}>
+                            {photo.caption}
+                        </Typography>
+                    )}
+                    <Typography level="body-xs" sx={{ color: '#777', textAlign: 'center' }}>
+                        Roda do rato ou duplo clique para ampliar · arraste para percorrer a foto · setas para mudar de foto
+                    </Typography>
+                </Box>
             </Box>
         </Modal>
     );

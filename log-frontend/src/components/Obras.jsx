@@ -161,6 +161,8 @@ export default function Obras() {
     const [photoPrompt, setPhotoPrompt] = useState(null);
 
     const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: null });
+    // Foto cuja legenda está a ser escrita: { id, value }.
+    const [captionEdit, setCaptionEdit] = useState(null);
 
     const fetchRecords = useCallback(async () => {
         setLoading(true);
@@ -401,7 +403,7 @@ export default function Obras() {
         for (const p of photos) {
             try {
                 const res = await api.get(`/emg/obras/${obra.id}/documentos/${p.id}`, { responseType: 'blob' });
-                out.push(await shrinkImage(res.data));
+                out.push({ ...(await shrinkImage(res.data)), caption: p.caption });
             } catch {
                 // Uma foto ilegível não deve impedir a geração do relatório.
                 console.warn('Foto ignorada no relatório:', p.originalName);
@@ -421,6 +423,18 @@ export default function Obras() {
             URL.revokeObjectURL(url);
         } catch {
             toast.error('Erro ao descarregar o documento.');
+        }
+    }
+
+    async function handleSaveCaption() {
+        try {
+            await api.put(`/emg/obras/${detail.id}/documentos/${captionEdit.id}`, {
+                caption: captionEdit.value,
+            });
+            await refreshDetail(detail.id);
+            setCaptionEdit(null);
+        } catch (err) {
+            toast.error(err.response?.data?.error || 'Erro ao guardar a legenda.');
         }
     }
 
@@ -913,7 +927,8 @@ export default function Obras() {
                                 gap: 1, mb: 1,
                             }}>
                                 {photosOf(detail).map((p, i) => (
-                                    <Box key={p.id} sx={{ position: 'relative' }}>
+                                    <Box key={p.id}>
+                                        <Box sx={{ position: 'relative' }}>
                                         <PhotoThumb
                                             obraId={detail.id}
                                             photo={p}
@@ -929,6 +944,23 @@ export default function Obras() {
                                                 <MdDelete />
                                             </IconButton>
                                         )}
+                                        </Box>
+                                        {/* A legenda é o que dá sentido à foto no
+                                            relatório; fica logo por baixo dela. */}
+                                        <Typography
+                                            level="body-xs"
+                                            onClick={detail.canEdit
+                                                ? () => setCaptionEdit({ id: p.id, value: p.caption ?? '' })
+                                                : undefined}
+                                            sx={{
+                                                mt: 0.5, lineHeight: 1.3,
+                                                color: p.caption ? '#555' : '#bbb',
+                                                cursor: detail.canEdit ? 'pointer' : 'default',
+                                                '&:hover': detail.canEdit ? { color: '#f57c00' } : undefined,
+                                            }}
+                                        >
+                                            {p.caption || (detail.canEdit ? '+ legenda' : '')}
+                                        </Typography>
                                     </Box>
                                 ))}
                             </Box>
@@ -1061,6 +1093,32 @@ export default function Obras() {
                             <Button color="warning" loading={emailLoading} onClick={handleSendEmail}>Enviar</Button>
                         </Box>
                     </Box>
+                </ModalDialog>
+            </Modal>
+
+            {/* Legenda de uma foto */}
+            <Modal open={!!captionEdit} onClose={() => setCaptionEdit(null)}>
+                <ModalDialog sx={{ maxWidth: 460, width: '92%' }}>
+                    <ModalClose />
+                    <DialogTitle>Legenda da foto</DialogTitle>
+                    <DialogContent>
+                        <FormControl size="sm" sx={{ mt: 1 }}>
+                            <FormLabel>O que se vê nesta foto</FormLabel>
+                            <Textarea
+                                minRows={2}
+                                autoFocus
+                                value={captionEdit?.value ?? ''}
+                                onChange={e => setCaptionEdit(c => ({ ...c, value: e.target.value }))}
+                            />
+                            <Typography level="body-xs" sx={{ color: '#999', mt: 0.5 }}>
+                                Aparece por baixo da foto no relatório. Deixe vazio para a remover.
+                            </Typography>
+                        </FormControl>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button color="warning" onClick={handleSaveCaption}>Guardar</Button>
+                        <Button variant="plain" onClick={() => setCaptionEdit(null)}>Cancelar</Button>
+                    </DialogActions>
                 </ModalDialog>
             </Modal>
 

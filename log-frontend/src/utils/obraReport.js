@@ -158,10 +158,21 @@ export function buildObraPDF(obra, photos = []) {
         if (py + maxCellH + 10 > pageH - margin) { doc.addPage(); py = 20; }
         drawHeading();
 
+        // Legenda por baixo de cada foto, quando existe.
+        const CAPTION_SIZE = 7;
+        const CAPTION_LINE = 3;   // altura de uma linha, em mm
+        const CAPTION_GAP = 3;    // espaço entre a foto e a legenda
+
         for (let i = 0; i < photos.length; i += 2) {
             const row = photos.slice(i, i + 2);
-            const heights = row.map(p => Math.min(maxCellH, (cellW * p.height) / p.width));
-            const rowH = Math.max(...heights);
+            const imgHeights = row.map(p => Math.min(maxCellH, (cellW * p.height) / p.width));
+
+            // O corte em linhas depende do tamanho de letra em vigor, por isso
+            // define-se antes de medir e não só antes de escrever.
+            doc.setFontSize(CAPTION_SIZE);
+            const capLines = row.map(p => (p.caption ? doc.splitTextToSize(p.caption, cellW) : []));
+            const capHeights = capLines.map(l => (l.length ? CAPTION_GAP + l.length * CAPTION_LINE : 0));
+            const rowH = Math.max(...imgHeights.map((h, k) => h + capHeights[k]));
 
             if (py + rowH > pageH - margin) {
                 doc.addPage();
@@ -170,10 +181,17 @@ export function buildObraPDF(obra, photos = []) {
             }
 
             row.forEach((p, idx) => {
-                const h = Math.min(maxCellH, (cellW * p.height) / p.width);
+                const h = imgHeights[idx];
                 const w = (h * p.width) / p.height;
                 const x = margin + idx * (cellW + gap);
                 doc.addImage(p.dataUrl, 'JPEG', x, py, w, h);
+
+                if (capLines[idx].length) {
+                    doc.setFontSize(CAPTION_SIZE);
+                    doc.setTextColor(90);
+                    doc.text(capLines[idx], x, py + h + CAPTION_GAP);
+                    doc.setTextColor(0);
+                }
             });
 
             py += rowH + gap;
