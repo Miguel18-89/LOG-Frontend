@@ -21,11 +21,12 @@ import DialogTitle from '@mui/joy/DialogTitle';
 import DialogContent from '@mui/joy/DialogContent';
 import DialogActions from '@mui/joy/DialogActions';
 import {
-    MdEdit, MdDelete, MdVisibility, MdUploadFile, MdDownload, MdSend,
+    MdEdit, MdDelete, MdVisibility, MdSend,
     MdLink, MdLinkOff, MdWarningAmber, MdAddCircleOutline,
 } from 'react-icons/md';
 import { toast } from 'react-toastify';
 import api from '../services/api';
+import AttachmentsSection from './AttachmentsSection';
 import { fmtDate } from '../utils/obraReport';
 import {
     TICKET_TYPES, TICKET_PRIORITIES, TICKET_STATUSES,
@@ -75,7 +76,6 @@ export default function Tickets() {
     const [detail, setDetail] = useState(null);
     const [message, setMessage] = useState('');
     const [sending, setSending] = useState(false);
-    const [uploading, setUploading] = useState(false);
 
     // Listas para ligar obras e RMAs, carregadas só quando são precisas.
     const [linkOpen, setLinkOpen] = useState(null); // 'obra' | 'rma' | null
@@ -236,51 +236,6 @@ export default function Tickets() {
             toast.error(err.response?.data?.error || 'Erro ao enviar a mensagem.');
         } finally {
             setSending(false);
-        }
-    }
-
-    async function handleUpload(files) {
-        const list = Array.from(files ?? []);
-        if (list.length === 0) return;
-        setUploading(true);
-        try {
-            for (const file of list) {
-                const fd = new FormData();
-                fd.append('file', file);
-                await api.post(`/emg/tickets/${detail.id}/documentos`, fd, {
-                    headers: { 'Content-Type': 'multipart/form-data' },
-                });
-            }
-            await refreshDetail(detail.id);
-            toast.success(`${list.length} ficheiro(s) carregado(s).`);
-        } catch (err) {
-            toast.error(err.response?.data?.error || 'Erro ao carregar o ficheiro.');
-        } finally {
-            setUploading(false);
-        }
-    }
-
-    async function handleDownloadDoc(doc) {
-        try {
-            const res = await api.get(`/emg/tickets/${detail.id}/documentos/${doc.id}`, { responseType: 'blob' });
-            const url = URL.createObjectURL(res.data);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = doc.originalName;
-            a.click();
-            URL.revokeObjectURL(url);
-        } catch {
-            toast.error('Erro ao descarregar o documento.');
-        }
-    }
-
-    async function handleDeleteDoc(docId) {
-        try {
-            await api.delete(`/emg/tickets/${detail.id}/documentos/${docId}`);
-            await refreshDetail(detail.id);
-            toast.success('Documento eliminado.');
-        } catch {
-            toast.error('Erro ao eliminar o documento.');
         }
     }
 
@@ -697,21 +652,12 @@ export default function Tickets() {
 
                             <Divider sx={{ my: 1.5 }} />
 
-                            {/* Anexos */}
-                            <Typography level="title-sm" sx={{ color: '#f57c00', mb: 1 }}>Anexos</Typography>
-                            {(detail.documents ?? []).length === 0 ? (
-                                <Typography level="body-sm" sx={{ color: '#999', mb: 1 }}>Sem anexos.</Typography>
-                            ) : (detail.documents ?? []).map(d => (
-                                <Box key={d.id} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                                    <Typography level="body-sm" sx={{ flex: 1 }}>{d.originalName}</Typography>
-                                    <IconButton size="sm" variant="plain" title="Descarregar" onClick={() => handleDownloadDoc(d)}><MdDownload /></IconButton>
-                                    <IconButton size="sm" variant="plain" color="danger" title="Eliminar" onClick={() => handleDeleteDoc(d.id)}><MdDelete /></IconButton>
-                                </Box>
-                            ))}
-                            <Button component="label" size="sm" variant="outlined" startDecorator={<MdUploadFile />} loading={uploading} sx={{ mt: 1 }}>
-                                Carregar ficheiro
-                                <input type="file" hidden multiple onChange={e => { handleUpload(e.target.files); e.target.value = ''; }} />
-                            </Button>
+                            {/* Anexos: documentos em lista e fotos em grelha, com legenda */}
+                            <AttachmentsSection
+                                basePath={`/emg/tickets/${detail.id}`}
+                                documents={detail.documents ?? []}
+                                onChanged={() => refreshDetail(detail.id)}
+                            />
 
                             <Divider sx={{ my: 1.5 }} />
 

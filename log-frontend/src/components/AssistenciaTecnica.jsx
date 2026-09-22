@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
+import AttachmentsSection from './AttachmentsSection';
 import Box from '@mui/joy/Box';
 import Button from '@mui/joy/Button';
 import Input from '@mui/joy/Input';
@@ -363,6 +364,17 @@ export default function AssistenciaTecnica() {
                             <Typography level="body-sm" sx={{ mt: 0.5, color: '#444' }}>{detailRMA.fault}</Typography>
                         </Box>
                         <Divider sx={{ mb: 1.5 }} />
+                        {/* Anexos: documentos e fotos do equipamento, com legenda */}
+                        <AttachmentsSection
+                            basePath={`/emg/rma/${detailRMA.id}`}
+                            documents={detailRMA.documents ?? []}
+                            onChanged={async () => {
+                                const res = await api.get(`/emg/rma/${detailRMA.id}`);
+                                setDetailRMA(res.data);
+                            }}
+                        />
+
+                        <Divider sx={{ my: 1.5 }} />
                         <Typography level="title-sm" sx={{ mb: 1, color: '#f57c00' }}>Actualizações</Typography>
                         <Box sx={{ maxHeight: 220, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 1, mb: 1.5 }}>
                             {detailRMA.updates.length === 0
