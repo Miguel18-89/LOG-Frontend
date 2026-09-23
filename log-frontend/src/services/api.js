@@ -6,7 +6,7 @@ import axios from 'axios';
  * antes estava escrito em três ficheiros, e um deles ficou sem alternativa,
  * gerando pedidos para "undefined/..." sempre que a variável não estava definida.
  */
-export const API_URL = import.meta.env.VITE_API_URL || 'https://api.213.199.58.233.sslip.io';
+export const API_URL = import.meta.env.VITE_API_URL || 'https://api.emg.pt';
 
 const api = axios.create({
     baseURL: API_URL,
