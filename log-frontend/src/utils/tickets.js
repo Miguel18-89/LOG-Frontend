@@ -80,6 +80,9 @@ export function describeEntry(entry) {
     const { field, fromValue, toValue } = entry;
 
     if (field === 'description') return 'editou a descrição';
+    if (field === 'mensagem_eliminada') {
+        return toValue ? `eliminou uma mensagem de ${toValue}` : 'eliminou uma mensagem';
+    }
     if (field === 'obra_ligada') return `ligou a obra ${toValue}`;
     if (field === 'obra_desligada') return `desligou a obra ${toValue}`;
     if (field === 'rma_ligado') return `ligou o RMA ${toValue}`;

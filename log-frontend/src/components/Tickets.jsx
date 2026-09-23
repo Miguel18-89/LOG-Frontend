@@ -225,6 +225,15 @@ export default function Tickets() {
         }
     }
 
+    async function handleDeleteMessage(entryId) {
+        try {
+            const res = await api.delete(`/emg/tickets/${detail.id}/mensagens/${entryId}`);
+            setDetail(res.data);
+        } catch (err) {
+            toast.error(err.response?.data?.error || 'Erro ao eliminar a mensagem.');
+        }
+    }
+
     async function handleSendMessage() {
         if (!message.trim()) return;
         setSending(true);
@@ -676,12 +685,26 @@ export default function Tickets() {
                                             {fmtDateTime(e.created_at)} · {e.createdBy?.name ?? '—'}
                                         </Typography>
                                         {e.kind === 'mensagem' ? (
-                                            <Typography level="body-sm" sx={{
-                                                whiteSpace: 'pre-wrap', bgcolor: '#f7f7f7',
-                                                borderRadius: 'sm', p: 1, borderLeft: '3px solid #f57c00',
+                                            <Box sx={{
+                                                display: 'flex', alignItems: 'flex-start', gap: 0.5,
+                                                bgcolor: '#f7f7f7', borderRadius: 'sm', p: 1,
+                                                borderLeft: '3px solid #f57c00',
                                             }}>
-                                                {e.message}
-                                            </Typography>
+                                                <Typography level="body-sm" sx={{ whiteSpace: 'pre-wrap', flex: 1 }}>
+                                                    {e.message}
+                                                </Typography>
+                                                {/* So o administrador apaga, e so mensagens: o registo
+                                                    de alteracoes e o rasto do que aconteceu. */}
+                                                {detail.canDelete && (
+                                                    <IconButton
+                                                        size="sm" variant="plain" color="danger"
+                                                        title="Eliminar mensagem"
+                                                        onClick={() => handleDeleteMessage(e.id)}
+                                                    >
+                                                        <MdDelete />
+                                                    </IconButton>
+                                                )}
+                                            </Box>
                                         ) : (
                                             <Typography level="body-sm" sx={{ color: '#555' }}>{describeEntry(e)}</Typography>
                                         )}
