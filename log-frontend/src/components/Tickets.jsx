@@ -22,7 +22,7 @@ import DialogContent from '@mui/joy/DialogContent';
 import DialogActions from '@mui/joy/DialogActions';
 import {
     MdEdit, MdDelete, MdVisibility, MdSend,
-    MdLink, MdLinkOff, MdWarningAmber, MdAddCircleOutline, MdOpenInNew,
+    MdLink, MdLinkOff, MdWarningAmber, MdAddCircleOutline,
 } from 'react-icons/md';
 import { toast } from 'react-toastify';
 import api from '../services/api';
@@ -717,25 +717,32 @@ export default function Tickets({ apenasFechados = false }) {
                             )}
                             {(detail.workOrders ?? []).map(o => (
                                 <Box key={o.id} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                                    <Chip size="sm" sx={{ bgcolor: '#fff3e0', color: '#e65100' }}>Obra #{o.orderNumber}</Chip>
+                                    {/* A etiqueta e o link: leva a pagina das Obras
+                                        ja com esta obra aberta. */}
+                                    <Chip
+                                        size="sm"
+                                        title="Abrir a obra"
+                                        sx={{ bgcolor: '#fff3e0', color: '#e65100', cursor: 'pointer' }}
+                                        onClick={() => navigate('/EMG/Obras', { state: { abrirObra: o.id } })}
+                                    >
+                                        Obra #{o.orderNumber}
+                                    </Chip>
                                     <Typography level="body-sm" sx={{ flex: 1 }}>{o.client} — {o.obra} ({fmtDate(o.date)})</Typography>
-                                    {/* Leva a pagina das Obras ja com esta obra aberta. */}
-                                    <IconButton size="sm" variant="plain" title="Abrir a obra"
-                                        onClick={() => navigate('/EMG/Obras', { state: { abrirObra: o.id } })}>
-                                        <MdOpenInNew />
-                                    </IconButton>
                                     <IconButton size="sm" variant="plain" color="danger" title="Desligar"
                                         onClick={() => handleUnlink('obra', o.id)}><MdLinkOff /></IconButton>
                                 </Box>
                             ))}
                             {(detail.rmas ?? []).map(r => (
                                 <Box key={r.id} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                                    <Chip size="sm" sx={{ bgcolor: '#e3f2fd', color: '#1565c0' }}>RMA #{r.rmaNumber}</Chip>
+                                    <Chip
+                                        size="sm"
+                                        title="Abrir o RMA"
+                                        sx={{ bgcolor: '#e3f2fd', color: '#1565c0', cursor: 'pointer' }}
+                                        onClick={() => navigate('/EMG/Assistencia', { state: { abrirRma: r.id } })}
+                                    >
+                                        RMA #{r.rmaNumber}
+                                    </Chip>
                                     <Typography level="body-sm" sx={{ flex: 1 }}>{r.brand} {r.model}</Typography>
-                                    <IconButton size="sm" variant="plain" title="Abrir o RMA"
-                                        onClick={() => navigate('/EMG/Assistencia', { state: { abrirRma: r.id } })}>
-                                        <MdOpenInNew />
-                                    </IconButton>
                                     <IconButton size="sm" variant="plain" color="danger" title="Desligar"
                                         onClick={() => handleUnlink('rma', r.id)}><MdLinkOff /></IconButton>
                                 </Box>
