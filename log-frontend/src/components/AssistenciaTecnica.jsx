@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import AttachmentsSection from './AttachmentsSection';
 import Box from '@mui/joy/Box';
@@ -17,6 +18,7 @@ import FormLabel from '@mui/joy/FormLabel';
 import Divider from '@mui/joy/Divider';
 import Textarea from '@mui/joy/Textarea';
 import IconButton from '@mui/joy/IconButton';
+import Chip from '@mui/joy/Chip';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
@@ -58,6 +60,8 @@ const emptyForm = {
 };
 
 export default function AssistenciaTecnica() {
+    const navigate = useNavigate();
+    const routerLocation = useLocation();
     const [records, setRecords]       = useState([]);
     const [total, setTotal]           = useState(0);
     const [page, setPage]             = useState(1);
@@ -79,6 +83,16 @@ export default function AssistenciaTecnica() {
     const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: null });
 
     useEffect(() => { fetchRecords(); }, [page, pageSize, filterStatus, filterClient]);
+
+    // Chegada a partir de um ticket a pedir para ver este RMA.
+    useEffect(() => {
+        const abrir = routerLocation.state?.abrirRma;
+        if (!abrir) return;
+        navigate(routerLocation.pathname, { replace: true, state: null });
+        api.get(`/emg/rma/${abrir}`)
+            .then(res => setDetailRMA(res.data))
+            .catch(() => toast.error('Não foi possível abrir esse RMA.'));
+    }, [routerLocation.state, routerLocation.pathname, navigate]);
 
     async function fetchRecords() {
         setLoading(true);
@@ -352,13 +366,25 @@ export default function AssistenciaTecnica() {
                                 ['Local', detailRMA.location],
                                 ['Pedido por', detailRMA.requestedBy],
                                 ...(detailRMA.repairLocation ? [['Local reparação', detailRMA.repairLocation]] : []),
-                                ...(detailRMA.ticket
-                                    ? [['Origem', `Ticket #${detailRMA.ticket.ticketNumber} — ${detailRMA.ticket.title}`]]
-                                    : []),
+
                             ].map(([k, v]) => (
                                 <Box key={k}><strong>{k}:</strong> {v}</Box>
                             ))}
                         </Box>
+                        {detailRMA.ticket && (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                                <Typography level="body-sm"><strong>Origem:</strong></Typography>
+                                <Chip
+                                    size="sm"
+                                    sx={{ bgcolor: '#ede7f6', color: '#4527a0', cursor: 'pointer' }}
+                                    onClick={() => navigate('/EMG/Tickets', { state: { abrirTicket: detailRMA.ticket.id } })}
+                                >
+                                    Ticket #{detailRMA.ticket.ticketNumber}
+                                </Chip>
+                                <Typography level="body-sm" sx={{ flex: 1 }}>{detailRMA.ticket.title}</Typography>
+                            </Box>
+                        )}
+
                         <Box sx={{ mb: 2 }}>
                             <strong>Avaria:</strong>
                             <Typography level="body-sm" sx={{ mt: 0.5, color: '#444' }}>{detailRMA.fault}</Typography>

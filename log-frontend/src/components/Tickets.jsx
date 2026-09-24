@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Box from '@mui/joy/Box';
 import Button from '@mui/joy/Button';
 import Input from '@mui/joy/Input';
@@ -22,7 +22,7 @@ import DialogContent from '@mui/joy/DialogContent';
 import DialogActions from '@mui/joy/DialogActions';
 import {
     MdEdit, MdDelete, MdVisibility, MdSend,
-    MdLink, MdLinkOff, MdWarningAmber, MdAddCircleOutline,
+    MdLink, MdLinkOff, MdWarningAmber, MdAddCircleOutline, MdOpenInNew,
 } from 'react-icons/md';
 import { toast } from 'react-toastify';
 import api from '../services/api';
@@ -32,7 +32,8 @@ import {
     TICKET_TYPES, TICKET_PRIORITIES, TICKET_STATUSES,
     TYPE_COLORS, PRIORITY_COLORS, STATUS_COLORS,
     ticketTypeLabel, ticketPriorityLabel, ticketStatusLabel,
-    describeEntry, fmtDateTime, isOverdue, emptyTicketForm, ticketToForm,
+    describeEntry, fmtDateTime, isOverdue, needsAttention, daysOpen,
+    emptyTicketForm, ticketToForm,
 } from '../utils/tickets';
 
 /** Etiqueta colorida, no mesmo estilo que as Obras já usam. */
@@ -48,8 +49,15 @@ function Tag({ colors, children }) {
     );
 }
 
-export default function Tickets() {
+/**
+ * Lista de tickets. Serve as duas rotas: a principal, com os que estao por
+ * fechar, e a dos fechados. E o mesmo ecra com o mesmo detalhe, filtros e
+ * paginacao -- duplica-lo para mudar um filtro era garantir que as duas copias
+ * divergiam a primeira correcao.
+ */
+export default function Tickets({ apenasFechados = false }) {
     const navigate = useNavigate();
+    const routerLocation = useLocation();
     const [records, setRecords] = useState([]);
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(1);
@@ -83,6 +91,8 @@ export default function Tickets() {
     const [linkChoice, setLinkChoice] = useState('');
 
     const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: null });
+    // Os ultimos fechados, so na pagina principal e sem filtros.
+    const [recentClosed, setRecentClosed] = useState([]);
 
     const fetchRecords = useCallback(async () => {
         setLoading(true);
@@ -92,7 +102,9 @@ export default function Tickets() {
                     page, pageSize,
                     search: appliedSearch || undefined,
                     type: filterType || undefined,
-                    status: filterStatus || undefined,
+                    status: apenasFechados ? 'fechado' : (filterStatus || undefined),
+                    // A lista principal esconde os fechados; eles tem pagina propria.
+                    hideClosed: apenasFechados ? undefined : 'true',
                     priority: filterPriority || undefined,
                     mine: onlyMine ? 'true' : undefined,
                     open: onlyOpen ? 'true' : undefined,
@@ -108,7 +120,7 @@ export default function Tickets() {
             setLoading(false);
         }
     }, [page, pageSize, appliedSearch, filterType, filterStatus, filterPriority,
-        onlyMine, onlyOpen, dateFrom, dateTo]);
+        onlyMine, onlyOpen, dateFrom, dateTo, apenasFechados]);
 
     useEffect(() => { fetchRecords(); }, [fetchRecords]);
 
@@ -120,6 +132,32 @@ export default function Tickets() {
             .then(res => setUsers(Array.isArray(res.data) ? res.data : []))
             .catch(() => setUsers([]));
     }, []);
+
+    // Os ultimos fechados sao um atalho de leitura, nao uma lista de trabalho:
+    // por isso ignoram os filtros e vivem so na pagina principal.
+    const fetchRecentClosed = useCallback(async () => {
+        if (apenasFechados) return;
+        try {
+            const res = await api.get('/emg/tickets', {
+                params: { page: 1, pageSize: 10, status: 'fechado' },
+            });
+            setRecentClosed(res.data.data ?? []);
+        } catch {
+            setRecentClosed([]);
+        }
+    }, [apenasFechados]);
+
+    useEffect(() => { fetchRecentClosed(); }, [fetchRecentClosed]);
+
+    // Chegada a partir de uma obra ou de um RMA, a pedir este ticket.
+    useEffect(() => {
+        const abrir = routerLocation.state?.abrirTicket;
+        if (!abrir) return;
+        navigate(routerLocation.pathname, { replace: true, state: null });
+        api.get(`/emg/tickets/${abrir}`)
+            .then(res => setDetail(res.data))
+            .catch(() => toast.error('Não foi possível abrir esse ticket.'));
+    }, [routerLocation.state, routerLocation.pathname, navigate]);
 
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
@@ -193,6 +231,7 @@ export default function Tickets() {
             }
             setOpenForm(false);
             fetchRecords();
+            fetchRecentClosed();
         } catch (err) {
             toast.error(err.response?.data?.error || 'Erro ao guardar.');
         } finally {
@@ -206,6 +245,7 @@ export default function Tickets() {
             await api.put(`/emg/tickets/${detail.id}`, fields);
             await refreshDetail(detail.id);
             fetchRecords();
+            fetchRecentClosed();
             if (successMsg) toast.success(successMsg);
         } catch (err) {
             toast.error(err.response?.data?.error || 'Erro ao atualizar.');
@@ -218,6 +258,7 @@ export default function Tickets() {
             toast.success('Ticket eliminado.');
             if (detail?.id === deleteConfirm.id) setDetail(null);
             fetchRecords();
+            fetchRecentClosed();
         } catch (err) {
             toast.error(err.response?.data?.error || 'Erro ao eliminar.');
         } finally {
@@ -306,7 +347,9 @@ export default function Tickets() {
 
     return (
         <Box sx={{ p: 2 }}>
-            <Typography level="h3" sx={{ fontWeight: 'bold', color: '#444', mb: 2 }}>Tickets</Typography>
+            <Typography level="h3" sx={{ fontWeight: 'bold', color: '#444', mb: 2 }}>
+                {apenasFechados ? 'Tickets Fechados' : 'Tickets'}
+            </Typography>
 
             {/* Filtros */}
             <Box className="filtros" sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'flex-end', mb: 2 }}>
@@ -327,13 +370,16 @@ export default function Tickets() {
                         {TICKET_TYPES.map(t => <Option key={t.value} value={t.value}>{t.label}</Option>)}
                     </Select>
                 </FormControl>
-                <FormControl size="sm">
-                    <FormLabel>Estado</FormLabel>
-                    <Select value={filterStatus} onChange={(_, v) => { setFilterStatus(v ?? ''); setPage(1); }} sx={{ minWidth: 150 }}>
-                        <Option value="">Todos</Option>
-                        {TICKET_STATUSES.map(s => <Option key={s.value} value={s.value}>{s.label}</Option>)}
-                    </Select>
-                </FormControl>
+                {!apenasFechados && (
+                    <FormControl size="sm">
+                        <FormLabel>Estado</FormLabel>
+                        <Select value={filterStatus} onChange={(_, v) => { setFilterStatus(v ?? ''); setPage(1); }} sx={{ minWidth: 150 }}>
+                            <Option value="">Todos</Option>
+                            {TICKET_STATUSES.filter(s => s.value !== 'fechado')
+                                .map(s => <Option key={s.value} value={s.value}>{s.label}</Option>)}
+                        </Select>
+                    </FormControl>
+                )}
                 <FormControl size="sm">
                     <FormLabel>Prioridade</FormLabel>
                     <Select value={filterPriority} onChange={(_, v) => { setFilterPriority(v ?? ''); setPage(1); }} sx={{ minWidth: 140 }}>
@@ -357,16 +403,20 @@ export default function Tickets() {
                 >
                     Os meus
                 </Button>
-                <Button
-                    size="sm" color="warning"
-                    variant={onlyOpen ? 'solid' : 'outlined'}
-                    onClick={() => { setOnlyOpen(v => !v); setPage(1); }}
-                >
-                    Por fechar
-                </Button>
+                {!apenasFechados && (
+                    <Button
+                        size="sm" color="warning"
+                        variant={onlyOpen ? 'solid' : 'outlined'}
+                        onClick={() => { setOnlyOpen(v => !v); setPage(1); }}
+                    >
+                        Só por atribuir
+                    </Button>
+                )}
                 <Button size="sm" variant="outlined" onClick={clearFilters}>Limpar</Button>
                 <Box sx={{ ml: 'auto' }}>
-                    <Button size="sm" color="warning" onClick={openCreate}>+ Novo Ticket</Button>
+                    {!apenasFechados && (
+                        <Button size="sm" color="warning" onClick={openCreate}>+ Novo Ticket</Button>
+                    )}
                 </Box>
             </Box>
 
@@ -383,16 +433,21 @@ export default function Tickets() {
                             <th style={{ width: 110 }}>Estado</th>
                             <th style={{ width: 140 }}>Responsável</th>
                             <th style={{ width: 110 }}>Data limite</th>
+                            <th style={{ width: 80 }}>Aberto há</th>
                             <th style={{ width: 110, textAlign: 'center' }}></th>
                         </tr>
                     </thead>
                     <tbody>
                         {loading ? (
-                            <tr><td colSpan={9} style={{ textAlign: 'center', padding: '2rem', color: '#999' }}>A carregar...</td></tr>
+                            <tr><td colSpan={10} style={{ textAlign: 'center', padding: '2rem', color: '#999' }}>A carregar...</td></tr>
                         ) : records.length === 0 ? (
-                            <tr><td colSpan={9} style={{ textAlign: 'center', padding: '2rem', color: '#999' }}>Sem tickets registados.</td></tr>
+                            <tr><td colSpan={10} style={{ textAlign: 'center', padding: '2rem', color: '#999' }}>
+                                {apenasFechados ? 'Sem tickets fechados.' : 'Nada por fechar.'}
+                            </td></tr>
                         ) : records.map(r => (
-                            <tr key={r.id}>
+                            // Vermelho quando o ticket ja passou do prazo da sua
+                            // prioridade sem ser fechado.
+                            <tr key={r.id} style={needsAttention(r) ? { backgroundColor: '#ffebee' } : undefined}>
                                 <td style={{ fontWeight: 'bold', color: '#f57c00' }}>#{r.ticketNumber}</td>
                                 <td><Tag colors={TYPE_COLORS[r.type]}>{ticketTypeLabel(r.type)}</Tag></td>
                                 <td>{r.title}</td>
@@ -407,6 +462,13 @@ export default function Tickets() {
                                             {fmtDate(r.dueDate)}
                                         </span>
                                     ) : '—'}
+                                </td>
+                                <td style={{ fontSize: '0.85rem' }}>
+                                    {r.status === 'fechado'
+                                        ? '—'
+                                        : <span style={needsAttention(r) ? { color: '#c62828', fontWeight: 'bold' } : undefined}>
+                                            {daysOpen(r)} dia(s)
+                                        </span>}
                                 </td>
                                 <td style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
                                     <IconButton size="sm" variant="plain" title="Ver" onClick={() => openDetail(r)}><MdVisibility /></IconButton>
@@ -438,6 +500,49 @@ export default function Tickets() {
                     </Select>
                 </FormControl>
             </Box>
+
+            {/* Os ultimos fechados: atalho de leitura, sem filtros nem paginacao */}
+            {!apenasFechados && recentClosed.length > 0 && (
+                <Box sx={{ mt: 4 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                        <Typography level="title-md" sx={{ color: '#444' }}>
+                            Últimos fechados
+                        </Typography>
+                        <Button size="sm" variant="plain" onClick={() => navigate('/EMG/TicketsFechados')}>
+                            Ver todos ›
+                        </Button>
+                    </Box>
+                    <Sheet variant="outlined" sx={{ borderRadius: 'sm', overflow: 'auto' }}>
+                        <Table borderAxis="xBetween" size="sm" sx={{ minWidth: 700 }}>
+                            <thead>
+                                <tr>
+                                    <th style={{ width: 70 }}>Ticket #</th>
+                                    <th>Assunto</th>
+                                    <th>Cliente</th>
+                                    <th style={{ width: 140 }}>Responsável</th>
+                                    <th style={{ width: 120 }}>Fechado em</th>
+                                    <th style={{ width: 60, textAlign: 'center' }}></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {recentClosed.map(r => (
+                                    <tr key={r.id}>
+                                        <td style={{ fontWeight: 'bold', color: '#f57c00' }}>#{r.ticketNumber}</td>
+                                        <td>{r.title}</td>
+                                        <td>{r.client || '—'}</td>
+                                        <td style={{ fontSize: '0.85rem' }}>{r.assignee?.name ?? '—'}</td>
+                                        <td style={{ fontSize: '0.85rem' }}>{r.closedAt ? fmtDate(r.closedAt) : '—'}</td>
+                                        <td style={{ textAlign: 'center' }}>
+                                            <IconButton size="sm" variant="plain" title="Ver"
+                                                onClick={() => openDetail(r)}><MdVisibility /></IconButton>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </Table>
+                    </Sheet>
+                </Box>
+            )}
 
             {/* Modal criar / editar */}
             <Modal open={openForm} onClose={() => setOpenForm(false)}>
@@ -613,7 +718,12 @@ export default function Tickets() {
                             {(detail.workOrders ?? []).map(o => (
                                 <Box key={o.id} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                                     <Chip size="sm" sx={{ bgcolor: '#fff3e0', color: '#e65100' }}>Obra #{o.orderNumber}</Chip>
-                                    <Typography level="body-sm">{o.client} — {o.obra} ({fmtDate(o.date)})</Typography>
+                                    <Typography level="body-sm" sx={{ flex: 1 }}>{o.client} — {o.obra} ({fmtDate(o.date)})</Typography>
+                                    {/* Leva a pagina das Obras ja com esta obra aberta. */}
+                                    <IconButton size="sm" variant="plain" title="Abrir a obra"
+                                        onClick={() => navigate('/EMG/Obras', { state: { abrirObra: o.id } })}>
+                                        <MdOpenInNew />
+                                    </IconButton>
                                     <IconButton size="sm" variant="plain" color="danger" title="Desligar"
                                         onClick={() => handleUnlink('obra', o.id)}><MdLinkOff /></IconButton>
                                 </Box>
@@ -621,7 +731,11 @@ export default function Tickets() {
                             {(detail.rmas ?? []).map(r => (
                                 <Box key={r.id} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                                     <Chip size="sm" sx={{ bgcolor: '#e3f2fd', color: '#1565c0' }}>RMA #{r.rmaNumber}</Chip>
-                                    <Typography level="body-sm">{r.brand} {r.model}</Typography>
+                                    <Typography level="body-sm" sx={{ flex: 1 }}>{r.brand} {r.model}</Typography>
+                                    <IconButton size="sm" variant="plain" title="Abrir o RMA"
+                                        onClick={() => navigate('/EMG/Assistencia', { state: { abrirRma: r.id } })}>
+                                        <MdOpenInNew />
+                                    </IconButton>
                                     <IconButton size="sm" variant="plain" color="danger" title="Desligar"
                                         onClick={() => handleUnlink('rma', r.id)}><MdLinkOff /></IconButton>
                                 </Box>

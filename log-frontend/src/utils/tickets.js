@@ -98,6 +98,39 @@ export function describeEntry(entry) {
     return `mudou ${what} de «${readable(field, fromValue)}» para «${readable(field, toValue)}»`;
 }
 
+/**
+ * Quantos dias um ticket pode ficar por fechar, conforme a prioridade, antes de
+ * passar a pedir atencao. Contam-se a partir da data de abertura.
+ */
+export const ATTENTION_DAYS = {
+    urgente: 1,
+    alta: 2,
+    normal: 7,
+    baixa: 14,
+};
+
+const DIA_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Um ticket que ja passou do prazo da sua prioridade e ainda nao foi fechado.
+ *
+ * E o que pinta a linha de vermelho na lista. Distinto de `isOverdue`, que olha
+ * para a data limite escrita a mao: esta regra e automatica e vale mesmo para os
+ * tickets a que ninguem deu prazo nenhum, que sao a maioria.
+ */
+export function needsAttention(ticket) {
+    if (!ticket || ticket.status === 'fechado' || ticket.status === 'cancelado') return false;
+    const dias = ATTENTION_DAYS[ticket.priority];
+    if (!dias) return false;
+    return Date.now() - new Date(ticket.created_at).getTime() > dias * DIA_MS;
+}
+
+/** Ha quantos dias inteiros o ticket esta aberto. */
+export function daysOpen(ticket) {
+    if (!ticket?.created_at) return 0;
+    return Math.floor((Date.now() - new Date(ticket.created_at).getTime()) / DIA_MS);
+}
+
 /** Data e hora curtas, para a linha de tempo. */
 export function fmtDateTime(value) {
     if (!value) return '';

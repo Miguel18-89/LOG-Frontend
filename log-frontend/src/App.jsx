@@ -68,6 +68,7 @@ function App() {
           <Route path="Ferias" element={<Ferias />} />
           <Route path="Obras" element={<Obras />} />
           <Route path="Tickets" element={<Tickets />} />
+          <Route path="TicketsFechados" element={<Tickets apenasFechados />} />
         </Route>
       </Routes>}
       <ToastContainer

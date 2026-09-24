@@ -239,6 +239,16 @@ export default function Obras() {
         setOpenForm(true);
     }
 
+    // Chegada a partir de um ticket a pedir para ver uma obra concreta.
+    useEffect(() => {
+        const abrir = routerLocation.state?.abrirObra;
+        if (!abrir) return;
+        navigate(routerLocation.pathname, { replace: true, state: null });
+        api.get(`/emg/obras/${abrir}`)
+            .then(res => setDetail(res.data))
+            .catch(() => toast.error('Não foi possível abrir essa obra.'));
+    }, [routerLocation.state, routerLocation.pathname, navigate]);
+
     // Chegada a partir de um ticket: abre o formulário já preenchido com o que o
     // pedido sabe. O estado do router é limpo a seguir, senão voltar atrás no
     // browser reabriria o formulário sem se ter pedido nada.
@@ -853,13 +863,17 @@ export default function Obras() {
                         </Button>}
 
                         {detail.ticket && (
-                            <Typography level="body-sm" sx={{ mb: 1.5 }}>
-                                <strong>Origem:</strong>{' '}
-                                <Chip size="sm" sx={{ bgcolor: '#ede7f6', color: '#4527a0' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                                <Typography level="body-sm"><strong>Origem:</strong></Typography>
+                                <Chip
+                                    size="sm"
+                                    sx={{ bgcolor: '#ede7f6', color: '#4527a0', cursor: 'pointer' }}
+                                    onClick={() => navigate('/EMG/Tickets', { state: { abrirTicket: detail.ticket.id } })}
+                                >
                                     Ticket #{detail.ticket.ticketNumber}
-                                </Chip>{' '}
-                                {detail.ticket.title}
-                            </Typography>
+                                </Chip>
+                                <Typography level="body-sm" sx={{ flex: 1 }}>{detail.ticket.title}</Typography>
+                            </Box>
                         )}
 
                         <Typography level="title-sm" sx={{ color: '#f57c00' }}>Tarefas efetuadas</Typography>
