@@ -3,8 +3,30 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="src/images/Icon.svg" />
+
+    <!--
+      Sem viewport-fit=cover de propósito: a interface não foi desenhada para o
+      entalhe do iPhone, e sem ele o iOS mantém o conteúdo dentro da área segura
+      sozinho. maximum-scale também fica de fora — bloquear o zoom prejudica
+      quem precisa dele para ler.
+    -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    
+
+    <!-- Instalação no ecrã principal -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#f57c00" />
+
+    <!--
+      O iOS não lê o manifesto: o nome, o ícone e o modo sem barra do browser
+      vêm destas etiquetas próprias. Sem elas, "Adicionar ao ecrã principal"
+      cria apenas um atalho que abre o Safari normal.
+    -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <!-- "default" mantém a barra de estado opaca e o conteúdo abaixo dela. -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="LOG" />
+    <link rel="apple-touch-icon" href="/pwa/apple-touch-icon.png" />
+
     <title>LOG - Management Platform</title>
   </head>
   <body>
