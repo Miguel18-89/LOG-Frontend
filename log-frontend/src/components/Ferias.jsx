@@ -16,6 +16,9 @@ import { toast } from 'react-toastify';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import api from '../services/api';
+import FeriasMonthCalendar from './FeriasMonthCalendar';
+import { MONTHS_FULL } from '../utils/feriasCalendar';
+import { useIsPhone } from '../hooks/useIsPhone';
 import { useAuth } from '../contexts/AuthContext.jsx';
 
 const MONTHS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -184,6 +187,13 @@ export default function Ferias() {
     const { user } = useAuth();
     const currentYear = new Date().getFullYear();
     const [year, setYear] = useState(currentYear);
+    const isPhone = useIsPhone();
+    // Mensal por omissao: com doze colaboradores, a grelha do ano so se le
+    // num monitor grande. A do ano fica a um clique, para o planeamento.
+    const [month, setMonth] = useState(new Date().getMonth() + 1);
+    const [vista, setVista] = useState('mes');
+    // Num telemovel a grelha do ano nao tem hipotese: 365 colunas.
+    const mostrarAno = vista === 'ano' && !isPhone;
     const [vacations, setVacations] = useState([]);
     const [employees, setEmployees] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -192,6 +202,16 @@ export default function Ferias() {
     const [submitting, setSubmitting] = useState(false);
     const [cancelConfirm, setCancelConfirm] = useState(null); // vacation id
     const [rejectModal, setRejectModal] = useState(null); // { id, reason }
+
+    /** Avança ou recua um mês, saltando de ano quando passa os limites. */
+    function shiftMonth(delta) {
+        let m = month + delta;
+        let y = year;
+        if (m < 1) { m = 12; y -= 1; }
+        if (m > 12) { m = 1; y += 1; }
+        setMonth(m);
+        setYear(y);
+    }
 
     const days = getDaysInYear(year);
     const monthGroups = buildMonthGroups(days);
@@ -320,9 +340,46 @@ export default function Ferias() {
                     ))}
                 </Box>
 
-                {/* Calendar map */}
+                {/* Escolha da vista e navegação do mês */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5, flexWrap: 'wrap' }}>
+                    {!isPhone && (
+                        <Box sx={{ display: 'flex', gap: 0.5, mr: 1 }}>
+                            <Button size="sm" variant={vista === 'mes' ? 'solid' : 'outlined'}
+                                color="warning" onClick={() => setVista('mes')}>Mês</Button>
+                            <Button size="sm" variant={vista === 'ano' ? 'solid' : 'outlined'}
+                                color="warning" onClick={() => setVista('ano')}>Ano</Button>
+                        </Box>
+                    )}
+                    {!mostrarAno && (
+                        <>
+                            <IconButton variant="outlined" size="sm" onClick={() => shiftMonth(-1)}>
+                                <MdChevronLeft />
+                            </IconButton>
+                            <Typography level="title-md" sx={{ minWidth: 150, textAlign: 'center', color: '#f57c00' }}>
+                                {MONTHS_FULL[month - 1]} {year}
+                            </Typography>
+                            <IconButton variant="outlined" size="sm" onClick={() => shiftMonth(1)}>
+                                <MdChevronRight />
+                            </IconButton>
+                        </>
+                    )}
+                </Box>
+
+                {/* Calendário do mês */}
+                {!mostrarAno && (
+                    <FeriasMonthCalendar
+                        year={year}
+                        month={month}
+                        vacations={vacations}
+                        employees={employees}
+                        loading={loading}
+                    />
+                )}
+
+                {/* Calendar map (ano) */}
                 <Box
                     sx={{
+                        display: mostrarAno ? 'block' : 'none',
                         border: '1px solid #e0e0e0',
                         borderRadius: 'md',
                         bgcolor: '#fff',

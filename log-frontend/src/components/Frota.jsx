@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
+import {
+    RecordCard, CardHeader, CardField, CardActions,
+} from './RecordCards';
+import { useIsPhone } from '../hooks/useIsPhone';
 import Box from '@mui/joy/Box';
 import Button from '@mui/joy/Button';
 import Input from '@mui/joy/Input';
@@ -85,6 +89,7 @@ const emptyOil     = { date:'', location:'', km:'', notes:'' };
 const emptyRepair  = { date:'', fault:'', repairLocation:'', km:'', notes:'' };
 
 export default function Frota() {
+    const isPhone = useIsPhone();
     const [vehicles, setVehicles]   = useState([]);
     const [search, setSearch]       = useState('');
     const [loading, setLoading]     = useState(false);
@@ -223,7 +228,7 @@ export default function Frota() {
             </Box>
 
             {/* Tabela */}
-            <Sheet variant="outlined" sx={{ borderRadius:'sm', overflow:'auto' }}>
+            <Sheet variant="outlined" sx={{ borderRadius:'sm', overflow:'auto', display: isPhone ? 'none' : 'block' }}>
                 <Table borderAxis="xBetween" size="sm" sx={{ minWidth: 900 }}>
                     <thead>
                         <tr>
@@ -259,6 +264,36 @@ export default function Frota() {
                     </tbody>
                 </Table>
             </Sheet>
+
+            {/* Cartoes, em ecra estreito: a tabela pede 900px */}
+            {isPhone && (
+                <Box>
+                    {loading ? (
+                        <Typography level="body-sm" sx={{ color:'#999', textAlign:'center', py:4 }}>A carregar...</Typography>
+                    ) : vehicles.length === 0 ? (
+                        <Typography level="body-sm" sx={{ color:'#999', textAlign:'center', py:4 }}>Sem viaturas.</Typography>
+                    ) : vehicles.map(v => (
+                        // O fundo assinala inspecao ou seguro a expirar, tal como na tabela.
+                        <Box key={v.id} sx={{ '& > div': { bgcolor: rowBg(v) || undefined } }}>
+                            <RecordCard onClick={() => openDetail(v)}>
+                                <CardHeader left={v.plate} right={`${MONTHS[v.registrationMonth - 1]} ${v.registrationYear}`} />
+                                <Typography level="title-sm">{v.brand} {v.model}</Typography>
+                                <CardField label="Próxima inspecção">{cellDate(v.nextInspectionDate)}</CardField>
+                                <CardField label="Validade do seguro">{cellDate(v.insuranceExpiryDate)}</CardField>
+                                <CardField label="Pneus">{v.tireSize}</CardField>
+                                <CardActions>
+                                    <IconButton size="sm" variant="plain"
+                                        onClick={e => { e.stopPropagation(); openEdit(v); }}><EditIcon fontSize="small" /></IconButton>
+                                    <IconButton size="sm" variant="plain" color="danger"
+                                        onClick={e => { e.stopPropagation(); setDeleteConfirm({ open:true, id:v.id, type:'vehicle', rid:null }); }}>
+                                        <DeleteIcon fontSize="small" />
+                                    </IconButton>
+                                </CardActions>
+                            </RecordCard>
+                        </Box>
+                    ))}
+                </Box>
+            )}
 
             {/* Modal criar/editar viatura */}
             <Modal open={openForm} onClose={() => setOpenForm(false)}>
