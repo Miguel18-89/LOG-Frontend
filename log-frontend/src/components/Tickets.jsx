@@ -27,6 +27,10 @@ import {
 import { toast } from 'react-toastify';
 import api from '../services/api';
 import AttachmentsSection from './AttachmentsSection';
+import {
+    RecordCard, CardHeader, CardField, CardChips, CardActions,
+} from './RecordCards';
+import { useIsPhone } from '../hooks/useIsPhone';
 import { fmtDate } from '../utils/obraReport';
 import {
     TICKET_TYPES, TICKET_PRIORITIES, TICKET_STATUSES,
@@ -58,6 +62,9 @@ function Tag({ colors, children }) {
 export default function Tickets({ apenasFechados = false }) {
     const navigate = useNavigate();
     const routerLocation = useLocation();
+    const isPhone = useIsPhone();
+    // Em ecra estreito os filtros ocupavam meio ecra antes de se ver um ticket.
+    const [showFilters, setShowFilters] = useState(false);
     const [records, setRecords] = useState([]);
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(1);
@@ -352,7 +359,21 @@ export default function Tickets({ apenasFechados = false }) {
             </Typography>
 
             {/* Filtros */}
-            <Box className="filtros" sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'flex-end', mb: 2 }}>
+            {isPhone && (
+                <Box sx={{ display: 'flex', gap: 1, mb: 1.5 }}>
+                    <Button size="sm" variant="outlined" sx={{ flex: 1 }}
+                        onClick={() => setShowFilters(v => !v)}>
+                        {showFilters ? 'Esconder filtros' : 'Filtros e pesquisa'}
+                    </Button>
+                    {!apenasFechados && (
+                        <Button size="sm" color="warning" onClick={openCreate}>+ Novo</Button>
+                    )}
+                </Box>
+            )}
+            <Box className="filtros" sx={{
+                display: isPhone && !showFilters ? 'none' : 'flex',
+                gap: 1.5, flexWrap: 'wrap', alignItems: 'flex-end', mb: 2,
+            }}>
                 <FormControl size="sm">
                     <FormLabel>Pesquisar</FormLabel>
                     <Input
@@ -420,8 +441,8 @@ export default function Tickets({ apenasFechados = false }) {
                 </Box>
             </Box>
 
-            {/* Tabela */}
-            <Sheet variant="outlined" sx={{ borderRadius: 'sm', overflow: 'auto' }}>
+            {/* Tabela, em ecra largo */}
+            <Sheet variant="outlined" sx={{ borderRadius: 'sm', overflow: 'auto', display: isPhone ? 'none' : 'block' }}>
                 <Table borderAxis="xBetween" size="sm" sx={{ minWidth: 1000 }}>
                     <thead>
                         <tr>
@@ -484,6 +505,57 @@ export default function Tickets({ apenasFechados = false }) {
                 </Table>
             </Sheet>
 
+            {/* Cartoes, em ecra estreito: a tabela pede 1000px e nao cabe num telemovel */}
+            {isPhone && (
+                <Box>
+                    {loading ? (
+                        <Typography level="body-sm" sx={{ color: '#999', textAlign: 'center', py: 4 }}>
+                            A carregar...
+                        </Typography>
+                    ) : records.length === 0 ? (
+                        <Typography level="body-sm" sx={{ color: '#999', textAlign: 'center', py: 4 }}>
+                            {apenasFechados ? 'Sem tickets fechados.' : 'Nada por fechar.'}
+                        </Typography>
+                    ) : records.map(r => (
+                        <RecordCard key={r.id} highlight={needsAttention(r)} onClick={() => openDetail(r)}>
+                            <CardHeader
+                                left={`#${r.ticketNumber}`}
+                                right={r.status === 'fechado'
+                                    ? (r.closedAt ? `fechado ${fmtDate(r.closedAt)}` : 'fechado')
+                                    : `${daysOpen(r)} dia(s)`}
+                            />
+                            <Typography level="title-sm">{r.title}</Typography>
+                            <CardField label="Cliente">{r.client}</CardField>
+                            <CardField label="Responsável">
+                                {r.assignee?.name ?? <span style={{ color: '#c62828' }}>Por atribuir</span>}
+                            </CardField>
+                            {r.dueDate && (
+                                <CardField label="Data limite">
+                                    <span style={isOverdue(r) ? { color: '#c62828', fontWeight: 'bold' } : undefined}>
+                                        {fmtDate(r.dueDate)}
+                                    </span>
+                                </CardField>
+                            )}
+                            <CardChips>
+                                <Tag colors={TYPE_COLORS[r.type]}>{ticketTypeLabel(r.type)}</Tag>
+                                <Tag colors={PRIORITY_COLORS[r.priority]}>{ticketPriorityLabel(r.priority)}</Tag>
+                                <Tag colors={STATUS_COLORS[r.status]}>{ticketStatusLabel(r.status)}</Tag>
+                            </CardChips>
+                            <CardActions>
+                                <IconButton size="sm" variant="plain" title="Editar"
+                                    onClick={e => { e.stopPropagation(); openEdit(r); }}><MdEdit /></IconButton>
+                                {r.canDelete && (
+                                    <IconButton size="sm" variant="plain" color="danger" title="Eliminar"
+                                        onClick={e => { e.stopPropagation(); setDeleteConfirm({ open: true, id: r.id }); }}>
+                                        <MdDelete />
+                                    </IconButton>
+                                )}
+                            </CardActions>
+                        </RecordCard>
+                    ))}
+                </Box>
+            )}
+
             {/* Paginação */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2, flexWrap: 'wrap' }}>
                 <Typography level="body-sm" sx={{ color: '#666' }}>
@@ -512,7 +584,20 @@ export default function Tickets({ apenasFechados = false }) {
                             Ver todos ›
                         </Button>
                     </Box>
-                    <Sheet variant="outlined" sx={{ borderRadius: 'sm', overflow: 'auto' }}>
+                    {isPhone && recentClosed.map(r => (
+                        <RecordCard key={r.id} onClick={() => openDetail(r)}>
+                            <CardHeader
+                                left={`#${r.ticketNumber}`}
+                                right={r.closedAt ? fmtDate(r.closedAt) : ''}
+                            />
+                            <Typography level="title-sm">{r.title}</Typography>
+                            <CardField label="Cliente">{r.client}</CardField>
+                            <CardField label="Responsável">{r.assignee?.name}</CardField>
+                        </RecordCard>
+                    ))}
+                    <Sheet variant="outlined" sx={{
+                        borderRadius: 'sm', overflow: 'auto', display: isPhone ? 'none' : 'block',
+                    }}>
                         <Table borderAxis="xBetween" size="sm" sx={{ minWidth: 700 }}>
                             <thead>
                                 <tr>

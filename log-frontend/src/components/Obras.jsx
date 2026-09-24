@@ -30,6 +30,10 @@ import api from '../services/api';
 import SignaturePad from './SignaturePad';
 import PhotoLightbox from './PhotoLightbox';
 import {
+    RecordCard, CardHeader, CardField, CardChips, CardActions,
+} from './RecordCards';
+import { useIsPhone } from '../hooks/useIsPhone';
+import {
     OBRA_TYPES, OBRA_STATUS, obraTypeLabel, obraStatusLabel, formatTimeRange,
     fmtDate, downloadObraPDF, obraPDFBase64, shrinkImage, allTechnicianNames,
 } from '../utils/obraReport';
@@ -106,6 +110,8 @@ function PhotoThumb({ obraId, photo, onReady, onOpen }) {
 export default function Obras() {
     const routerLocation = useLocation();
     const navigate = useNavigate();
+    const isPhone = useIsPhone();
+    const [showFilters, setShowFilters] = useState(false);
     // As permissões vêm do servidor em canEdit/canDelete por obra, em vez de serem
     // recalculadas aqui — a regra depende dos técnicos associados a cada obra.
     const [records, setRecords] = useState([]);
@@ -518,7 +524,19 @@ export default function Obras() {
             <Typography level="h3" sx={{ fontWeight: 'bold', color: '#444', mb: 2 }}>Obras</Typography>
 
             {/* Filtros */}
-            <Box className="filtros" sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 2, alignItems: 'flex-end' }}>
+            {isPhone && (
+                <Box sx={{ display: 'flex', gap: 1, mb: 1.5 }}>
+                    <Button size="sm" variant="outlined" sx={{ flex: 1 }}
+                        onClick={() => setShowFilters(v => !v)}>
+                        {showFilters ? 'Esconder filtros' : 'Filtros e pesquisa'}
+                    </Button>
+                    <Button size="sm" color="warning" onClick={openCreate}>+ Nova</Button>
+                </Box>
+            )}
+            <Box className="filtros" sx={{
+                display: isPhone && !showFilters ? 'none' : 'flex',
+                gap: 2, flexWrap: 'wrap', mb: 2, alignItems: 'flex-end',
+            }}>
                 <FormControl size="sm">
                     <FormLabel>Cliente</FormLabel>
                     <Input
@@ -584,8 +602,8 @@ export default function Obras() {
                 </Box>
             </Box>
 
-            {/* Tabela */}
-            <Sheet variant="outlined" sx={{ borderRadius: 'sm', overflow: 'auto' }}>
+            {/* Tabela, em ecra largo */}
+            <Sheet variant="outlined" sx={{ borderRadius: 'sm', overflow: 'auto', display: isPhone ? 'none' : 'block' }}>
                 <Table borderAxis="xBetween" size="sm" sx={{ minWidth: 950 }}>
                     <thead>
                         <tr>
@@ -659,6 +677,56 @@ export default function Obras() {
                     </tbody>
                 </Table>
             </Sheet>
+
+            {/* Cartoes, em ecra estreito: a tabela pede 950px */}
+            {isPhone && (
+                <Box>
+                    {loading ? (
+                        <Typography level="body-sm" sx={{ color: '#999', textAlign: 'center', py: 4 }}>A carregar...</Typography>
+                    ) : records.length === 0 ? (
+                        <Typography level="body-sm" sx={{ color: '#999', textAlign: 'center', py: 4 }}>Sem obras registadas.</Typography>
+                    ) : records.map(r => (
+                        <RecordCard key={r.id} onClick={() => openDetail(r)}>
+                            <CardHeader left={`#${r.orderNumber}`} right={fmtDate(r.date)} />
+                            <Typography level="title-sm">{r.client}</Typography>
+                            <Typography level="body-sm" sx={{ color: '#555' }}>{r.obra}</Typography>
+                            <CardField label="Horário">{formatTimeRange(r.startTime, r.endTime)}</CardField>
+                            <CardField label="Técnicos">{allTechnicianNames(r).join(', ')}</CardField>
+                            <CardChips>
+                                <Box sx={{
+                                    display: 'inline-block', px: 1, py: 0.25, borderRadius: 'sm',
+                                    fontSize: '0.75rem', fontWeight: 'bold',
+                                    bgcolor: TYPE_COLORS[r.type]?.bg, color: TYPE_COLORS[r.type]?.color,
+                                }}>
+                                    {obraTypeLabel(r.type)}
+                                </Box>
+                                <Chip size="sm" sx={r.status === 'concluida'
+                                    ? { bgcolor: '#c8e6c9', color: '#2e7d32', fontWeight: 'bold' }
+                                    : { bgcolor: '#fff9c4', color: '#f57f17', fontWeight: 'bold' }}>
+                                    {obraStatusLabel(r.status)}
+                                </Chip>
+                                {r.signedAt
+                                    ? <Chip size="sm" sx={{ bgcolor: '#c8e6c9', color: '#2e7d32' }}>Assinada</Chip>
+                                    : <Chip size="sm" sx={{ bgcolor: '#eee', color: '#888' }}>Por assinar</Chip>}
+                            </CardChips>
+                            <CardActions>
+                                {r.canEdit && (
+                                    <IconButton size="sm" variant="plain" title="Editar"
+                                        onClick={e => { e.stopPropagation(); openEdit(r); }}><MdEdit /></IconButton>
+                                )}
+                                <IconButton size="sm" variant="plain" title="Relatório PDF"
+                                    onClick={e => { e.stopPropagation(); handleDownloadPDF(r); }}><MdPictureAsPdf /></IconButton>
+                                {r.canDelete && (
+                                    <IconButton size="sm" variant="plain" color="danger" title="Eliminar"
+                                        onClick={e => { e.stopPropagation(); setDeleteConfirm({ open: true, id: r.id }); }}>
+                                        <MdDelete />
+                                    </IconButton>
+                                )}
+                            </CardActions>
+                        </RecordCard>
+                    ))}
+                </Box>
+            )}
 
             {/* Paginação */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2, flexWrap: 'wrap' }}>

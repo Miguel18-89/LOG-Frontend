@@ -2,6 +2,10 @@ import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import AttachmentsSection from './AttachmentsSection';
+import {
+    RecordCard, CardHeader, CardField, CardChips, CardActions,
+} from './RecordCards';
+import { useIsPhone } from '../hooks/useIsPhone';
 import Box from '@mui/joy/Box';
 import Button from '@mui/joy/Button';
 import Input from '@mui/joy/Input';
@@ -62,6 +66,7 @@ const emptyForm = {
 export default function AssistenciaTecnica() {
     const navigate = useNavigate();
     const routerLocation = useLocation();
+    const isPhone = useIsPhone();
     const [records, setRecords]       = useState([]);
     const [total, setTotal]           = useState(0);
     const [page, setPage]             = useState(1);
@@ -219,7 +224,8 @@ export default function AssistenciaTecnica() {
 
             {/* Tabela */}
             <Sheet variant="outlined" sx={{ borderRadius: 'sm', overflow: 'auto' }}>
-                <Table borderAxis="xBetween" size="sm" sx={{ minWidth: 1100 }}>
+                <Table borderAxis="xBetween" size="sm"
+                    sx={{ minWidth: 1100, display: isPhone ? 'none' : 'table' }}>
                     <thead>
                         <tr>
                             <th style={{ width: 70 }}>RMA #</th>
@@ -269,6 +275,44 @@ export default function AssistenciaTecnica() {
                     </tbody>
                 </Table>
             </Sheet>
+
+            {/* Cartoes, em ecra estreito: a tabela pede 1100px e nao cabe num telemovel */}
+            {isPhone && (
+                <Box sx={{ mt: 1 }}>
+                    {loading ? (
+                        <Typography level="body-sm" sx={{ color: '#999', textAlign: 'center', py: 4 }}>A carregar...</Typography>
+                    ) : records.length === 0 ? (
+                        <Typography level="body-sm" sx={{ color: '#999', textAlign: 'center', py: 4 }}>Sem registos.</Typography>
+                    ) : records.map(r => (
+                        <RecordCard key={r.id} onClick={() => openDetail(r)}>
+                            <CardHeader left={`#${r.rmaNumber}`} right={fmtDate(r.openDate)} />
+                            <Typography level="title-sm">{r.brand} {r.model}</Typography>
+                            <CardField label="Nº série">{r.serialNumber}</CardField>
+                            <CardField label="Avaria">{r.fault}</CardField>
+                            <CardField label="Cliente">{r.client}</CardField>
+                            <CardField label="Local">{r.location}</CardField>
+                            <CardChips>
+                                <Box sx={{
+                                    display: 'inline-block', px: 1, py: 0.25, borderRadius: 'sm', fontSize: '0.75rem',
+                                    bgcolor: r.status === 'entregue' ? '#c8e6c9' : r.status === 'em_reparacao' ? '#ffe0b2' : '#e3f2fd',
+                                    color: r.status === 'entregue' ? '#2e7d32' : r.status === 'em_reparacao' ? '#e65100' : '#1565c0',
+                                    fontWeight: 'bold',
+                                }}>
+                                    {statusLabel(r.status)}
+                                </Box>
+                            </CardChips>
+                            <CardActions>
+                                <IconButton size="sm" variant="plain"
+                                    onClick={e => { e.stopPropagation(); openEdit(r); }}><EditIcon fontSize="small" /></IconButton>
+                                <IconButton size="sm" variant="plain" color="danger"
+                                    onClick={e => { e.stopPropagation(); setDeleteConfirm({ open: true, id: r.id }); }}>
+                                    <DeleteIcon fontSize="small" />
+                                </IconButton>
+                            </CardActions>
+                        </RecordCard>
+                    ))}
+                </Box>
+            )}
 
             {/* Paginação */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2, flexWrap: 'wrap' }}>
