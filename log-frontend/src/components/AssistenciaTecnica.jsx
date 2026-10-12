@@ -215,8 +215,11 @@ export default function AssistenciaTecnica({ apenasEntregues = false }) {
             <Typography level="h3" sx={{ fontWeight: 'bold', color: '#444', mb: 2 }}>
                 {apenasEntregues ? 'Assistência Técnica — Entregues' : 'Assistência Técnica'}
             </Typography>
-            {/* Legenda de cores */}
-            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 2, fontSize: '0.78rem' }}>
+            {/* Legenda de cores. Nos entregues esta tudo verde: a legenda so seria ruido. */}
+            <Box sx={{
+                display: apenasEntregues ? 'none' : 'flex',
+                gap: 2, flexWrap: 'wrap', mb: 2, fontSize: '0.78rem',
+            }}>
                 {[
                     { color: '#ffcdd2', label: '> 2 meses' },
                     { color: '#ffe0b2', label: '> 1 mês' },
@@ -232,7 +235,8 @@ export default function AssistenciaTecnica({ apenasEntregues = false }) {
 
             {/* Filtros */}
             <Box className="filtros" sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 2, alignItems: 'flex-end' }}>
-                <FormControl size="sm">
+                {/* Na pagina dos entregues o estado esta fixo: o filtro so enganaria. */}
+                <FormControl size="sm" sx={{ display: apenasEntregues ? 'none' : undefined }}>
                     <FormLabel>Estado</FormLabel>
                     <Select value={filterStatus} onChange={(_, v) => setFilterStatus(v ?? '')} sx={{ minWidth: 200 }} placeholder="Todos">
                         <Option value="">Todos</Option>

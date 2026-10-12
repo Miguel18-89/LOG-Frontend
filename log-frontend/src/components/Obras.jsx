@@ -631,7 +631,9 @@ export default function Obras({ apenasConcluidas = false }) {
                 )}
                 <Button size="sm" variant="outlined" onClick={clearFilters}>Limpar</Button>
                 <Box sx={{ ml: 'auto' }}>
-                    <Button size="sm" color="warning" onClick={openCreate}>+ Nova Obra</Button>
+                    {!apenasConcluidas && (
+                        <Button size="sm" color="warning" onClick={openCreate}>+ Nova Obra</Button>
+                    )}
                 </Box>
             </Box>
 
