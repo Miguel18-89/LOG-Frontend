@@ -20,6 +20,9 @@ export const TICKET_STATUSES = [
 
 // Estados que contam como trabalho por fazer — o mesmo critério do servidor.
 export const OPEN_STATUSES = ['aberto', 'atribuido', 'em_curso'];
+// Estados que tiram o ticket da fila de trabalho. Espelha ARCHIVED_STATUSES do
+// ticketController: se um dia divergirem, a lista e o filtro deixam de bater certo.
+export const ARQUIVO_STATUSES = ['fechado', 'cancelado'];
 
 export const TYPE_COLORS = {
     assistencia: { bg: '#e3f2fd', color: '#1565c0' },

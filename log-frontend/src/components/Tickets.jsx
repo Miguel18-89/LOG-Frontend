@@ -33,7 +33,7 @@ import {
 import { useIsPhone } from '../hooks/useIsPhone';
 import { fmtDate } from '../utils/obraReport';
 import {
-    TICKET_TYPES, TICKET_PRIORITIES, TICKET_STATUSES,
+    TICKET_TYPES, TICKET_PRIORITIES, TICKET_STATUSES, ARQUIVO_STATUSES,
     TYPE_COLORS, PRIORITY_COLORS, STATUS_COLORS,
     ticketTypeLabel, ticketPriorityLabel, ticketStatusLabel,
     describeEntry, fmtDateTime, isOverdue, needsAttention, daysOpen,
@@ -109,9 +109,12 @@ export default function Tickets({ apenasFechados = false }) {
                     page, pageSize,
                     search: appliedSearch || undefined,
                     type: filterType || undefined,
-                    status: apenasFechados ? 'fechado' : (filterStatus || undefined),
-                    // A lista principal esconde os fechados; eles tem pagina propria.
+                    status: filterStatus || undefined,
+                    // A lista principal e a fila de trabalho; o arquivo (fechados e
+                    // cancelados) tem pagina propria. Em qualquer uma delas o filtro
+                    // de Estado continua a mandar, por isso vai sempre em separado.
                     hideClosed: apenasFechados ? undefined : 'true',
+                    archived: apenasFechados ? 'true' : undefined,
                     priority: filterPriority || undefined,
                     mine: onlyMine ? 'true' : undefined,
                     open: onlyOpen ? 'true' : undefined,
@@ -146,7 +149,7 @@ export default function Tickets({ apenasFechados = false }) {
         if (apenasFechados) return;
         try {
             const res = await api.get('/emg/tickets', {
-                params: { page: 1, pageSize: 10, status: 'fechado' },
+                params: { page: 1, pageSize: 10, archived: 'true' },
             });
             setRecentClosed(res.data.data ?? []);
         } catch {
@@ -355,7 +358,7 @@ export default function Tickets({ apenasFechados = false }) {
     return (
         <Box sx={{ p: 2 }}>
             <Typography level="h3" sx={{ fontWeight: 'bold', color: '#444', mb: 2 }}>
-                {apenasFechados ? 'Tickets Fechados' : 'Tickets'}
+                {apenasFechados ? 'Tickets Fechados e Cancelados' : 'Tickets'}
             </Typography>
 
             {/* Filtros */}
@@ -391,16 +394,25 @@ export default function Tickets({ apenasFechados = false }) {
                         {TICKET_TYPES.map(t => <Option key={t.value} value={t.value}>{t.label}</Option>)}
                     </Select>
                 </FormControl>
-                {!apenasFechados && (
-                    <FormControl size="sm">
-                        <FormLabel>Estado</FormLabel>
-                        <Select value={filterStatus} onChange={(_, v) => { setFilterStatus(v ?? ''); setPage(1); }} sx={{ minWidth: 150 }}>
-                            <Option value="">Todos</Option>
-                            {TICKET_STATUSES.filter(s => s.value !== 'fechado')
-                                .map(s => <Option key={s.value} value={s.value}>{s.label}</Option>)}
-                        </Select>
-                    </FormControl>
-                )}
+                {/*
+                    O filtro aparece nas duas páginas. No arquivo deixou de ser
+                    inútil quando passou a juntar fechados e cancelados: serve
+                    para separar uns dos outros.
+                */}
+                <FormControl size="sm">
+                    <FormLabel>Estado</FormLabel>
+                    <Select value={filterStatus} onChange={(_, v) => { setFilterStatus(v ?? ''); setPage(1); }} sx={{ minWidth: 150 }}>
+                        <Option value="">Todos</Option>
+                        {/*
+                            Cada página só oferece os estados que lá vivem. Dar a
+                            escolher "aberto" no arquivo, ou "fechado" na fila de
+                            trabalho, é prometer uma lista que vem sempre vazia.
+                        */}
+                        {TICKET_STATUSES
+                            .filter(s => ARQUIVO_STATUSES.includes(s.value) === apenasFechados)
+                            .map(s => <Option key={s.value} value={s.value}>{s.label}</Option>)}
+                    </Select>
+                </FormControl>
                 <FormControl size="sm">
                     <FormLabel>Prioridade</FormLabel>
                     <Select value={filterPriority} onChange={(_, v) => { setFilterPriority(v ?? ''); setPage(1); }} sx={{ minWidth: 140 }}>
@@ -463,7 +475,7 @@ export default function Tickets({ apenasFechados = false }) {
                             <tr><td colSpan={10} style={{ textAlign: 'center', padding: '2rem', color: '#999' }}>A carregar...</td></tr>
                         ) : records.length === 0 ? (
                             <tr><td colSpan={10} style={{ textAlign: 'center', padding: '2rem', color: '#999' }}>
-                                {apenasFechados ? 'Sem tickets fechados.' : 'Nada por fechar.'}
+                                {apenasFechados ? 'Sem tickets arquivados.' : 'Nada por fechar.'}
                             </td></tr>
                         ) : records.map(r => (
                             // Vermelho quando o ticket ja passou do prazo da sua
@@ -514,7 +526,7 @@ export default function Tickets({ apenasFechados = false }) {
                         </Typography>
                     ) : records.length === 0 ? (
                         <Typography level="body-sm" sx={{ color: '#999', textAlign: 'center', py: 4 }}>
-                            {apenasFechados ? 'Sem tickets fechados.' : 'Nada por fechar.'}
+                            {apenasFechados ? 'Sem tickets arquivados.' : 'Nada por fechar.'}
                         </Typography>
                     ) : records.map(r => (
                         <RecordCard key={r.id} highlight={needsAttention(r)} onClick={() => openDetail(r)}>
@@ -578,7 +590,7 @@ export default function Tickets({ apenasFechados = false }) {
                 <Box sx={{ mt: 4 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
                         <Typography level="title-md" sx={{ color: '#444' }}>
-                            Últimos fechados
+                            Últimos fechados e cancelados
                         </Typography>
                         <Button size="sm" variant="plain" onClick={() => navigate('/EMG/TicketsFechados')}>
                             Ver todos ›
@@ -593,6 +605,9 @@ export default function Tickets({ apenasFechados = false }) {
                             <Typography level="title-sm">{r.title}</Typography>
                             <CardField label="Cliente">{r.client}</CardField>
                             <CardField label="Responsável">{r.assignee?.name}</CardField>
+                            <CardChips>
+                                <Tag colors={STATUS_COLORS[r.status]}>{ticketStatusLabel(r.status)}</Tag>
+                            </CardChips>
                         </RecordCard>
                     ))}
                     <Sheet variant="outlined" sx={{
@@ -605,7 +620,9 @@ export default function Tickets({ apenasFechados = false }) {
                                     <th>Assunto</th>
                                     <th>Cliente</th>
                                     <th style={{ width: 140 }}>Responsável</th>
-                                    <th style={{ width: 120 }}>Fechado em</th>
+                                    {/* Sem isto, um cancelado passa por fechado. */}
+                                    <th style={{ width: 100 }}>Estado</th>
+                                    <th style={{ width: 120 }}>Data</th>
                                     <th style={{ width: 60, textAlign: 'center' }}></th>
                                 </tr>
                             </thead>
@@ -616,6 +633,7 @@ export default function Tickets({ apenasFechados = false }) {
                                         <td>{r.title}</td>
                                         <td>{r.client || '—'}</td>
                                         <td style={{ fontSize: '0.85rem' }}>{r.assignee?.name ?? '—'}</td>
+                                        <td><Tag colors={STATUS_COLORS[r.status]}>{ticketStatusLabel(r.status)}</Tag></td>
                                         <td style={{ fontSize: '0.85rem' }}>{r.closedAt ? fmtDate(r.closedAt) : '—'}</td>
                                         <td style={{ textAlign: 'center' }}>
                                             <IconButton size="sm" variant="plain" title="Ver"

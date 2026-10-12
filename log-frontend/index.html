@@ -2,7 +2,12 @@
 <html lang="pt-PT">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="src/images/Icon.svg" />
+    <!--
+      Caminho absoluto a partir de `public/`. Com "src/images/..." o ícone só
+      aparecia em desenvolvimento, onde o Vite serve a pasta `src`; no build
+      dava 404 e o separador ficava sem ícone.
+    -->
+    <link rel="icon" type="image/svg+xml" href="/images/Icon.svg" />
 
     <!--
       Sem viewport-fit=cover de propósito: a interface não foi desenhada para o
@@ -21,6 +26,12 @@
       vêm destas etiquetas próprias. Sem elas, "Adicionar ao ecrã principal"
       cria apenas um atalho que abre o Safari normal.
     -->
+    <!--
+      A etiqueta da Apple está obsoleta e o Chrome avisa na consola, mas o Safari
+      ainda é o único a lê-la. Ficam as duas: a antiga para o iOS de hoje, a
+      padronizada para quando ele a adotar.
+    -->
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <!-- "default" mantém a barra de estado opaca e o conteúdo abaixo dela. -->
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />

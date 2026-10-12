@@ -272,6 +272,8 @@ export default function AssistenciaTecnica({ apenasEntregues = false }) {
                             <th>Cliente</th>
                             <th>Local</th>
                             <th>Pedido por</th>
+                            {/* So no arquivo: na fila de trabalho ainda nao ha entrega. */}
+                            {apenasEntregues && <th style={{ width: 110 }}>Entregue em</th>}
                             <th>Estado</th>
                             <th style={{ width: 100, textAlign: 'center' }}></th>
                         </tr>
@@ -292,6 +294,7 @@ export default function AssistenciaTecnica({ apenasEntregues = false }) {
                                 <td>{r.client}</td>
                                 <td>{r.location}</td>
                                 <td>{r.requestedBy}</td>
+                                {apenasEntregues && <td>{r.deliveredAt ? fmtDate(r.deliveredAt) : '—'}</td>}
                                 <td>
                                     <Box sx={{ display: 'inline-block', px: 1, py: 0.25, borderRadius: 'sm', fontSize: '0.75rem',
                                         bgcolor: r.status === 'entregue' ? '#c8e6c9' : r.status === 'em_reparacao' ? '#ffe0b2' : '#e3f2fd',
@@ -361,7 +364,10 @@ export default function AssistenciaTecnica({ apenasEntregues = false }) {
 
                     {isPhone && recentDelivered.map(r => (
                         <RecordCard key={r.id} onClick={() => openDetail(r)}>
-                            <CardHeader left={`#${r.rmaNumber}`} right={fmtDate(r.openDate)} />
+                            <CardHeader
+                                left={`#${r.rmaNumber}`}
+                                right={r.deliveredAt ? fmtDate(r.deliveredAt) : '—'}
+                            />
                             <Typography level="title-sm">{r.brand} {r.model}</Typography>
                             <CardField label="Nº série">{r.serialNumber}</CardField>
                             <CardField label="Cliente">{r.client}</CardField>
@@ -375,7 +381,7 @@ export default function AssistenciaTecnica({ apenasEntregues = false }) {
                             <thead>
                                 <tr>
                                     <th style={{ width: 70 }}>RMA #</th>
-                                    <th style={{ width: 100 }}>Data</th>
+                                    <th style={{ width: 100 }}>Entregue em</th>
                                     <th>Marca / Modelo</th>
                                     <th>Nº Série</th>
                                     <th>Cliente</th>
@@ -386,7 +392,7 @@ export default function AssistenciaTecnica({ apenasEntregues = false }) {
                                 {recentDelivered.map(r => (
                                     <tr key={r.id}>
                                         <td style={{ fontWeight: 'bold', color: '#f57c00' }}>#{r.rmaNumber}</td>
-                                        <td>{fmtDate(r.openDate)}</td>
+                                        <td>{r.deliveredAt ? fmtDate(r.deliveredAt) : '—'}</td>
                                         <td>{r.brand} {r.model}</td>
                                         <td>{r.serialNumber}</td>
                                         <td>{r.client}</td>
@@ -490,6 +496,9 @@ export default function AssistenciaTecnica({ apenasEntregues = false }) {
                         <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, fontSize: '0.88rem', mb: 1 }}>
                             {[
                                 ['Data abertura', fmtDate(detailRMA.openDate)],
+                                ...(detailRMA.deliveredAt
+                                    ? [['Data entrega', fmtDate(detailRMA.deliveredAt)]]
+                                    : []),
                                 ['Estado', statusLabel(detailRMA.status)],
                                 ['Marca', detailRMA.brand],
                                 ['Modelo', detailRMA.model],
