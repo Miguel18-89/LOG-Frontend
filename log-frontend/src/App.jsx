@@ -63,10 +63,14 @@ function App() {
           <Route path="HorasExtra" element={<EMGHorasExtra />} />
           <Route path="BancoHoras" element={<EMGBancoHoras />} />
           <Route path="Assistencia" element={<AssistenciaTecnica />} />
+          <Route path="AssistenciaEntregues" element={<AssistenciaTecnica apenasEntregues />} />
           <Route path="Frota" element={<Frota />} />
           <Route path="Pessoal" element={<Pessoal />} />
           <Route path="Ferias" element={<Ferias />} />
           <Route path="Obras" element={<Obras />} />
+          {/* Alcancaveis pelo botao "Ver todas" da respetiva pagina, nao pela
+              navbar: sao arquivo, nao trabalho do dia. */}
+          <Route path="ObrasConcluidas" element={<Obras apenasConcluidas />} />
           <Route path="Tickets" element={<Tickets />} />
           <Route path="TicketsFechados" element={<Tickets apenasFechados />} />
         </Route>

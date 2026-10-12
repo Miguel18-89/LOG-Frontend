@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import AttachmentsSection from './AttachmentsSection';
@@ -63,10 +63,16 @@ const emptyForm = {
     status: 'no_cliente', repairLocation: '',
 };
 
-export default function AssistenciaTecnica() {
+/**
+ * Lista de RMAs. Serve duas rotas: a principal, com o que esta em curso, e a dos
+ * entregues ao cliente. E o mesmo ecra com o mesmo detalhe e paginacao.
+ */
+export default function AssistenciaTecnica({ apenasEntregues = false }) {
     const navigate = useNavigate();
     const routerLocation = useLocation();
     const isPhone = useIsPhone();
+    // Os ultimos entregues, so na pagina principal e sem filtros.
+    const [recentDelivered, setRecentDelivered] = useState([]);
     const [records, setRecords]       = useState([]);
     const [total, setTotal]           = useState(0);
     const [page, setPage]             = useState(1);
@@ -87,7 +93,20 @@ export default function AssistenciaTecnica() {
 
     const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: null });
 
-    useEffect(() => { fetchRecords(); }, [page, pageSize, filterStatus, filterClient]);
+    useEffect(() => { fetchRecords(); }, [page, pageSize, filterStatus, filterClient, apenasEntregues]);
+
+    // Atalho de leitura, nao uma lista de trabalho: ignora os filtros.
+    const fetchRecentDelivered = useCallback(async () => {
+        if (apenasEntregues) return;
+        try {
+            const res = await api.get('/emg/rma', { params: { page: 1, pageSize: 10, status: 'entregue' } });
+            setRecentDelivered(res.data.data ?? []);
+        } catch {
+            setRecentDelivered([]);
+        }
+    }, [apenasEntregues]);
+
+    useEffect(() => { fetchRecentDelivered(); }, [fetchRecentDelivered]);
 
     // Chegada a partir de um ticket a pedir para ver este RMA.
     useEffect(() => {
@@ -103,7 +122,13 @@ export default function AssistenciaTecnica() {
         setLoading(true);
         try {
             const res = await api.get('/emg/rma', {
-                params: { page, pageSize, status: filterStatus || undefined, client: filterClient || undefined },
+                params: {
+                    page, pageSize,
+                    status: apenasEntregues ? 'entregue' : (filterStatus || undefined),
+                    // A lista principal esconde os entregues; eles tem pagina propria.
+                    hideDelivered: apenasEntregues ? undefined : 'true',
+                    client: filterClient || undefined,
+                },
             });
             setRecords(res.data.data);
             setTotal(res.data.total);
@@ -154,6 +179,7 @@ export default function AssistenciaTecnica() {
             }
             setOpenForm(false);
             fetchRecords();
+            fetchRecentDelivered();
         } catch (err) {
             toast.error(err.response?.data?.error || 'Erro ao guardar.');
         } finally { setFormLoading(false); }
@@ -165,6 +191,7 @@ export default function AssistenciaTecnica() {
             toast.success('RMA eliminado.');
             setDeleteConfirm({ open: false, id: null });
             fetchRecords();
+            fetchRecentDelivered();
         } catch { toast.error('Erro ao eliminar.'); }
     }
 
@@ -185,7 +212,9 @@ export default function AssistenciaTecnica() {
 
     return (
         <Box sx={{ p: 2 }}>
-            <Typography level="h3" sx={{ fontWeight: 'bold', color: '#444', mb: 2 }}>Assistência Técnica</Typography>
+            <Typography level="h3" sx={{ fontWeight: 'bold', color: '#444', mb: 2 }}>
+                {apenasEntregues ? 'Assistência Técnica — Entregues' : 'Assistência Técnica'}
+            </Typography>
             {/* Legenda de cores */}
             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 2, fontSize: '0.78rem' }}>
                 {[
@@ -218,7 +247,9 @@ export default function AssistenciaTecnica() {
                 <Button size="sm" onClick={handleFilter}>Filtrar</Button>
                 <Button size="sm" variant="outlined" onClick={() => { setFilterStatus(''); setFilterClient(''); setPage(1); }}>Limpar</Button>
                 <Box sx={{ ml: 'auto' }}>
-                    <Button size="sm" color="warning" onClick={openCreate}>+ Novo RMA</Button>
+                    {!apenasEntregues && (
+                        <Button size="sm" color="warning" onClick={openCreate}>+ Novo RMA</Button>
+                    )}
                 </Box>
             </Box>
 
@@ -311,6 +342,59 @@ export default function AssistenciaTecnica() {
                             </CardActions>
                         </RecordCard>
                     ))}
+                </Box>
+            )}
+
+            {/* Os ultimos entregues: atalho de leitura, sem filtros nem paginacao */}
+            {!apenasEntregues && recentDelivered.length > 0 && (
+                <Box sx={{ mt: 4 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                        <Typography level="title-md" sx={{ color: '#444' }}>Últimos entregues</Typography>
+                        <Button size="sm" variant="plain" onClick={() => navigate('/EMG/AssistenciaEntregues')}>
+                            Ver todos ›
+                        </Button>
+                    </Box>
+
+                    {isPhone && recentDelivered.map(r => (
+                        <RecordCard key={r.id} onClick={() => openDetail(r)}>
+                            <CardHeader left={`#${r.rmaNumber}`} right={fmtDate(r.openDate)} />
+                            <Typography level="title-sm">{r.brand} {r.model}</Typography>
+                            <CardField label="Nº série">{r.serialNumber}</CardField>
+                            <CardField label="Cliente">{r.client}</CardField>
+                        </RecordCard>
+                    ))}
+
+                    <Sheet variant="outlined" sx={{
+                        borderRadius: 'sm', overflow: 'auto', display: isPhone ? 'none' : 'block',
+                    }}>
+                        <Table borderAxis="xBetween" size="sm" sx={{ minWidth: 700 }}>
+                            <thead>
+                                <tr>
+                                    <th style={{ width: 70 }}>RMA #</th>
+                                    <th style={{ width: 100 }}>Data</th>
+                                    <th>Marca / Modelo</th>
+                                    <th>Nº Série</th>
+                                    <th>Cliente</th>
+                                    <th style={{ width: 60, textAlign: 'center' }}></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {recentDelivered.map(r => (
+                                    <tr key={r.id}>
+                                        <td style={{ fontWeight: 'bold', color: '#f57c00' }}>#{r.rmaNumber}</td>
+                                        <td>{fmtDate(r.openDate)}</td>
+                                        <td>{r.brand} {r.model}</td>
+                                        <td>{r.serialNumber}</td>
+                                        <td>{r.client}</td>
+                                        <td style={{ textAlign: 'center' }}>
+                                            <IconButton size="sm" variant="plain"
+                                                onClick={() => openDetail(r)}><VisibilityIcon fontSize="small" /></IconButton>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </Table>
+                    </Sheet>
                 </Box>
             )}
 

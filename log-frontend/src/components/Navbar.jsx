@@ -42,7 +42,6 @@ export default function Navbar() {
             <Box className={`navbar-links ${openMenu ? 'open' : ''}`}>
                 <Link className="navbar-link" to="/EMG/Assistencia" onClick={() => setOpenMenu(false)}>Assistência Técnica</Link>
                 <Link className="navbar-link" to="/EMG/Tickets" onClick={() => setOpenMenu(false)}>Tickets</Link>
-                <Link className="navbar-link" to="/EMG/TicketsFechados" onClick={() => setOpenMenu(false)}>Tickets Fechados</Link>
                 <Link className="navbar-link" to="/EMG/Obras" onClick={() => setOpenMenu(false)}>Obras</Link>
                 <Link className="navbar-link" to="/EMG/Frota" onClick={() => setOpenMenu(false)}>Frota</Link>
                 <Link className="navbar-link" to="/EMG/Pessoal" onClick={() => setOpenMenu(false)}>Pessoal</Link>

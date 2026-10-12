@@ -107,7 +107,11 @@ function PhotoThumb({ obraId, photo, onReady, onOpen }) {
     );
 }
 
-export default function Obras() {
+/**
+ * Lista de obras. Serve duas rotas: a principal, com o que esta a decorrer, e a
+ * das concluidas. E o mesmo ecra com o mesmo detalhe, filtros e paginacao.
+ */
+export default function Obras({ apenasConcluidas = false }) {
     const routerLocation = useLocation();
     const navigate = useNavigate();
     const isPhone = useIsPhone();
@@ -139,6 +143,8 @@ export default function Obras() {
     // Pedido que deu origem a esta obra, quando se chega aqui a partir de um
     // ticket. Fica guardado enquanto o formulário está aberto.
     const [fromTicket, setFromTicket] = useState(null);
+    // As ultimas concluidas, so na pagina principal e sem filtros.
+    const [recentDone, setRecentDone] = useState([]);
 
     const [detail, setDetail] = useState(null);
     // URLs das fotos já descarregadas para as miniaturas, reaproveitados pelo
@@ -178,7 +184,9 @@ export default function Obras() {
                     page, pageSize,
                     client: appliedClient || undefined,
                     type: filterType || undefined,
-                    status: filterStatus || undefined,
+                    status: apenasConcluidas ? 'concluida' : (filterStatus || undefined),
+                    // A lista principal esconde as concluidas; elas tem pagina propria.
+                    hideDone: apenasConcluidas ? undefined : 'true',
                     technician: appliedTechnician || undefined,
                     from: dateFrom || undefined,
                     to: dateTo || undefined,
@@ -191,7 +199,8 @@ export default function Obras() {
         } finally {
             setLoading(false);
         }
-    }, [page, pageSize, appliedClient, appliedTechnician, filterType, filterStatus, dateFrom, dateTo]);
+    }, [page, pageSize, appliedClient, appliedTechnician, filterType, filterStatus,
+        dateFrom, dateTo, apenasConcluidas]);
 
     useEffect(() => { fetchRecords(); }, [fetchRecords]);
 
@@ -326,6 +335,7 @@ export default function Obras() {
             }
             setOpenForm(false);
             fetchRecords();
+            fetchRecentDone();
         } catch (err) {
             toast.error(err.response?.data?.error || 'Erro ao guardar.');
         } finally {
@@ -339,6 +349,7 @@ export default function Obras() {
             toast.success('Obra eliminada.');
             if (detail?.id === deleteConfirm.id) setDetail(null);
             fetchRecords();
+            fetchRecentDone();
         } catch (err) {
             toast.error(err.response?.data?.error || 'Erro ao eliminar.');
         } finally {
@@ -360,6 +371,7 @@ export default function Obras() {
             setSignerName('');
             toast.success('Assinatura guardada.');
             fetchRecords();
+            fetchRecentDone();
         } catch (err) {
             toast.error(err.response?.data?.error || 'Erro ao guardar a assinatura.');
         }
@@ -371,6 +383,7 @@ export default function Obras() {
             await refreshDetail(detail.id);
             toast.success('Assinatura removida.');
             fetchRecords();
+            fetchRecentDone();
         } catch {
             toast.error('Erro ao remover a assinatura.');
         }
@@ -406,6 +419,7 @@ export default function Obras() {
             await api.put(`/emg/obras/${detail.id}`, { status: next });
             await refreshDetail(detail.id);
             fetchRecords();
+            fetchRecentDone();
             toast.success(next === 'concluida' ? 'Obra marcada como concluída.' : 'Obra reaberta.');
         } catch {
             toast.error('Erro ao atualizar o estado.');
@@ -517,11 +531,28 @@ export default function Obras() {
         downloadObraPDF(obra, photos);
     }
 
+    // Atalho de leitura, nao uma lista de trabalho: ignora os filtros.
+    const fetchRecentDone = useCallback(async () => {
+        if (apenasConcluidas) return;
+        try {
+            const res = await api.get('/emg/obras', {
+                params: { page: 1, pageSize: 10, status: 'concluida' },
+            });
+            setRecentDone(res.data.data ?? []);
+        } catch {
+            setRecentDone([]);
+        }
+    }, [apenasConcluidas]);
+
+    useEffect(() => { fetchRecentDone(); }, [fetchRecentDone]);
+
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
     return (
         <Box sx={{ p: 2 }}>
-            <Typography level="h3" sx={{ fontWeight: 'bold', color: '#444', mb: 2 }}>Obras</Typography>
+            <Typography level="h3" sx={{ fontWeight: 'bold', color: '#444', mb: 2 }}>
+                {apenasConcluidas ? 'Obras Concluídas' : 'Obras'}
+            </Typography>
 
             {/* Filtros */}
             {isPhone && (
@@ -557,7 +588,7 @@ export default function Obras() {
                         {OBRA_TYPES.map(t => <Option key={t.value} value={t.value}>{t.label}</Option>)}
                     </Select>
                 </FormControl>
-                <FormControl size="sm">
+                <FormControl size="sm" sx={{ display: apenasConcluidas ? 'none' : undefined }}>
                     <FormLabel>Estado</FormLabel>
                     <Select
                         value={filterStatus}
@@ -588,14 +619,16 @@ export default function Obras() {
                         onChange={e => { setDateTo(e.target.value); setPage(1); }} />
                 </FormControl>
                 <Button size="sm" onClick={handleFilter}>Filtrar</Button>
-                <Button
-                    size="sm"
-                    variant={filterStatus === 'em_curso' ? 'solid' : 'outlined'}
-                    color="warning"
-                    onClick={() => { setFilterStatus(filterStatus === 'em_curso' ? '' : 'em_curso'); setPage(1); }}
-                >
-                    Só em curso
-                </Button>
+                {!apenasConcluidas && (
+                    <Button
+                        size="sm"
+                        variant={filterStatus === 'em_curso' ? 'solid' : 'outlined'}
+                        color="warning"
+                        onClick={() => { setFilterStatus(filterStatus === 'em_curso' ? '' : 'em_curso'); setPage(1); }}
+                    >
+                        Só em curso
+                    </Button>
+                )}
                 <Button size="sm" variant="outlined" onClick={clearFilters}>Limpar</Button>
                 <Box sx={{ ml: 'auto' }}>
                     <Button size="sm" color="warning" onClick={openCreate}>+ Nova Obra</Button>
@@ -744,6 +777,65 @@ export default function Obras() {
                     </Select>
                 </FormControl>
             </Box>
+
+            {/* As ultimas concluidas: atalho de leitura, sem filtros nem paginacao */}
+            {!apenasConcluidas && recentDone.length > 0 && (
+                <Box sx={{ mt: 4 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                        <Typography level="title-md" sx={{ color: '#444' }}>Últimas concluídas</Typography>
+                        <Button size="sm" variant="plain" onClick={() => navigate('/EMG/ObrasConcluidas')}>
+                            Ver todas ›
+                        </Button>
+                    </Box>
+
+                    {isPhone && recentDone.map(r => (
+                        <RecordCard key={r.id} onClick={() => openDetail(r)}>
+                            <CardHeader left={`#${r.orderNumber}`} right={fmtDate(r.date)} />
+                            <Typography level="title-sm">{r.client}</Typography>
+                            <Typography level="body-sm" sx={{ color: '#555' }}>{r.obra}</Typography>
+                            <CardField label="Técnicos">{allTechnicianNames(r).join(', ')}</CardField>
+                        </RecordCard>
+                    ))}
+
+                    <Sheet variant="outlined" sx={{
+                        borderRadius: 'sm', overflow: 'auto', display: isPhone ? 'none' : 'block',
+                    }}>
+                        <Table borderAxis="xBetween" size="sm" sx={{ minWidth: 700 }}>
+                            <thead>
+                                <tr>
+                                    <th style={{ width: 70 }}>Obra #</th>
+                                    <th style={{ width: 100 }}>Data</th>
+                                    <th>Cliente</th>
+                                    <th>Obra / Local</th>
+                                    <th>Técnicos</th>
+                                    <th style={{ width: 100, textAlign: 'center' }}>Assinatura</th>
+                                    <th style={{ width: 60, textAlign: 'center' }}></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {recentDone.map(r => (
+                                    <tr key={r.id}>
+                                        <td style={{ fontWeight: 'bold', color: '#f57c00' }}>#{r.orderNumber}</td>
+                                        <td>{fmtDate(r.date)}</td>
+                                        <td>{r.client}</td>
+                                        <td>{r.obra}</td>
+                                        <td style={{ fontSize: '0.8rem' }}>{allTechnicianNames(r).join(', ') || '—'}</td>
+                                        <td style={{ textAlign: 'center' }}>
+                                            {r.signedAt
+                                                ? <Chip size="sm" sx={{ bgcolor: '#c8e6c9', color: '#2e7d32' }}>Assinada</Chip>
+                                                : <Chip size="sm" sx={{ bgcolor: '#eee', color: '#888' }}>Por assinar</Chip>}
+                                        </td>
+                                        <td style={{ textAlign: 'center' }}>
+                                            <IconButton size="sm" variant="plain" title="Ver"
+                                                onClick={() => openDetail(r)}><MdVisibility /></IconButton>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </Table>
+                    </Sheet>
+                </Box>
+            )}
 
             {/* Modal criar / editar */}
             <Modal open={openForm} onClose={() => setOpenForm(false)}>
